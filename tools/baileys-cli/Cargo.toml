@@ -1,0 +1,26 @@
+[package]
+name = "baileys-cli"
+description = "High-performance multi-platform CLI client for WhatsApp based on Rose-Baileys"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+default-run = "baileys-cli"
+
+[[bin]]
+name = "baileys-cli"
+path = "src/main.rs"
+
+[dependencies]
+baileys-core.workspace = true
+baileys-media.workspace = true
+baileys-proto = { workspace = true, features = ["extractor"] }
+baileys-store.workspace = true
+prost.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+qrcode.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+rustyline.workspace = true

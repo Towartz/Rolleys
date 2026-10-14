@@ -1,0 +1,23 @@
+[package]
+name = "baileys-napi"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3.14.0", default-features = false, features = ["async", "tokio_rt", "napi8", "serde-json"] }
+napi-derive = "3.6.10"
+baileys-core.workspace = true
+baileys-media.workspace = true
+baileys-store.workspace = true
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = "0.1"
+
+[build-dependencies]
+napi-build = "2.6.0"

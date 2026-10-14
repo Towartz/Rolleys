@@ -1,0 +1,30 @@
+[package]
+name = "baileys-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+baileys-crypto.workspace = true
+baileys-proto.workspace = true
+baileys-binary.workspace = true
+baileys-noise.workspace = true
+baileys-signal.workspace = true
+baileys-store.workspace = true
+baileys-media.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+rustls.workspace = true
+prost.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+rand.workspace = true
+base64.workspace = true
+subtle.workspace = true
+futures-util = "0.3"
+hex = "0.4"
+reqwest.workspace = true

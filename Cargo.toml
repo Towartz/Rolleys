@@ -1,0 +1,97 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/baileys-crypto",
+    "crates/baileys-proto",
+    "crates/baileys-binary",
+    "crates/baileys-noise",
+    "crates/baileys-signal",
+    "crates/baileys-store",
+    "crates/baileys-media",
+    "crates/baileys-core",
+    "bindings/baileys-cabi",
+    "bindings/baileys-ffi",
+    "bindings/baileys-napi",
+    "tools/baileys-cli",
+    "tools/baileys-live-test",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Rolleys Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/66XZD/Rolleys"
+
+[workspace.dependencies]
+# Cryptography
+aes-gcm = "0.10"
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+ctr = "0.9"
+cipher = { version = "0.4", features = ["block-padding"] }
+sha2 = "0.10"
+hmac = "0.12"
+hkdf = "0.12"
+md-5 = "0.10"
+x25519-dalek = { version = "2.0", features = ["static_secrets"] }
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand = "0.8"
+subtle = "2.5"
+zeroize = { version = "1.8", features = ["derive"] }
+
+# Serialization & Protobuf
+prost = "0.13"
+prost-types = "0.13"
+prost-build = "0.13"
+protoc-bin-vendored = "3.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+hex = "0.4"
+
+# Storage
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Async & Runtime
+tokio = { version = "1.40", features = ["full"] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-pki-types", "rustls-tls-native-roots", "rustls-tls-webpki-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+async-trait = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures-util = { version = "0.3", default-features = false }
+
+# Utilities
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+flate2 = "1.0"
+bytes = "1.8"
+qrcode = "0.14"
+chrono = "0.4"
+uniffi = { version = "0.28", default-features = false }
+regex = "1.10"
+oxc_allocator = "0.153"
+oxc_parser = "0.153"
+oxc_ast = "0.153"
+oxc_span = "0.153"
+rustyline = "18.0.1"
+
+# Internal crates
+baileys-crypto = { path = "crates/baileys-crypto" }
+baileys-proto = { path = "crates/baileys-proto" }
+baileys-binary = { path = "crates/baileys-binary" }
+baileys-noise = { path = "crates/baileys-noise" }
+baileys-signal = { path = "crates/baileys-signal" }
+baileys-store = { path = "crates/baileys-store" }
+baileys-media = { path = "crates/baileys-media" }
+baileys-core = { path = "crates/baileys-core" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"

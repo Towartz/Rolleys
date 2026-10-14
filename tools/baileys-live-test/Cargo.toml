@@ -1,0 +1,31 @@
+[package]
+name = "baileys-live-test"
+description = "Isolated live integration and WhatsApp status broadcast testing harness for Rose-Baileys"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "live-status-test"
+path = "src/main.rs"
+test = false
+
+[[bin]]
+name = "revoke-status"
+path = "src/bin/revoke_status.rs"
+test = false
+
+[[bin]]
+name = "live-newsletter-test"
+path = "src/bin/live_newsletter_test.rs"
+test = false
+
+[dependencies]
+baileys-core.workspace = true
+baileys-store.workspace = true
+baileys-proto = { workspace = true, features = ["extractor"] }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+chrono.workspace = true

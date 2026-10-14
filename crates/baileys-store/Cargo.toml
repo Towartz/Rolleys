@@ -1,0 +1,20 @@
+[package]
+name = "baileys-store"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+baileys-crypto.workspace = true
+baileys-signal.workspace = true
+baileys-proto.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+base64.workspace = true
+rand.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

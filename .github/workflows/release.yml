@@ -1,0 +1,327 @@
+name: Release Multiplatform Binaries & Libraries
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'cli-v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v0.1.0)'
+        required: false
+        default: 'v0.1.0'
+      is_prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # -------------------------------------------------------------
+  # Windows Builds (x86_64 & ARM64 CLI + C-ABI DLL)
+  # -------------------------------------------------------------
+  build-windows:
+    name: Windows (${{ matrix.target }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            arch: x86_64
+            build_cabi: true
+          - target: aarch64-pc-windows-msvc
+            arch: aarch64
+            build_cabi: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build baileys-cli
+        shell: pwsh
+        env:
+          RUSTFLAGS: "-C link-arg=/STACK:16777216"
+        run: |
+          cargo build -p baileys-cli --release --target ${{ matrix.target }}
+
+      - name: Build C-ABI Shared Library (x86_64 only)
+        if: matrix.build_cabi == true
+        shell: pwsh
+        run: |
+          cargo build -p baileys-cabi --release --target ${{ matrix.target }}
+
+      - name: Package Windows CLI archive (.zip)
+        shell: pwsh
+        run: |
+          $Version = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "${{ github.event.inputs.tag_name || 'v0.1.0' }}" }
+          $ArchiveName = "rolleys-cli-$Version-${{ matrix.target }}"
+          $Staging = "staging_cli_${{ matrix.target }}"
+          New-Item -ItemType Directory -Path $Staging -Force | Out-Null
+          
+          Copy-Item "target/${{ matrix.target }}/release/baileys-cli.exe" "$Staging/rolleys-cli.exe" -Force
+          if (Test-Path "README.md") { Copy-Item "README.md" "$Staging/README.md" -Force }
+          
+          New-Item -ItemType Directory -Path "artifacts" -Force | Out-Null
+          Compress-Archive -Path "$Staging/*" -DestinationPath "artifacts/$ArchiveName.zip" -CompressionLevel Optimal
+          Get-FileHash -Path "artifacts/$ArchiveName.zip" -Algorithm SHA256
+
+      - name: Package Windows C-ABI archive (.zip)
+        if: matrix.build_cabi == true
+        shell: pwsh
+        run: |
+          $Version = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "${{ github.event.inputs.tag_name || 'v0.1.0' }}" }
+          $ArchiveName = "rolleys-cabi-$Version-${{ matrix.target }}"
+          $Staging = "staging_cabi_${{ matrix.target }}"
+          New-Item -ItemType Directory -Path $Staging -Force | Out-Null
+
+          Copy-Item "target/${{ matrix.target }}/release/baileys_cabi.dll" "$Staging/baileys_cabi.dll" -Force
+          if (Test-Path "target/${{ matrix.target }}/release/baileys_cabi.dll.lib") {
+            Copy-Item "target/${{ matrix.target }}/release/baileys_cabi.dll.lib" "$Staging/baileys_cabi.lib" -Force
+          }
+          Copy-Item "bindings/c/baileys.h" "$Staging/baileys.h" -Force
+
+          Compress-Archive -Path "$Staging/*" -DestinationPath "artifacts/$ArchiveName.zip" -CompressionLevel Optimal
+          Get-FileHash -Path "artifacts/$ArchiveName.zip" -Algorithm SHA256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.target }}
+          path: artifacts/*.zip
+          if-no-files-found: error
+
+  # -------------------------------------------------------------
+  # Linux Builds (x86_64 / aarch64, glibc & static musl, Android)
+  # -------------------------------------------------------------
+  build-linux:
+    name: Linux (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            use_cross: true
+            build_cabi: false
+          - target: x86_64-unknown-linux-gnu
+            use_cross: false
+            build_cabi: true
+          - target: aarch64-unknown-linux-musl
+            use_cross: true
+            build_cabi: false
+          - target: aarch64-unknown-linux-gnu
+            use_cross: true
+            build_cabi: true
+          - target: aarch64-linux-android
+            use_cross: true
+            build_cabi: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl-tools
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install prebuilt cross
+        if: matrix.use_cross == true
+        uses: taiki-e/install-action@cross
+
+      - name: Build baileys-cli
+        run: |
+          if [ "${{ matrix.use_cross }}" = "true" ]; then
+            cross build -p baileys-cli --release --target ${{ matrix.target }}
+          else
+            cargo build -p baileys-cli --release --target ${{ matrix.target }}
+          fi
+
+      - name: Build C-ABI Shared Library (gnu targets)
+        if: matrix.build_cabi == true
+        run: |
+          if [ "${{ matrix.use_cross }}" = "true" ]; then
+            cross build -p baileys-cabi --release --target ${{ matrix.target }}
+          else
+            cargo build -p baileys-cabi --release --target ${{ matrix.target }}
+          fi
+
+      - name: Package Linux CLI archive (.tar.gz)
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            VERSION="${{ github.event.inputs.tag_name || 'v0.1.0' }}"
+          fi
+          ARCHIVE_NAME="rolleys-cli-${VERSION}-${{ matrix.target }}"
+          STAGING="staging_cli_${{ matrix.target }}"
+          mkdir -p "${STAGING}" artifacts
+          
+          cp "target/${{ matrix.target }}/release/baileys-cli" "${STAGING}/rolleys-cli"
+          if [ -f "README.md" ]; then cp "README.md" "${STAGING}/README.md"; fi
+          
+          tar -czf "artifacts/${ARCHIVE_NAME}.tar.gz" -C "${STAGING}" .
+          sha256sum "artifacts/${ARCHIVE_NAME}.tar.gz"
+
+      - name: Package Linux C-ABI archive (.tar.gz)
+        if: matrix.build_cabi == true
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            VERSION="${{ github.event.inputs.tag_name || 'v0.1.0' }}"
+          fi
+          ARCHIVE_NAME="rolleys-cabi-${VERSION}-${{ matrix.target }}"
+          STAGING="staging_cabi_${{ matrix.target }}"
+          mkdir -p "${STAGING}" artifacts
+
+          cp "target/${{ matrix.target }}/release/libbaileys_cabi.so" "${STAGING}/libbaileys_cabi.so"
+          cp "bindings/c/baileys.h" "${STAGING}/baileys.h"
+
+          tar -czf "artifacts/${ARCHIVE_NAME}.tar.gz" -C "${STAGING}" .
+          sha256sum "artifacts/${ARCHIVE_NAME}.tar.gz"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.target }}
+          path: artifacts/*.tar.gz
+          if-no-files-found: error
+
+  # -------------------------------------------------------------
+  # macOS Builds (Apple Silicon & Intel + Universal lipo binary)
+  # -------------------------------------------------------------
+  build-macos:
+    name: macOS (Universal, ARM64 & Intel)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - name: Build macOS CLI binaries & C-ABI dylib
+        run: |
+          cargo build -p baileys-cli --release --target aarch64-apple-darwin
+          cargo build -p baileys-cli --release --target x86_64-apple-darwin
+          cargo build -p baileys-cabi --release --target aarch64-apple-darwin
+          cargo build -p baileys-cabi --release --target x86_64-apple-darwin
+
+      - name: Create Universal Binary via lipo
+        run: |
+          mkdir -p target/universal-apple-darwin/release
+          lipo -create \
+            target/aarch64-apple-darwin/release/baileys-cli \
+            target/x86_64-apple-darwin/release/baileys-cli \
+            -output target/universal-apple-darwin/release/baileys-cli
+          lipo -info target/universal-apple-darwin/release/baileys-cli
+
+          lipo -create \
+            target/aarch64-apple-darwin/release/libbaileys_cabi.dylib \
+            target/x86_64-apple-darwin/release/libbaileys_cabi.dylib \
+            -output target/universal-apple-darwin/release/libbaileys_cabi.dylib
+          lipo -info target/universal-apple-darwin/release/libbaileys_cabi.dylib
+
+      - name: Package macOS archives (.tar.gz)
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            VERSION="${{ github.event.inputs.tag_name || 'v0.1.0' }}"
+          fi
+          mkdir -p artifacts
+
+          # 1. Apple Silicon (ARM64) CLI
+          mkdir -p staging_arm64
+          cp target/aarch64-apple-darwin/release/baileys-cli staging_arm64/rolleys-cli
+          if [ -f README.md ]; then cp README.md staging_arm64/; fi
+          tar -czf "artifacts/rolleys-cli-${VERSION}-aarch64-apple-darwin.tar.gz" -C staging_arm64 .
+
+          # 2. Intel (x86_64) CLI
+          mkdir -p staging_x86_64
+          cp target/x86_64-apple-darwin/release/baileys-cli staging_x86_64/rolleys-cli
+          if [ -f README.md ]; then cp README.md staging_x86_64/; fi
+          tar -czf "artifacts/rolleys-cli-${VERSION}-x86_64-apple-darwin.tar.gz" -C staging_x86_64 .
+
+          # 3. Universal 2 Binary CLI
+          mkdir -p staging_universal
+          cp target/universal-apple-darwin/release/baileys-cli staging_universal/rolleys-cli
+          if [ -f README.md ]; then cp README.md staging_universal/; fi
+          tar -czf "artifacts/rolleys-cli-${VERSION}-universal-apple-darwin.tar.gz" -C staging_universal .
+
+          # 4. Universal C-ABI Shared Library
+          mkdir -p staging_cabi_mac
+          cp target/universal-apple-darwin/release/libbaileys_cabi.dylib staging_cabi_mac/libbaileys_cabi.dylib
+          cp bindings/c/baileys.h staging_cabi_mac/baileys.h
+          tar -czf "artifacts/rolleys-cabi-${VERSION}-universal-apple-darwin.tar.gz" -C staging_cabi_mac .
+
+          shasum -a 256 artifacts/*.tar.gz
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binaries
+          path: artifacts/*.tar.gz
+          if-no-files-found: error
+
+  # -------------------------------------------------------------
+  # Publish Release & Unified SHA-256 Checksums
+  # -------------------------------------------------------------
+  publish-release:
+    name: Publish GitHub Release Assets
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate unified SHA256SUMS.txt
+        working-directory: release-assets
+        run: |
+          sha256sum * > SHA256SUMS.txt
+          echo "=== Generated Checksums ==="
+          cat SHA256SUMS.txt
+
+      - name: Determine Release Tag
+        id: release_info
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            TAG="${{ github.event.inputs.tag_name || 'v0.1.0' }}"
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: Rolleys ${{ steps.release_info.outputs.tag }}
+          prerelease: ${{ github.event.inputs.is_prerelease || false }}
+          generate_release_notes: true
+          files: |
+            release-assets/*

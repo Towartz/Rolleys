@@ -1,0 +1,21 @@
+[package]
+name = "baileys-signal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+baileys-crypto.workspace = true
+baileys-proto.workspace = true
+baileys-binary.workspace = true
+bytes.workspace = true
+prost.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+hex.workspace = true
+subtle.workspace = true
+rand.workspace = true

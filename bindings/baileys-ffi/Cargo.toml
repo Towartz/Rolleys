@@ -1,0 +1,27 @@
+[package]
+name = "baileys-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+name = "baileys_ffi"
+
+[dependencies]
+baileys-core.workspace = true
+baileys-media.workspace = true
+baileys-store.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+uniffi = { workspace = true, features = ["cli"] }
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["cli"]
+
+[features]
+default = ["cli"]
+cli = ["uniffi/cli"]

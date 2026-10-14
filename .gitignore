@@ -1,0 +1,58 @@
+# Rust build targets
+target/
+**/target/
+**/*.rs.bk
+
+# Precompiled distribution packages
+dist/
+**/dist/
+*.tar.gz
+*.zip
+*.sha256
+
+# Native addon binaries and UniFFI generated files
+*.node
+crates/baileys-napi/*.node
+crates/baileys-ffi/*.dylib
+crates/baileys-ffi/*.so
+crates/baileys-ffi/*.dll
+
+# SQLite Session databases & WAL files
+*.db
+*.db-shm
+*.db-wal
+.sessions/
+live_status_session.db*
+aurora_session.db*
+test_session.db*
+clean_test.db*
+
+# Media downloads folder
+/downloads/
+downloads/
+
+# Environment and sensitive keys
+.env
+.env.*
+*.pem
+*.key
+
+# Operating System & Local scratch artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+.rose_history
+test_sample.png
+*.log
+GEMINI.md
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node dependencies & proto backups
+node_modules/
+scripts/node_modules/
+*.proto.bak

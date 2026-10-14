@@ -1,0 +1,16 @@
+[package]
+name = "baileys-noise"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+baileys-crypto.workspace = true
+baileys-proto.workspace = true
+baileys-binary.workspace = true
+bytes.workspace = true
+prost.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+hex = "0.4"

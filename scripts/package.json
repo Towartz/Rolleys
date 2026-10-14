@@ -1,0 +1,13 @@
+{
+  "name": "rose-baileys-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WhatsApp Web Protobuf extraction and developer automation tools for Rose-Baileys",
+  "scripts": {
+    "extract": "node extract-waproto.js"
+  },
+  "dependencies": {
+    "acorn": "^8.14.0",
+    "acorn-walk": "^8.3.4"
+  }
+}

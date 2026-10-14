@@ -1,0 +1,4 @@
+module baileys_ffiFFI {
+    header "baileys_ffiFFI.h"
+    export *
+}
