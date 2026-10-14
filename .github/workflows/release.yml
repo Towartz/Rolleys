@@ -129,7 +129,8 @@ jobs:
             use_cross: true
             build_cabi: true
           - target: aarch64-linux-android
-            use_cross: true
+            use_cross: false
+            use_ndk: true
             build_cabi: false
     steps:
       - name: Checkout repository
@@ -148,9 +149,15 @@ jobs:
         if: matrix.use_cross == true
         uses: taiki-e/install-action@cross
 
+      - name: Install cargo-ndk
+        if: matrix.use_ndk == true
+        run: cargo install cargo-ndk --locked
+
       - name: Build baileys-cli
         run: |
-          if [ "${{ matrix.use_cross }}" = "true" ]; then
+          if [ "${{ matrix.use_ndk }}" = "true" ]; then
+            cargo ndk --target ${{ matrix.target }} --platform 24 build -p baileys-cli --release
+          elif [ "${{ matrix.use_cross }}" = "true" ]; then
             cross build -p baileys-cli --release --target ${{ matrix.target }}
           else
             cargo build -p baileys-cli --release --target ${{ matrix.target }}
@@ -290,6 +297,7 @@ jobs:
     name: Publish GitHub Release Assets
     needs: [build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
+    if: always() && !cancelled() && (needs.build-windows.result == 'success' || needs.build-linux.result == 'success' || needs.build-macos.result == 'success')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
