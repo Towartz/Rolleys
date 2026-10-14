@@ -42,7 +42,7 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Run Clippy Linter
-        run: cargo clippy --workspace --all-targets -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
   # -------------------------------------------------------------
   # Matrix Tests across Windows, Linux, and macOS Host Runners
