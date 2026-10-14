@@ -1,48 +1,77 @@
 # Rolleys
 
+[![CI - Towartz/Rolleys](https://github.com/Towartz/Rolleys/actions/workflows/ci.yml/badge.svg)](https://github.com/Towartz/Rolleys/actions/workflows/ci.yml)
 [![CI - 66XZD/Rolleys](https://github.com/66XZD/Rolleys/actions/workflows/ci.yml/badge.svg)](https://github.com/66XZD/Rolleys/actions/workflows/ci.yml)
-[![CI - Towartz/Rust-Baileys](https://github.com/Towartz/Rust-Baileys/actions/workflows/ci.yml/badge.svg)](https://github.com/Towartz/Rust-Baileys/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT%20%7C%20Apache--2.0-blue.svg)](LICENSE)
+[![Author](https://img.shields.io/badge/author-Towartz-purple.svg)](https://github.com/Towartz)
 [![MSRV](https://img.shields.io/badge/rustc-1.75%2B-orange.svg)](Cargo.toml)
+[![Documentation](https://img.shields.io/badge/docs-reference-green.svg)](docs/)
 
 An asynchronous, modular WhatsApp Web Multi-Device protocol engine written in pure Rust.
 
-Rolleys provides protocol parity with WhatsApp Web without requiring a Node.js or browser runtime. It encompasses the complete protocol lifecycle: cryptographic handshakes, Signal end-to-end encryption, binary XML stanza framing, media streaming and deciphering, AppState differential synchronization, and persistent session storage.
+Rolleys provides complete protocol parity with WhatsApp Web without requiring a browser instance, headless Chromium, or Node.js runtime. Built from first principles on `tokio`, Rolleys handles the entire protocol lifecycle: cryptographic handshakes, Signal end-to-end encryption, binary XML stanza framing, media streaming and deciphering, AppState differential synchronization, and persistent storage.
+
+Maintained by **[Towartz](https://github.com/Towartz)** and contributors.
+
+---
+
+## Table of Contents
+- [Architecture](#architecture)
+- [Documentation Index](#documentation-index)
+- [Workspace Crates](#workspace-crates)
+- [Target Platforms & Support Matrix](#target-platforms--support-matrix)
+- [Quickstart Guide](#quickstart-guide)
+  - [Session Storage Setup](#1-session-storage-setup)
+  - [Client Initialization & Connection](#2-client-initialization--connection)
+  - [Sending Messages & Quotes](#3-sending-messages--quotes)
+  - [Media, Documents & Reactions](#4-media-documents--reactions)
+  - [Group Administration](#5-group-administration)
+  - [Newsletters & Channels](#6-newsletters--channels)
+- [Interactive Terminal REPL (baileys-cli)](#interactive-terminal-repl-baileys-cli)
+- [Foreign Function Interfaces (FFI)](#foreign-function-interfaces-ffi)
+  - [C-ABI (C / C++ / Embedded)](#c-abi-c--c--embedded)
+  - [Android JNI & Kotlin](#android-jni--kotlin)
+  - [Apple Swift & iOS](#apple-swift--ios)
+  - [Node.js & Electron](#nodejs--electron)
+- [Building & Cross-Compilation](#building--cross-compilation)
+- [Technical Specifications & Security Guarantees](#technical-specifications--security-guarantees)
+- [Authors & License](#authors--license)
+- [Disclaimer](#disclaimer)
 
 ---
 
 ## Architecture
 
-Rolleys is structured as a collection of decoupled, layered crates designed for standalone reuse or unified deployment across desktop, mobile, embedded, and server runtimes.
+Rolleys is decomposed into independent, modular crates designed for standalone use or unified cross-platform deployment.
 
 ```mermaid
 flowchart TD
-    subgraph Primitives["Cryptographic & Serialization Primitives"]
-        Crypto["baileys-crypto<br/><i>Curve25519 / AES-GCM / SHA-256 / HKDF / LtHash</i>"]
-        Proto["baileys-proto<br/><i>Protobuf Codecs (prost)</i>"]
-        Binary["baileys-binary<br/><i>Binary XML Tokenizer & JID Parser</i>"]
+    subgraph Primitives["Cryptographic and Serialization Primitives"]
+        Crypto["baileys-crypto: Curve25519, AES-GCM, SHA-256, HKDF, LtHash"]
+        Proto["baileys-proto: Protobuf Codecs (prost)"]
+        Binary["baileys-binary: Binary XML Tokenizer and JID Parser"]
     end
 
-    subgraph Security["Security & Protocol Layer"]
-        Noise["baileys-noise<br/><i>Noise_XX_25519_AESGCM_SHA256</i>"]
-        Signal["baileys-signal<br/><i>Signal Double Ratchet & Group Sender Keys</i>"]
+    subgraph Security["Security and Protocol Layer"]
+        Noise["baileys-noise: Noise_XX_25519_AESGCM_SHA256"]
+        Signal["baileys-signal: Signal Double Ratchet and Group Sender Keys"]
     end
 
-    subgraph StorageMedia["Persistence & Data Engine"]
-        Store["baileys-store<br/><i>SQLite (WAL) / File / Memory Storage</i>"]
-        Media["baileys-media<br/><i>Streaming CDN Cipher & Path Sanitizer</i>"]
+    subgraph StorageMedia["Persistence and Data Engine"]
+        Store["baileys-store: SQLite (WAL), File, Memory Storage"]
+        Media["baileys-media: Streaming CDN Cipher and Path Sanitizer"]
     end
 
     subgraph CoreEngine["Protocol Orchestrator"]
-        Core["baileys-core<br/><i>State Machine / Registration / Events / Services</i>"]
+        Core["baileys-core: State Machine, Registration, Events, Services"]
     end
 
-    subgraph Interfaces["Distribution & Language Bindings"]
-        CABI["baileys-cabi<br/><i>C-ABI (baileys.h) / cdylib / staticlib</i>"]
-        FFI["baileys-ffi<br/><i>UniFFI (Kotlin / Swift)</i>"]
-        NAPI["baileys-napi<br/><i>Node-API (Node.js / Bun / Electron)</i>"]
-        CLI["baileys-cli<br/><i>Thread-Safe Terminal REPL</i>"]
-        LiveTest["baileys-live-test<br/><i>Gateway Integration Harness</i>"]
+    subgraph Interfaces["Distribution and Language Bindings"]
+        CABI["baileys-cabi: C-ABI (baileys.h), cdylib, staticlib"]
+        FFI["baileys-ffi: UniFFI (Kotlin, Swift)"]
+        NAPI["baileys-napi: Node-API (Node.js, Bun, Electron)"]
+        CLI["baileys-cli: Thread-Safe Terminal REPL"]
+        LiveTest["baileys-live-test: Gateway Integration Harness"]
     end
 
     Crypto --> Noise
@@ -61,6 +90,17 @@ flowchart TD
     Core --> CLI
     Core --> LiveTest
 ```
+
+---
+
+## Documentation Index
+
+Detailed engineering manuals and reference guides are maintained in the [`docs/`](docs/) directory:
+
+- [**Architecture & Protocol Lifecycle**](docs/ARCHITECTURE.md): Noise XX handshakes, Signal Double Ratchet, Binary XML compression, AppState Merkle sync.
+- [**API Reference Guide**](docs/API_REFERENCE.md): Full method signatures, events, error types, domain services (`messages`, `groups`, `newsletters`, `status`, `privacy`).
+- [**CLI Manual & REPL Guide**](docs/CLI_MANUAL.md): Interactive command reference, pairing workflows (QR, Phone code), In-Chat Bot runner.
+- [**FFI & Multiplatform Embedding**](docs/FFI_GUIDE.md): C-ABI integration, Android JNI / Kotlin, Apple Swift / iOS XCFramework, Node.js N-API.
 
 ---
 
@@ -86,7 +126,7 @@ flowchart TD
 
 ## Target Platforms & Support Matrix
 
-Rolleys is continuously tested against the following targets in CI:
+Rolleys is continuously built and tested against the following targets in CI:
 
 | Platform | Target Triple | Tier | Distribution / Output | ABI Interface |
 | :--- | :--- | :---: | :--- | :--- |
@@ -99,7 +139,7 @@ Rolleys is continuously tested against the following targets in CI:
 
 ---
 
-## Quickstart
+## Quickstart Guide
 
 Add `baileys-core` and `baileys-store` to your `Cargo.toml`:
 
@@ -110,170 +150,202 @@ baileys-store = { path = "crates/baileys-store" }
 tokio = { version = "1.40", features = ["full"] }
 ```
 
-### Initializing and Connecting a Client
-
+### 1. Session Storage Setup
+Rolleys provides out-of-the-box persistent storage via embedded SQLite:
 ```rust
-use std::sync::Arc;
-use baileys_core::{BaileysClient, BaileysConfigBuilder, BaileysEvent};
 use baileys_store::SqliteStore;
+use std::sync::Arc;
+
+let store = Arc::new(SqliteStore::open("session.db")?);
+```
+
+### 2. Client Initialization & Connection
+```rust
+use baileys_core::{BaileysClient, BaileysConfigBuilder, BaileysEvent};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Initialize persistent SQLite session storage (WAL mode)
     let store = Arc::new(SqliteStore::open("session.db")?);
-
-    // 2. Configure client parameters
     let config = BaileysConfigBuilder::new()
         .with_browser("Rolleys", "Linux", "1.0.0")
         .build();
 
-    // 3. Instantiate client and subscribe to the broadcast event receiver
     let client = Arc::new(BaileysClient::new(store, config));
     let mut events = client.events();
 
-    // 4. Handle connection lifecycle and message events
     tokio::spawn(async move {
         while let Ok(event) = events.recv().await {
             match event {
-                BaileysEvent::Connecting => {
-                    println!("Connecting to WhatsApp Web gateway...");
-                }
-                BaileysEvent::QrCode { code } => {
-                    println!("Scan pairing QR: {code}");
-                }
-                BaileysEvent::PairingCode { code } => {
-                    println!("Pairing code: {code}");
-                }
-                BaileysEvent::Connected { me_jid } => {
-                    println!("Authenticated successfully as: {me_jid}");
-                }
+                BaileysEvent::Connecting => println!("Connecting to gateway..."),
+                BaileysEvent::QrCode { code } => println!("Pairing QR: {code}"),
+                BaileysEvent::Connected { me_jid } => println!("Connected as {me_jid}"),
                 BaileysEvent::Message { message } => {
-                    if let Some(msg) = message.message {
-                        println!("Message received: {msg:?}");
-                    }
+                    println!("Received message from: {:?}", message.key.remote_jid);
                 }
-                BaileysEvent::Disconnected { reason } => {
-                    println!("Disconnected: {reason}");
-                }
+                BaileysEvent::Disconnected { reason } => println!("Disconnected: {reason}"),
                 _ => {}
             }
         }
     });
 
-    // 5. Connect to the gateway
     client.connect().await?;
-
-    // Block on termination signal
     tokio::signal::ctrl_c().await?;
     Ok(())
 }
 ```
 
-### Sending Messages
-
+### 3. Sending Messages & Quotes
 ```rust
-// Send a plaintext message
-client.messages().send_text("1234567890@s.whatsapp.net", "Hello from Rust!").await?;
+// Plaintext message
+client.messages().send_text("62812345678@s.whatsapp.net", "Hello from Rolleys!").await?;
 
-// Send a message quoting an earlier message
+// Quoted reply
 client.messages().send_text_with_quote(
-    "1234567890@s.whatsapp.net",
+    "62812345678@s.whatsapp.net",
     "Replying to your query",
-    "MESSAGE_ID_STAMP",
-    "Original message content",
+    "TARGET_MESSAGE_ID",
+    "Original message preview",
     None,
 ).await?;
 ```
 
+### 4. Media, Documents & Reactions
+```rust
+// Encrypted photo
+let image_bytes = std::fs::read("photo.jpg")?;
+client.messages().send_image("62812345678@s.whatsapp.net", &image_bytes, Some("Photo caption")).await?;
+
+// Emoji reaction
+client.messages().send_reaction("62812345678@s.whatsapp.net", "TARGET_MESSAGE_ID", "🚀").await?;
+```
+
+### 5. Group Administration
+```rust
+// Create group
+let group_jid = client.groups().create_group(
+    "Rust Engineers",
+    vec!["6281111111@s.whatsapp.net".into(), "6282222222@s.whatsapp.net".into()],
+).await?;
+
+// Add participant
+client.groups().add_participants(&group_jid, vec!["6283333333@s.whatsapp.net".into()]).await?;
+```
+
+### 6. Newsletters & Channels
+```rust
+// Create a channel
+let channel = client.newsletters().create("Rolleys News", Some("Public announcements"), None).await?;
+
+// Post an announcement
+client.newsletters().send_text(&channel.jid, "Version 0.1.0 released!").await?;
+```
+
 ---
 
-## Language Bindings & Foreign Function Interfaces
+## Interactive Terminal REPL (`baileys-cli`)
 
-### C / C++ / Embedded (`baileys-cabi`)
-The Universal C-ABI is exposed through `bindings/c/baileys.h`. Build the dynamic or static library:
+Rolleys includes a full-featured terminal CLI with safe, asynchronous logging and on-demand QR rendering:
+
+```bash
+cargo run -p baileys-cli
+```
+
+### Key Commands
+- `qr`: Displays clean half-block unicode QR pairing code.
+- `send <jid> <text>`: Transmits a plaintext message.
+- `sendimage <jid> <path> [caption]`: Uploads and sends encrypted media.
+- `status`: Displays engine health, latency, and telemetry counters.
+- `ghost [on|off]`: Suppresses read receipts and status views.
+- `bot [off|self|public]`: Toggles embedded in-chat automated command handler.
+
+For complete CLI documentation, refer to [**CLI Manual**](docs/CLI_MANUAL.md).
+
+---
+
+## Foreign Function Interfaces (FFI)
+
+### C-ABI (C / C++ / Embedded)
+The Universal C-ABI header is located at [`bindings/c/baileys.h`](bindings/c/baileys.h):
 ```bash
 cargo build --release -p baileys-cabi
 ```
-Link against:
-- Windows: `target/release/baileys_cabi.dll` / `baileys_cabi.lib`
-- Linux / Android: `target/release/libbaileys_cabi.so`
-- macOS: `target/release/libbaileys_cabi.dylib`
+Link against `baileys_cabi.dll` (Windows), `libbaileys_cabi.so` (Linux/Android), or `libbaileys_cabi.dylib` (macOS).
 
-### Android Kotlin / Swift UniFFI (`baileys-ffi`)
-Generate Swift and Kotlin bindings using `uniffi-bindgen`:
+### Android JNI & Kotlin
+Generate Kotlin bindings and compile native JNI shared libraries:
 ```bash
-# Android JNI build
 ./scripts/build-android-jni.sh
+```
 
-# Apple XCFramework build
+### Apple Swift & iOS
+Generate Swift packages and XCFramework static archives:
+```bash
 ./scripts/build-apple.sh --ios
 ```
 
-### Node.js / Electron (`baileys-napi`)
-Direct Node-API bridge providing low-overhead asynchronous bindings:
+### Node.js & Electron
+Direct native addon via Node-API:
 ```bash
 cd bindings/baileys-napi
 npm install
 npm run build
 ```
 
+See [**FFI Integration Guide**](docs/FFI_GUIDE.md) for full code examples across each language.
+
 ---
 
-## Building and Verification
+## Building & Cross-Compilation
 
-### Prerequisites
-- Rust stable toolchain 1.75 or later (`rustup update stable`).
-- CMake (required only for bundled SQLite compilation on certain cross targets).
-- Optional: `protoc` installed locally (if absent, `baileys-proto` falls back automatically to `protoc-bin-vendored`).
-
-### Build Workspace
+### Local Development
 ```bash
+# Build workspace
 cargo build --workspace
-```
 
-### Run Unit and Integration Tests
-```bash
+# Run full test suite
 cargo test --workspace --lib
-```
 
-### Formatting and Lint Compliance
-```bash
+# Linter and formatting check
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -D warnings
 ```
 
-### Cross-Compilation
-
-#### Android (NDK & cargo-ndk)
+### Android NDK Cross-Compilation
 ```powershell
-# Using repository cross-compilation automation
 .\scripts\build-cli-cross.ps1 -Target aarch64-linux-android -Release
 ```
 
-#### Linux MUSL (Zero-dependency static binary)
+### Linux MUSL Static Binary
 ```bash
 cargo build --release --target x86_64-unknown-linux-musl -p baileys-cli
 ```
 
 ---
 
-## Technical Specifications & Concurrency Model
+## Technical Specifications & Security Guarantees
 
-- **Memory Safety & Zeroization**: Cryptographic keys (`AuthCreds`, `KeyPair`, `AdvSecretKey`) implement automatic zeroization on drop via `zeroize`. All secret-dependent conditional operations use `subtle` constant-time comparisons.
-- **Embedded WebPKI Fallback**: `tokio-tungstenite` is configured with `rustls-tls-webpki-roots` in addition to `rustls-tls-native-roots`. This guarantees reliable TLS handshakes in minimal Docker scratch containers and Android sandboxes lacking system root certificates.
-- **SQLite Concurrency**: `SqliteStore` operates under `PRAGMA journal_mode = WAL` and `PRAGMA synchronous = NORMAL`. This design permits concurrent readers without locking the writer, preventing contention on mobile flash storage.
-- **Filename Sanitization**: `baileys-media` implements cross-platform path validation, stripping directory traversal tokens and guarding against Windows reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1-9`, `LPT1-9`).
+- **Memory Hygiene & Zeroization**: Cryptographic keys (`AuthCreds`, `KeyPair`, `AdvSecretKey`) implement automatic zeroization on drop via `zeroize`. Constant-time equality checks are enforced via `subtle::ConstantTimeEq`.
+- **Embedded WebPKI Fallback**: `tokio-tungstenite` embeds `rustls-tls-webpki-roots` alongside system root certificates, ensuring dependable TLS termination in minimal container and Android sandbox runtimes.
+- **SQLite Concurrency**: `SqliteStore` operates under `PRAGMA journal_mode = WAL` and `PRAGMA synchronous = NORMAL`, allowing concurrent non-blocking reads during active background socket operations.
+- **Path Sanitization**: `baileys-media` protects against directory traversal vulnerabilities and Windows reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1-9`, `LPT1-9`).
 
 ---
 
-## License
+## Authors & License
 
-Licensed under either of:
+### Main Author
+- **[Towartz](https://github.com/Towartz)** (Primary Maintainer & Copyright Holder)
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
-- MIT License ([LICENSE-MIT](LICENSE-MIT) or https://opensource.org/licenses/MIT)
+### Contributors
+- Rolleys Open Source Contributors
 
-at your option.
+### Dual License
+Rolleys is dual-licensed under either:
+
+- **Apache License, Version 2.0** ([LICENSE-APACHE](LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
+- **MIT License** ([LICENSE-MIT](LICENSE-MIT) or https://opensource.org/licenses/MIT)
+
+at your option. See [LICENSE](LICENSE) for details.
 
 ---
 
