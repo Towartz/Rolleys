@@ -8,12 +8,16 @@
 pub mod buffer_json;
 pub mod file_store;
 pub mod memory_store;
+#[cfg(feature = "redis-store")]
+pub mod redis_store;
 pub mod sqlite_store;
 pub mod traits;
 
 pub use buffer_json::*;
 pub use file_store::*;
 pub use memory_store::*;
+#[cfg(feature = "redis-store")]
+pub use redis_store::*;
 pub use sqlite_store::*;
 pub use traits::*;
 
@@ -30,8 +34,18 @@ pub enum StoreError {
     #[error("SQLite database error: {0}")]
     Database(String),
 
+    #[error("Redis database error: {0}")]
+    Redis(String),
+
     #[error("Invalid key format")]
     InvalidKeyFormat,
+}
+
+#[cfg(feature = "redis-store")]
+impl From<redis::RedisError> for StoreError {
+    fn from(e: redis::RedisError) -> Self {
+        Self::Redis(e.to_string())
+    }
 }
 
 impl From<std::io::Error> for StoreError {

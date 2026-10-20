@@ -1726,4 +1726,26 @@ impl BaileysClient {
             self.send_message(to_jid, proto_msg).await
         }
     }
+
+    /// Sends a prompt to Meta AI or a WhatsApp bot with bot context info.
+    pub async fn send_bot_prompt(
+        &self,
+        prompt: &str,
+        target_chat: Option<&str>,
+    ) -> Result<String, CoreError> {
+        let destination = target_chat.unwrap_or(crate::bot::META_AI_PN);
+        let ext = baileys_proto::proto::message::ExtendedTextMessage {
+            text: Some(prompt.to_string()),
+            context_info: Some(Box::new(baileys_proto::proto::ContextInfo {
+                mentioned_jid: vec![crate::bot::META_AI_PN.to_string()],
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let proto_msg = Message {
+            extended_text_message: Some(Box::new(ext)),
+            ..Default::default()
+        };
+        self.send_message(destination, proto_msg).await
+    }
 }

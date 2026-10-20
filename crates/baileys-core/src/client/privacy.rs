@@ -336,4 +336,59 @@ impl BaileysClient {
         let res = self.send_iq(iq, Duration::from_secs(15)).await?;
         crate::usync::parse_usync_status_response(&res)
     }
+
+    /// Queries the linked recovery email associated with this WhatsApp account.
+    pub async fn get_linked_email(&self) -> Result<Option<String>, CoreError> {
+        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        let iq = crate::account::build_get_email_iq(&iq_id);
+        let res = self.send_iq(iq, Duration::from_secs(15)).await?;
+        crate::account::parse_email_response(&res)
+    }
+
+    /// Sets or updates the recovery email associated with this WhatsApp account.
+    pub async fn set_linked_email(&self, email: &str) -> Result<(), CoreError> {
+        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        let iq = crate::account::build_set_email_iq(&iq_id, email);
+        self.send_iq(iq, Duration::from_secs(15)).await?;
+        Ok(())
+    }
+
+    /// Requests a 6-digit confirmation code sent to the account's pending email.
+    pub async fn request_email_code(&self, lang: &str, locale: &str) -> Result<(), CoreError> {
+        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        let iq = crate::account::build_request_email_code_iq(&iq_id, lang, locale);
+        self.send_iq(iq, Duration::from_secs(15)).await?;
+        Ok(())
+    }
+
+    /// Submits a 6-digit confirmation code to verify the pending email.
+    pub async fn verify_email_code(&self, code: &str) -> Result<(), CoreError> {
+        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        let iq = crate::account::build_verify_email_code_iq(&iq_id, code);
+        self.send_iq(iq, Duration::from_secs(15)).await?;
+        Ok(())
+    }
+
+    /// Queries the acceptance status of specific Terms of Service notices.
+    pub async fn query_tos(
+        &self,
+        notice_ids: &[&str],
+    ) -> Result<Vec<crate::account::TosNotice>, CoreError> {
+        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        let iq = crate::account::build_tos_query_iq(&iq_id, notice_ids);
+        let res = self.send_iq(iq, Duration::from_secs(15)).await?;
+        crate::account::parse_tos_response(&res)
+    }
+
+    /// Accepts or updates the stage for specified Terms of Service notices.
+    pub async fn accept_tos(
+        &self,
+        notice_ids: &[&str],
+        stage: Option<&str>,
+    ) -> Result<(), CoreError> {
+        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        let iq = crate::account::build_tos_update_iq(&iq_id, notice_ids, stage);
+        self.send_iq(iq, Duration::from_secs(15)).await?;
+        Ok(())
+    }
 }

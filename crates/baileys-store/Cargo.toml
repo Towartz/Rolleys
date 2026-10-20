@@ -18,3 +18,8 @@ base64.workspace = true
 rand.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+redis = { workspace = true, optional = true }
+
+[features]
+default = []
+redis-store = ["dep:redis"]

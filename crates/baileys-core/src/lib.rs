@@ -2,8 +2,10 @@
 
 #![allow(clippy::too_many_arguments)]
 
+pub mod account;
 pub mod auth;
 pub mod biz;
+pub mod bot;
 pub mod call;
 pub mod client;
 pub mod commerce;
@@ -33,9 +35,12 @@ pub mod status;
 pub mod syncd;
 pub mod tc_token;
 pub mod telemetry;
+pub mod username;
 pub mod usync;
 pub mod version;
+pub mod wam;
 
+pub use account::*;
 pub use auth::*;
 pub use baileys_proto;
 pub use baileys_proto::proto::WebMessageInfo;
@@ -45,6 +50,7 @@ pub use baileys_store::{
     StoredOrder, StoredPoll, StoredPollVote, StoredStory, StoredUserDevice,
 };
 pub use biz::*;
+pub use bot::*;
 pub use call::*;
 pub use client::*;
 pub use commerce::*;
@@ -74,8 +80,10 @@ pub use status::*;
 pub use syncd::*;
 pub use tc_token::*;
 pub use telemetry::*;
+pub use username::*;
 pub use usync::*;
 pub use version::*;
+pub use wam::*;
 
 use thiserror::Error;
 

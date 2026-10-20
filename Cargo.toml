@@ -53,6 +53,7 @@ hex = "0.4"
 
 # Storage
 rusqlite = { version = "0.32", features = ["bundled"] }
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
 
 # Async & Runtime
 tokio = { version = "1.40", features = ["full"] }

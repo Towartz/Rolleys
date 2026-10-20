@@ -169,6 +169,8 @@ const REPL_COMMANDS: &[&str] = &[
     "sendvoice",
     "sendsticker",
     "proto",
+    "lookupuser",
+    "metaai",
     "cmdmode",
     "cmdstatus",
     "help",

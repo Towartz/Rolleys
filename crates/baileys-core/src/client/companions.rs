@@ -149,4 +149,25 @@ impl BaileysClient {
         let res = self.send_iq(iq, Duration::from_secs(15)).await?;
         crate::usync::parse_usync_lid_response(&res)
     }
+
+    /// Looks up a WhatsApp account by its @username and optional 4-digit PIN via USync.
+    pub async fn lookup_username(
+        &self,
+        username: &str,
+        pin: Option<&str>,
+    ) -> Result<Option<crate::username::ResolvedUsername>, CoreError> {
+        let clean = crate::username::normalize_username(username);
+        crate::username::validate_username(&clean)
+            .map_err(|e| CoreError::Protocol(e.to_string()))?;
+
+        if let Some(p) = pin {
+            if !crate::username::is_valid_username_key(p) {
+                return Err(CoreError::Protocol("Username key must be 4 digits".into()));
+            }
+        }
+
+        let iq = crate::usync::build_usync_username_lookup_iq(&clean, pin);
+        let res = self.send_iq(iq, Duration::from_secs(15)).await?;
+        crate::usync::parse_usync_username_response(&res, &clean)
+    }
 }

@@ -352,6 +352,16 @@ pub static COMMANDS: &[CommandSpec] = &[
         min_args: 2,
         missing_hint: "<JID> <TEXT>",
     },
+    CommandSpec {
+        name: "metaai",
+        aliases: &["askai", "ai"],
+        category: CommandCategory::Messaging,
+        summary: "Send a prompt directly to Meta AI with required bot context metadata",
+        usage: "metaai <PROMPT>",
+        example: "metaai Explain quantum computing in simple terms",
+        min_args: 1,
+        missing_hint: "<PROMPT>",
+    },
 
     // ─── Groups ───────────────────────────────────────────────────────────────
     CommandSpec {
@@ -1063,6 +1073,16 @@ pub static COMMANDS: &[CommandSpec] = &[
         example: "disappearing 62812345678@s.whatsapp.net 24h",
         min_args: 2,
         missing_hint: "<JID> <TIMER>",
+    },
+    CommandSpec {
+        name: "lookupuser",
+        aliases: &["userlookup", "finduser"],
+        category: CommandCategory::Privacy,
+        summary: "Resolve a modern WhatsApp @username to JID and profile via USync",
+        usage: "lookupuser <@HANDLE> [4_DIGIT_PIN]",
+        example: "lookupuser @alice 1234",
+        min_args: 1,
+        missing_hint: "<@HANDLE> [PIN]",
     },
 
     // ─── WAProto ──────────────────────────────────────────────────────────────

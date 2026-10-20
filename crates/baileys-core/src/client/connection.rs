@@ -175,6 +175,7 @@ impl BaileysClient {
                 let mut msg_retries: HashMap<String, u32> = HashMap::new();
                 let mut last_ping_sent_at: Option<tokio::time::Instant> = None;
                 let mut ticks_since_prekey_check: u32 = 0;
+                let mut ticks_since_wam_flush: u32 = 0;
                 let mut pairing_code_sent = false;
 
                 while is_running_clone.load(Ordering::SeqCst) && !session_terminated {
@@ -208,6 +209,33 @@ impl BaileysClient {
                                             }
                                         }
                                     }
+                                }
+                            }
+
+                            // Periodic WAM (w:stats) anti-fingerprinting telemetry batch dispatch (every ~5 min)
+                            ticks_since_wam_flush += 1;
+                            if ticks_since_wam_flush >= 20 {
+                                ticks_since_wam_flush = 0;
+                                if is_connected_clone.load(Ordering::SeqCst) {
+                                    let stream_id = (rand::random::<u8>() % 100) + 1;
+                                    let mut batch = crate::wam::WamBatch::new(stream_id, 1, 0);
+                                    let now = std::time::SystemTime::now()
+                                        .duration_since(std::time::UNIX_EPOCH)
+                                        .unwrap_or_default()
+                                        .as_secs();
+                                    batch.write_event(
+                                        now,
+                                        472, // WebcSocketConnect event
+                                        1,
+                                        &[
+                                            crate::wam::WamField::new(1, 0i64),
+                                            crate::wam::WamField::new(2, client.metrics().messages_in.load(Ordering::Relaxed) as i64),
+                                            crate::wam::WamField::new(3, client.metrics().messages_out.load(Ordering::Relaxed) as i64),
+                                        ],
+                                    );
+                                    let wam_iq = batch.build_iq_node(now);
+                                    let _ = socket.send_node(wam_iq).await;
+                                    debug!("Dispatched background WAM anti-fingerprinting telemetry batch");
                                 }
                             }
 

@@ -384,6 +384,92 @@ pub fn parse_usync_status_response(
     Ok(results)
 }
 
+/// Builds a USync IQ stanza to look up an account by its @username and optional 4-digit PIN.
+pub fn build_usync_username_lookup_iq(username: &str, pin: Option<&str>) -> BinaryNode {
+    let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+    let sid = format!("usync-username-{:X}", rand::random::<u32>());
+
+    let mut contact_node = BinaryNode::new("contact").with_attr("username", username);
+    if let Some(p) = pin {
+        contact_node = contact_node.with_attr("pin", p);
+    }
+
+    let user_node = BinaryNode::new("user").with_child(contact_node);
+
+    BinaryNode::new("iq")
+        .with_attr("to", S_WHATSAPP_NET)
+        .with_attr("type", "get")
+        .with_attr("xmlns", "usync")
+        .with_attr("id", &iq_id)
+        .with_child(
+            BinaryNode::new("usync")
+                .with_attr("sid", sid)
+                .with_attr("mode", "query")
+                .with_attr("last", "true")
+                .with_attr("index", "0")
+                .with_attr("context", "interactive")
+                .with_child(
+                    BinaryNode::new("query")
+                        .with_child(BinaryNode::new("contact").with_attr("addressing_mode", "lid"))
+                        .with_child(
+                            BinaryNode::new("business")
+                                .with_child(BinaryNode::new("verified_name")),
+                        ),
+                )
+                .with_child(BinaryNode::new("list").with_child(user_node)),
+        )
+}
+
+/// Parses the USync username lookup response and returns the resolved identity if found.
+pub fn parse_usync_username_response(
+    response: &BinaryNode,
+    username: &str,
+) -> Result<Option<crate::username::ResolvedUsername>, CoreError> {
+    let usync = response
+        .get_child("usync")
+        .ok_or_else(|| CoreError::Protocol("Missing <usync> node in response".into()))?;
+
+    let list = usync
+        .get_child("list")
+        .ok_or_else(|| CoreError::Protocol("Missing <list> node in usync response".into()))?;
+
+    for user in list.get_children() {
+        if user.tag != "user" {
+            continue;
+        }
+
+        if user.get_attr("error") == Some("404") {
+            return Ok(None);
+        }
+
+        let jid = user
+            .get_attr("jid")
+            .or_else(|| user.get_attr("lid"))
+            .map(|s| s.to_string());
+
+        let phone_jid = user
+            .get_child("contact")
+            .and_then(|c| c.get_attr("jid"))
+            .map(|s| s.to_string());
+
+        let verified_name = user
+            .get_child("business")
+            .and_then(|b| b.get_child("verified_name"))
+            .and_then(|v| v.content_as_string().map(|s| s.to_string()));
+
+        if let Some(target_jid) = jid.or_else(|| phone_jid.clone()) {
+            return Ok(Some(crate::username::ResolvedUsername {
+                username: username.to_string(),
+                jid: target_jid,
+                phone_jid,
+                verified_name,
+            }));
+        }
+    }
+
+    Ok(None)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -596,5 +682,50 @@ mod tests {
         assert_eq!(parsed[0].0, "62812345678@s.whatsapp.net");
         assert_eq!(parsed[0].1, "Hey there! I am using WhatsApp.");
         assert_eq!(parsed[0].2, 1728100000);
+    }
+
+    #[test]
+    fn test_usync_username_lookup_roundtrip() {
+        let iq = build_usync_username_lookup_iq("alice", Some("1234"));
+        assert_eq!(iq.tag, "iq");
+        assert_eq!(iq.get_attr("xmlns"), Some("usync"));
+        let usync = iq.get_child("usync").expect("Missing usync");
+        let list = usync.get_child("list").expect("Missing list");
+        let user = list.get_child("user").expect("Missing user");
+        let contact = user.get_child("contact").expect("Missing contact");
+        assert_eq!(contact.get_attr("username"), Some("alice"));
+        assert_eq!(contact.get_attr("pin"), Some("1234"));
+
+        let response = BinaryNode::new("iq")
+            .with_attr("type", "result")
+            .with_child(
+                BinaryNode::new("usync").with_child(
+                    BinaryNode::new("list").with_child(
+                        BinaryNode::new("user")
+                            .with_attr("jid", "100200300@lid")
+                            .with_child(
+                                BinaryNode::new("contact")
+                                    .with_attr("jid", "62812345678@s.whatsapp.net"),
+                            )
+                            .with_child(
+                                BinaryNode::new("business").with_child(
+                                    BinaryNode::new("verified_name")
+                                        .with_bytes_content("Alice Store".as_bytes().to_vec()),
+                                ),
+                            ),
+                    ),
+                ),
+            );
+
+        let resolved = parse_usync_username_response(&response, "alice")
+            .expect("Failed to parse")
+            .expect("Expected resolved identity");
+        assert_eq!(resolved.username, "alice");
+        assert_eq!(resolved.jid, "100200300@lid");
+        assert_eq!(
+            resolved.phone_jid,
+            Some("62812345678@s.whatsapp.net".to_string())
+        );
+        assert_eq!(resolved.verified_name, Some("Alice Store".to_string()));
     }
 }

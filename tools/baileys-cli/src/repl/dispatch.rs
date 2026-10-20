@@ -3563,6 +3563,44 @@ pub async fn dispatch_command(
         } else {
             println!("[-] Usage: usyncpn <LID_JID1,LID_JID2...>");
         }
+    } else if trimmed.to_lowercase().starts_with("lookupuser ") {
+        let rest = trimmed[11..].trim();
+        let (handle, pin) = if let Some((u, p)) = rest.split_once(' ') {
+            (u.trim(), Some(p.trim()))
+        } else {
+            (rest, None)
+        };
+        if !handle.is_empty() {
+            println!("[*] Querying WhatsApp account for username '{}'...", handle);
+            match client.lookup_username(handle, pin).await {
+                Ok(Some(info)) => {
+                    println!("[+] Username identity resolved successfully:");
+                    println!("    Handle        : @{}", info.username);
+                    println!("    Resolved JID  : {}", info.jid);
+                    if let Some(ref pn) = info.phone_jid {
+                        println!("    Phone JID     : {}", pn);
+                    }
+                    if let Some(ref name) = info.verified_name {
+                        println!("    Verified Name : {}", name);
+                    }
+                }
+                Ok(None) => println!("[-] Account not found for username '{}'", handle),
+                Err(e) => eprintln!("[-] Username lookup failed: {}", e),
+            }
+        } else {
+            println!("[-] Usage: lookupuser <@HANDLE> [4_DIGIT_PIN]");
+        }
+    } else if trimmed.to_lowercase().starts_with("metaai ") {
+        let prompt = trimmed[7..].trim();
+        if !prompt.is_empty() {
+            println!("[*] Sending prompt to Meta AI...");
+            match client.send_bot_prompt(prompt, None).await {
+                Ok(msg_id) => println!("[+] Prompt sent to Meta AI (Message ID: {})", msg_id),
+                Err(e) => eprintln!("[-] Failed to send prompt to Meta AI: {}", e),
+            }
+        } else {
+            println!("[-] Usage: metaai <PROMPT>");
+        }
     } else if trimmed.to_lowercase().starts_with("usyncstatus ") {
         let rest = trimmed[12..].trim();
         let jids: Vec<&str> = rest
