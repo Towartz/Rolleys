@@ -578,6 +578,35 @@ pub fn build_voice_note_message(
     }
 }
 
+/// Builds a pin-in-chat message to pin or unpin a target message.
+pub fn build_pin_in_chat(target_key: &MessageKey, pin: bool) -> Message {
+    let pin_type = if pin { 1 } else { 2 };
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64;
+    Message {
+        pin_in_chat_message: Some(baileys_proto::proto::message::PinInChatMessage {
+            key: Some(target_key.clone()),
+            r#type: Some(pin_type),
+            sender_timestamp_ms: Some(now_ms),
+        }),
+        ..Default::default()
+    }
+}
+
+/// Builds an in-thread comment message replying directly to a target message.
+pub fn build_comment_message(target_key: &MessageKey, text: &str) -> Message {
+    let inner_msg = build_text(text);
+    Message {
+        comment_message: Some(Box::new(baileys_proto::proto::message::CommentMessage {
+            message: Some(Box::new(inner_msg)),
+            target_message_key: Some(target_key.clone()),
+        })),
+        ..Default::default()
+    }
+}
+
 pub use crate::rich_messages::wrap_view_once;
 
 #[cfg(test)]

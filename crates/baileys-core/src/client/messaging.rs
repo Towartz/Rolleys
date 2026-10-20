@@ -1748,4 +1748,15 @@ impl BaileysClient {
         };
         self.send_message(destination, proto_msg).await
     }
+
+    /// Sends an in-thread comment message replying directly to a target message.
+    pub async fn send_comment(
+        &self,
+        to_jid: &str,
+        target_key: &MessageKey,
+        text: &str,
+    ) -> Result<String, CoreError> {
+        let msg = crate::proto_builders::build_comment_message(target_key, text);
+        self.send_message(to_jid, msg).await
+    }
 }

@@ -604,9 +604,17 @@ pub fn parse_waproto_from_js(
                                                 } else if let Some(mem) =
                                                     unwrap_v.as_member_expression()
                                                 {
-                                                    mem.static_property_name()
-                                                        .unwrap_or("string")
-                                                        .to_string()
+                                                    let prop = mem
+                                                        .static_property_name()
+                                                        .unwrap_or("string");
+                                                    match prop.to_lowercase().as_str() {
+                                                        "string" | "int32" | "int64" | "uint32"
+                                                        | "uint64" | "sint32" | "sint64"
+                                                        | "bool" | "bytes" | "double" | "float"
+                                                        | "fixed32" | "fixed64" | "sfixed32"
+                                                        | "sfixed64" => prop.to_lowercase(),
+                                                        _ => prop.to_string(),
+                                                    }
                                                 } else {
                                                     "string".to_string()
                                                 }
@@ -696,7 +704,7 @@ pub fn parse_waproto_from_js(
 
     // 5. Generate proto string
     let mut proto_lines = Vec::new();
-    proto_lines.push("syntax = \"proto3\";".to_string());
+    proto_lines.push("syntax = \"proto2\";".to_string());
     proto_lines.push("package proto;".to_string());
     proto_lines.push(String::new());
     proto_lines.push(format!("/// WhatsApp Version: {}", wa_version));
@@ -1006,7 +1014,14 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_live_pull_latest_waproto() {
-        let summary = pull_latest_waproto(None)
+        let dest = if Path::new("proto/WAProto.proto").exists() {
+            Some(Path::new("proto/WAProto.proto"))
+        } else if Path::new("crates/baileys-proto/proto/WAProto.proto").exists() {
+            Some(Path::new("crates/baileys-proto/proto/WAProto.proto"))
+        } else {
+            None
+        };
+        let summary = pull_latest_waproto(dest)
             .await
             .expect("Live pull should succeed");
         assert!(summary.bundle_size_bytes > 1_000_000);

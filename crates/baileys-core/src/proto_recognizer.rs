@@ -42,6 +42,10 @@ pub enum RecognizedMessageType {
     ButtonsResponse,
     TemplateButtonReply,
     ListResponse,
+    PinInChat,
+    Comment,
+    ScheduledCall,
+    RichResponse,
     Unknown(String),
 }
 
@@ -79,6 +83,10 @@ impl RecognizedMessageType {
             Self::ButtonsResponse => "buttonsResponseMessage",
             Self::TemplateButtonReply => "templateButtonReplyMessage",
             Self::ListResponse => "listResponseMessage",
+            Self::PinInChat => "pinInChatMessage",
+            Self::Comment => "commentMessage",
+            Self::ScheduledCall => "scheduledCallMessage",
+            Self::RichResponse => "richResponseMessage",
             Self::Unknown(s) => s.as_str(),
         }
     }
@@ -116,6 +124,10 @@ impl RecognizedMessageType {
             Self::ButtonsResponse => "Button Response",
             Self::TemplateButtonReply => "Template Button Reply",
             Self::ListResponse => "List Response",
+            Self::PinInChat => "Pin In Chat",
+            Self::Comment => "In-Thread Comment",
+            Self::ScheduledCall => "Scheduled Call",
+            Self::RichResponse => "Meta AI Rich Response",
             Self::Unknown(_) => "Unknown / Custom",
         }
     }
@@ -181,6 +193,10 @@ impl RecognizedMessageType {
             Self::ButtonsResponse,
             Self::TemplateButtonReply,
             Self::ListResponse,
+            Self::PinInChat,
+            Self::Comment,
+            Self::ScheduledCall,
+            Self::RichResponse,
         ]
     }
 }
@@ -366,6 +382,34 @@ impl MessageExt for Message {
                     continue;
                 }
             }
+            if let Some(ref btm) = cur.bot_task_message {
+                if let Some(ref inner) = btm.message {
+                    wrappers.push("bot_task");
+                    cur = inner;
+                    continue;
+                }
+            }
+            if let Some(ref qrm) = cur.question_reply_message {
+                if let Some(ref inner) = qrm.message {
+                    wrappers.push("question_reply");
+                    cur = inner;
+                    continue;
+                }
+            }
+            if let Some(ref lsm) = cur.limit_sharing_message {
+                if let Some(ref inner) = lsm.message {
+                    wrappers.push("limit_sharing");
+                    cur = inner;
+                    continue;
+                }
+            }
+            if let Some(ref napm) = cur.newsletter_admin_profile_message {
+                if let Some(ref inner) = napm.message {
+                    wrappers.push("newsletter_admin_profile");
+                    cur = inner;
+                    continue;
+                }
+            }
 
             break;
         }
@@ -447,6 +491,27 @@ impl MessageExt for Message {
         if let Some(ref poll) = unwrapped.poll_creation_message_v3 {
             if let Some(ref n) = poll.name {
                 return Some(n.clone());
+            }
+        }
+        if let Some(ref poll) = unwrapped.poll_creation_message_v5 {
+            if let Some(ref n) = poll.name {
+                return Some(n.clone());
+            }
+        }
+        if let Some(ref comment) = unwrapped.comment_message {
+            if let Some(ref inner_msg) = comment.message {
+                if let Some(t) = inner_msg.extract_text() {
+                    return Some(t);
+                }
+            }
+        }
+        if let Some(ref rich) = unwrapped.rich_response_message {
+            for sub in &rich.submessages {
+                if let Some(ref text) = sub.message_text {
+                    if !text.is_empty() {
+                        return Some(text.clone());
+                    }
+                }
             }
         }
         if let Some(ref ev) = unwrapped.event_message {
@@ -723,20 +788,36 @@ fn detect_message_type(msg: &Message) -> RecognizedMessageType {
     if msg.live_location_message.is_some() {
         return RecognizedMessageType::LiveLocation;
     }
-    if msg.reaction_message.is_some() {
+    if msg.reaction_message.is_some() || msg.enc_reaction_message.is_some() {
         return RecognizedMessageType::Reaction;
     }
     if msg.poll_creation_message.is_some()
         || msg.poll_creation_message_v2.is_some()
         || msg.poll_creation_message_v3.is_some()
+        || msg.poll_creation_message_v5.is_some()
     {
         return RecognizedMessageType::PollCreation;
     }
-    if msg.poll_update_message.is_some() {
+    if msg.poll_update_message.is_some()
+        || msg.poll_result_snapshot_message.is_some()
+        || msg.poll_result_snapshot_message_v3.is_some()
+    {
         return RecognizedMessageType::PollVote;
     }
     if msg.protocol_message.is_some() {
         return RecognizedMessageType::Protocol;
+    }
+    if msg.pin_in_chat_message.is_some() {
+        return RecognizedMessageType::PinInChat;
+    }
+    if msg.comment_message.is_some() || msg.enc_comment_message.is_some() {
+        return RecognizedMessageType::Comment;
+    }
+    if msg.scheduled_call_creation_message.is_some() || msg.scheduled_call_edit_message.is_some() {
+        return RecognizedMessageType::ScheduledCall;
+    }
+    if msg.rich_response_message.is_some() {
+        return RecognizedMessageType::RichResponse;
     }
     if msg.interactive_message.is_some() {
         return RecognizedMessageType::Interactive;
