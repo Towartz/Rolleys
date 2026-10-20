@@ -1,11 +1,13 @@
 //! WAProto schema inspection & management commands for REPL.
 
-use std::sync::Arc;
-use baileys_store::SqliteStore;
+use baileys_core::proto_recognizer::{MessageExt, RecognizedMessageType};
 use baileys_proto::schema::SchemaInspector;
+use baileys_store::traits::ChatStore;
+use baileys_store::SqliteStore;
 use prost::Message as ProstMessage;
+use std::sync::Arc;
 
-async fn handle_proto_command(sub: &str, store: &Arc<SqliteStore>) {
+pub(crate) async fn handle_proto_command(sub: &str, store: &Arc<SqliteStore>) {
     let parts: Vec<&str> = sub.split_whitespace().collect();
     if parts.is_empty() {
         print_proto_help();
@@ -252,5 +254,3 @@ fn print_proto_help() {
         "   proto pull                   Pull fresh WAProto from live WhatsApp Web JS bundle\n"
     );
 }
-
-

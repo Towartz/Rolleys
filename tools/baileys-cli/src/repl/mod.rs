@@ -4,15 +4,9 @@ pub mod proto;
 #[cfg(test)]
 mod tests;
 
-use crate::selftest::run_self_test;
-use crate::ui::{set_log_printer, LogPrinter, CLI_LOG_FILTER};
-use baileys_core::proto_recognizer::{MessageExt, RecognizedMessageType};
-use baileys_core::{
-    BaileysClient, CarouselCard, InteractiveButton, InteractiveMessageBuilder, ListRow, ListSection,
-};
-use baileys_proto::schema::SchemaInspector;
-use baileys_store::{ChatStore, NewsletterStore, SessionStore, SqliteStore};
-use prost::Message as ProstMessage;
+use crate::ui::{set_log_printer, LogPrinter};
+use baileys_core::BaileysClient;
+use baileys_store::SqliteStore;
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::highlight::Highlighter;
@@ -493,4 +487,3 @@ pub async fn run_repl(
 
     Ok(())
 }
-

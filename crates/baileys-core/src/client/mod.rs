@@ -84,7 +84,6 @@ pub struct AppStateSyncSummary {
     pub collections_failed: usize,
 }
 
-
 pub mod business;
 pub mod channels;
 pub mod chat_actions;
@@ -462,7 +461,7 @@ impl BaileysClient {
     }
 
     /// Generates participant hash v2 (phash) for multi-device participant lists, matching WhatsApp Web & whatsmeow.
-    fn generate_participant_hash_v2(participants: &[String]) -> String {
+    pub(crate) fn generate_participant_hash_v2(participants: &[String]) -> String {
         let mut ad_strings: Vec<String> = participants
             .iter()
             .map(|p| {
@@ -490,37 +489,6 @@ impl BaileysClient {
         let b64 = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&hash[..6]);
         format!("2:{}", b64)
     }
-
-}
-
-/// Generates participant hash v2 (phash) for multi-device participant lists, matching WhatsApp Web & whatsmeow.
-pub(crate) fn generate_participant_hash_v2(participants: &[String]) -> String {
-    let mut ad_strings: Vec<String> = participants
-        .iter()
-        .map(|p| {
-            let (user_part, server) = p.split_once('@').unwrap_or((p.as_str(), ""));
-            let (user, device) = if let Some((u, d)) = user_part.split_once(':') {
-                (u, d)
-            } else {
-                (user_part, "0")
-            };
-            let (clean_user, agent) = if let Some((u, a)) = user.split_once('.') {
-                (u, a)
-            } else {
-                (user, "0")
-            };
-            if server.is_empty() {
-                p.clone()
-            } else {
-                format!("{}.{}:{}@{}", clean_user, agent, device, server)
-            }
-        })
-        .collect();
-    ad_strings.sort();
-    let joined = ad_strings.concat();
-    let hash = baileys_crypto::sha256(joined.as_bytes());
-    let b64 = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&hash[..6]);
-    format!("2:{}", b64)
 }
 
 /// Returns the user portion of a JID (`628123:12@s.whatsapp.net` -> `628123`).

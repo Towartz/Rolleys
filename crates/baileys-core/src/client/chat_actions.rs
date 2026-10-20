@@ -248,7 +248,7 @@ impl BaileysClient {
         Ok(summary)
     }
     /// Helper to dispatch AppState Syncd mutation patch to WhatsApp server.
-    async fn dispatch_syncd_patch<F>(&self, collection: &str, patch_fn: F)
+    pub(crate) async fn dispatch_syncd_patch<F>(&self, collection: &str, patch_fn: F)
     where
         F: FnOnce(&[u8], &[u8], &[u8], u64) -> Result<crate::syncd::SyncdPatchResult, CoreError>,
     {
