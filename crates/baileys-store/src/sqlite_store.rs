@@ -1395,6 +1395,64 @@ impl ChatStore for SqliteStore {
         Ok(msgs)
     }
 
+    async fn get_starred_messages(
+        &self,
+        limit: u32,
+    ) -> Result<Vec<StoredMessage>, StoreError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
+                 FROM messages WHERE is_starred = 1 ORDER BY timestamp DESC LIMIT ?1",
+            )
+            .map_err(|e| StoreError::Database(e.to_string()))?;
+
+        let rows = stmt
+            .query_map(params![limit], |row| {
+                let from_me_int: i32 = row.get(3)?;
+                let has_media_int: i32 = row.get(7)?;
+                let starred_int: i32 = row.get(9)?;
+                let revoked_int: i32 = row.get(10)?;
+                let edited_int: i32 = row.get(11)?;
+
+                Ok(StoredMessage {
+                    id: row.get(0)?,
+                    chat_jid: row.get(1)?,
+                    sender_jid: row.get(2)?,
+                    from_me: from_me_int > 0,
+                    timestamp: row.get(4)?,
+                    summary: row.get(5)?,
+                    status: row.get(6)?,
+                    has_media: has_media_int > 0,
+                    proto_bytes: row.get(8)?,
+                    is_starred: starred_int > 0,
+                    is_revoked: revoked_int > 0,
+                    is_edited: edited_int > 0,
+                })
+            })
+            .map_err(|e| StoreError::Database(e.to_string()))?;
+
+        let mut msgs = Vec::new();
+        for r in rows {
+            msgs.push(r.map_err(|e| StoreError::Database(e.to_string()))?);
+        }
+        Ok(msgs)
+    }
+
+    async fn delete_message(
+        &self,
+        chat_jid: &str,
+        message_id: &str,
+    ) -> Result<(), StoreError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM messages WHERE id = ?1 AND chat_jid = ?2",
+            params![message_id, chat_jid],
+        )
+        .map_err(|e| StoreError::Database(e.to_string()))?;
+        Ok(())
+    }
+
     async fn update_message_content(
         &self,
         chat_jid: &str,

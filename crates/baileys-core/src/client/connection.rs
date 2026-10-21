@@ -181,14 +181,16 @@ impl BaileysClient {
                 while is_running_clone.load(Ordering::SeqCst) && !session_terminated {
                     tokio::select! {
                         _ = ping_interval.tick() => {
-                            // Dead socket check: if previous ping had no response and no traffic arrived
+                            // Dead socket check: only abort if ping has gone unanswered for >= 45s
                             if let Some(sent_at) = last_ping_sent_at {
-                                warn!(
-                                    "Dead socket detected: WhatsApp server failed to respond within {:.1}s to keepalive ping. Aborting zombie TCP connection...",
-                                    sent_at.elapsed().as_secs_f32()
-                                );
-                                session_terminated = true;
-                                continue;
+                                if sent_at.elapsed() >= Duration::from_secs(45) {
+                                    warn!(
+                                        "Dead socket detected: WhatsApp server failed to respond within {:.1}s to keepalive ping. Aborting zombie TCP connection...",
+                                        sent_at.elapsed().as_secs_f32()
+                                    );
+                                    session_terminated = true;
+                                    continue;
+                                }
                             }
 
                             // Auto-replenish pre-keys if low (checked every ~60s)
