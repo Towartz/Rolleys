@@ -2153,6 +2153,29 @@ public object FfiConverterLong: FfiConverter<Long, Long> {
 /**
  * @suppress
  */
+public object FfiConverterFloat: FfiConverter<Float, Float> {
+    override fun lift(value: Float): Float {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Float {
+        return buf.getFloat()
+    }
+
+    override fun lower(value: Float): Float {
+        return value
+    }
+
+    override fun allocationSize(value: Float) = 4UL
+
+    override fun write(value: Float, buf: ByteBuffer) {
+        buf.putFloat(value)
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterDouble: FfiConverter<Double, Double> {
     override fun lift(value: Double): Double {
         return value
@@ -6614,6 +6637,49 @@ sealed class AuroraEvent {
         companion object
     }
     
+    data class IdentityChanged(
+        val `jid`: kotlin.String, 
+        val `timestamp`: kotlin.ULong) : AuroraEvent() {
+        companion object
+    }
+    
+    data class MediaUpdated(
+        val `messageId`: kotlin.String, 
+        val `directPath`: kotlin.String) : AuroraEvent() {
+        companion object
+    }
+    
+    data class ChatUpdate(
+        val `jid`: kotlin.String, 
+        val `pinned`: kotlin.Boolean?, 
+        val `archived`: kotlin.Boolean?, 
+        val `muteUntil`: kotlin.ULong?, 
+        val `unreadCount`: kotlin.UInt?) : AuroraEvent() {
+        companion object
+    }
+    
+    data class ContactUpdate(
+        val `jid`: kotlin.String, 
+        val `name`: kotlin.String?, 
+        val `pushName`: kotlin.String?) : AuroraEvent() {
+        companion object
+    }
+    
+    data class AppStateSynced(
+        val `collectionsSynced`: kotlin.UInt, 
+        val `mutationsApplied`: kotlin.UInt) : AuroraEvent() {
+        companion object
+    }
+    
+    data class MediaProgress(
+        val `taskId`: kotlin.String, 
+        val `direction`: kotlin.String, 
+        val `bytesTransferred`: kotlin.ULong, 
+        val `totalBytes`: kotlin.ULong, 
+        val `percentage`: kotlin.Float) : AuroraEvent() {
+        companion object
+    }
+    
 
     
     companion object
@@ -6702,6 +6768,37 @@ public object FfiConverterTypeAuroraEvent : FfiConverterRustBuffer<AuroraEvent>{
             20 -> AuroraEvent.DeviceUpdate(
                 FfiConverterString.read(buf),
                 FfiConverterSequenceUInt.read(buf),
+                )
+            21 -> AuroraEvent.IdentityChanged(
+                FfiConverterString.read(buf),
+                FfiConverterULong.read(buf),
+                )
+            22 -> AuroraEvent.MediaUpdated(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            23 -> AuroraEvent.ChatUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalBoolean.read(buf),
+                FfiConverterOptionalBoolean.read(buf),
+                FfiConverterOptionalULong.read(buf),
+                FfiConverterOptionalUInt.read(buf),
+                )
+            24 -> AuroraEvent.ContactUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                )
+            25 -> AuroraEvent.AppStateSynced(
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            26 -> AuroraEvent.MediaProgress(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterFloat.read(buf),
                 )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
@@ -6867,6 +6964,55 @@ public object FfiConverterTypeAuroraEvent : FfiConverterRustBuffer<AuroraEvent>{
                 + FfiConverterSequenceUInt.allocationSize(value.`devices`)
             )
         }
+        is AuroraEvent.IdentityChanged -> {
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterULong.allocationSize(value.`timestamp`)
+            )
+        }
+        is AuroraEvent.MediaUpdated -> {
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterString.allocationSize(value.`directPath`)
+            )
+        }
+        is AuroraEvent.ChatUpdate -> {
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterOptionalBoolean.allocationSize(value.`pinned`)
+                + FfiConverterOptionalBoolean.allocationSize(value.`archived`)
+                + FfiConverterOptionalULong.allocationSize(value.`muteUntil`)
+                + FfiConverterOptionalUInt.allocationSize(value.`unreadCount`)
+            )
+        }
+        is AuroraEvent.ContactUpdate -> {
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterOptionalString.allocationSize(value.`name`)
+                + FfiConverterOptionalString.allocationSize(value.`pushName`)
+            )
+        }
+        is AuroraEvent.AppStateSynced -> {
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.`collectionsSynced`)
+                + FfiConverterUInt.allocationSize(value.`mutationsApplied`)
+            )
+        }
+        is AuroraEvent.MediaProgress -> {
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`taskId`)
+                + FfiConverterString.allocationSize(value.`direction`)
+                + FfiConverterULong.allocationSize(value.`bytesTransferred`)
+                + FfiConverterULong.allocationSize(value.`totalBytes`)
+                + FfiConverterFloat.allocationSize(value.`percentage`)
+            )
+        }
     }
 
     override fun write(value: AuroraEvent, buf: ByteBuffer) {
@@ -6988,6 +7134,49 @@ public object FfiConverterTypeAuroraEvent : FfiConverterRustBuffer<AuroraEvent>{
                 buf.putInt(20)
                 FfiConverterString.write(value.`userJid`, buf)
                 FfiConverterSequenceUInt.write(value.`devices`, buf)
+                Unit
+            }
+            is AuroraEvent.IdentityChanged -> {
+                buf.putInt(21)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterULong.write(value.`timestamp`, buf)
+                Unit
+            }
+            is AuroraEvent.MediaUpdated -> {
+                buf.putInt(22)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterString.write(value.`directPath`, buf)
+                Unit
+            }
+            is AuroraEvent.ChatUpdate -> {
+                buf.putInt(23)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterOptionalBoolean.write(value.`pinned`, buf)
+                FfiConverterOptionalBoolean.write(value.`archived`, buf)
+                FfiConverterOptionalULong.write(value.`muteUntil`, buf)
+                FfiConverterOptionalUInt.write(value.`unreadCount`, buf)
+                Unit
+            }
+            is AuroraEvent.ContactUpdate -> {
+                buf.putInt(24)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterOptionalString.write(value.`name`, buf)
+                FfiConverterOptionalString.write(value.`pushName`, buf)
+                Unit
+            }
+            is AuroraEvent.AppStateSynced -> {
+                buf.putInt(25)
+                FfiConverterUInt.write(value.`collectionsSynced`, buf)
+                FfiConverterUInt.write(value.`mutationsApplied`, buf)
+                Unit
+            }
+            is AuroraEvent.MediaProgress -> {
+                buf.putInt(26)
+                FfiConverterString.write(value.`taskId`, buf)
+                FfiConverterString.write(value.`direction`, buf)
+                FfiConverterULong.write(value.`bytesTransferred`, buf)
+                FfiConverterULong.write(value.`totalBytes`, buf)
+                FfiConverterFloat.write(value.`percentage`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -7162,6 +7351,35 @@ public object FfiConverterTypeAuroraEventListener: FfiConverterCallbackInterface
 
 
 
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalBoolean: FfiConverterRustBuffer<kotlin.Boolean?> {
+    override fun read(buf: ByteBuffer): kotlin.Boolean? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterBoolean.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Boolean?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterBoolean.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Boolean?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0.toByte())
+        } else {
+            buf.put(1.toByte())
+            FfiConverterBoolean.write(value, buf)
+        }
+    }
+}
 
 /**
  * @suppress
