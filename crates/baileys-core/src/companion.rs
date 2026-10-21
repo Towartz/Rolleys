@@ -15,15 +15,15 @@ pub fn get_companion_platform_id(browser_name: &str, platform: &str) -> &'static
     let name = browser_name.to_lowercase();
     let plat = platform.to_lowercase();
 
-    if name.contains("chrome") {
+    if name.contains("chrome") || plat.contains("chrome") {
         "1"
-    } else if name.contains("edge") {
+    } else if name.contains("edge") || plat.contains("edge") {
         "2"
-    } else if name.contains("firefox") {
+    } else if name.contains("firefox") || plat.contains("firefox") {
         "3"
-    } else if name.contains("opera") {
+    } else if name.contains("opera") || plat.contains("opera") {
         "5"
-    } else if name.contains("safari") {
+    } else if name.contains("safari") || plat.contains("safari") {
         "6"
     } else if name.contains("desktop") {
         if plat.contains("windows") {
@@ -31,8 +31,6 @@ pub fn get_companion_platform_id(browser_name: &str, platform: &str) -> &'static
         } else {
             "7"
         }
-    } else if plat.contains("android") {
-        "0"
     } else {
         "1" // Default to Chrome (1) for maximum compatibility with WhatsApp Web gateway
     }
@@ -79,7 +77,15 @@ impl CompanionPairingState {
         let jid = jid_encode(&clean_phone, S_WHATSAPP_NET, None, None);
         let platform_id = get_companion_platform_id(&config.browser_name, &config.platform);
         // Baileys parity: `${browser[1]} (${browser[0]})` -> e.g. "Chrome (Mac OS)"
-        let platform_display = format!("{} ({})", config.browser_name, config.platform);
+        let platform_display = if config.browser_name.to_lowercase().contains("chrome")
+            || config.browser_name.to_lowercase().contains("firefox")
+            || config.browser_name.to_lowercase().contains("safari")
+            || config.browser_name.to_lowercase().contains("edge")
+        {
+            format!("{} ({})", config.browser_name, config.platform)
+        } else {
+            "Chrome (Mac OS)".to_string()
+        };
 
         let msg_id = format!("{}.{}-1", rand::random::<u16>(), rand::random::<u16>());
 
