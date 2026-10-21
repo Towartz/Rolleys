@@ -26,17 +26,8 @@ pub fn encode_big_endian(val: u64, len: usize) -> Vec<u8> {
 
 /// Builds the UserAgent protobuf structure matching Baileys & WhatsApp Web standards.
 pub fn get_user_agent(config: &BaileysConfig) -> UserAgent {
-    let is_android = config.platform.to_lowercase().contains("android")
-        || config.browser_name.to_lowercase().contains("android");
-
-    let platform = if is_android {
-        user_agent::Platform::Android as i32
-    } else {
-        user_agent::Platform::Web as i32
-    };
-
     UserAgent {
-        platform: Some(platform),
+        platform: Some(user_agent::Platform::Web as i32),
         app_version: Some(user_agent::AppVersion {
             primary: Some(config.app_version.0),
             secondary: Some(config.app_version.1),
@@ -57,15 +48,6 @@ pub fn get_user_agent(config: &BaileysConfig) -> UserAgent {
 
 /// Builds the DeviceProps binary payload embedded in the registration handshake.
 pub fn get_device_props(config: &BaileysConfig) -> Vec<u8> {
-    let is_android = config.platform.to_lowercase().contains("android")
-        || config.browser_name.to_lowercase().contains("android");
-
-    let platform_type = if is_android {
-        PlatformType::AndroidPhone as i32
-    } else {
-        PlatformType::Chrome as i32
-    };
-
     let props = DeviceProps {
         os: Some(config.platform.clone()),
         version: Some(AppVersion {
@@ -74,7 +56,7 @@ pub fn get_device_props(config: &BaileysConfig) -> Vec<u8> {
             tertiary: Some(7),
             ..Default::default()
         }),
-        platform_type: Some(platform_type),
+        platform_type: Some(PlatformType::Chrome as i32),
         require_full_sync: Some(false),
         history_sync_config: Some(HistorySyncConfig {
             storage_quota_mb: Some(10240),
@@ -112,17 +94,10 @@ pub fn generate_registration_node(creds: &AuthCreds, config: &BaileysConfig) -> 
         device_props: Some(device_props_bytes),
     };
 
-    let is_android = config.platform.to_lowercase().contains("android")
-        || config.browser_name.to_lowercase().contains("android");
-
-    let web_info = if !is_android {
-        Some(WebInfo {
-            web_sub_platform: Some(web_info::WebSubPlatform::WebBrowser as i32),
-            ..Default::default()
-        })
-    } else {
-        None
-    };
+    let web_info = Some(WebInfo {
+        web_sub_platform: Some(web_info::WebSubPlatform::WebBrowser as i32),
+        ..Default::default()
+    });
 
     ClientPayload {
         connect_type: Some(ConnectType::WifiUnknown as i32),
@@ -146,17 +121,10 @@ pub fn generate_login_node(user_jid: &str, config: &BaileysConfig) -> ClientPayl
     let username: u64 = user_str.parse().unwrap_or(0);
     let device: u32 = device_str.parse().unwrap_or(0);
 
-    let is_android = config.platform.to_lowercase().contains("android")
-        || config.browser_name.to_lowercase().contains("android");
-
-    let web_info = if !is_android {
-        Some(WebInfo {
-            web_sub_platform: Some(web_info::WebSubPlatform::WebBrowser as i32),
-            ..Default::default()
-        })
-    } else {
-        None
-    };
+    let web_info = Some(WebInfo {
+        web_sub_platform: Some(web_info::WebSubPlatform::WebBrowser as i32),
+        ..Default::default()
+    });
 
     ClientPayload {
         username: Some(username),
