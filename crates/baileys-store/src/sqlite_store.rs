@@ -35,6 +35,7 @@ const SCHEMA_SQL: &str = "
         ephemeral_expiration INTEGER NOT NULL DEFAULT 0,
         ephemeral_setting_timestamp INTEGER
     );
+    CREATE INDEX IF NOT EXISTS idx_chats_sort ON chats (pinned DESC, last_message_timestamp DESC);
     CREATE TABLE IF NOT EXISTS messages (
         id TEXT PRIMARY KEY,
         chat_jid TEXT NOT NULL,
@@ -56,6 +57,7 @@ const SCHEMA_SQL: &str = "
         push_name TEXT,
         lid TEXT
     );
+    CREATE INDEX IF NOT EXISTS idx_contacts_lid ON contacts (lid);
     CREATE TABLE IF NOT EXISTS newsletters (
         jid TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -227,15 +229,23 @@ impl SqliteStore {
         }
         let conn = Connection::open(p).map_err(|e| StoreError::Database(e.to_string()))?;
 
-        // Initialize schema with WAL and NORMAL sync for maximum mobile/desktop I/O throughput
+        // Initialize schema with WAL, NORMAL sync, 256MB mmap and 64MB cache for maximum mobile/desktop I/O throughput
         let batch = format!(
-            "{} PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;",
+            "{} PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA mmap_size = 268435456; PRAGMA cache_size = -64000; PRAGMA temp_store = MEMORY; PRAGMA busy_timeout = 5000;",
             SCHEMA_SQL
         );
         conn.execute_batch(&batch)
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         // Backward-compatible non-destructive migrations for existing databases
+        let _ = conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chats_sort ON chats (pinned DESC, last_message_timestamp DESC)",
+            [],
+        );
+        let _ = conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_contacts_lid ON contacts (lid)",
+            [],
+        );
         let _ = conn.execute(
             "ALTER TABLE chats ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
             [],
