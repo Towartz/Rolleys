@@ -3,9 +3,10 @@
 //! These mirror Baileys' `handleGroupNotification` / `handleNewsletterNotification`
 //! (messages-recv.ts) but have no I/O, so they can be unit-tested with hand-built nodes.
 
-use crate::events::{BaileysEvent, GroupUpdate};
+use crate::events::{BaileysEvent, ChatUpsert, GroupUpdate, MessageReaction};
 use crate::groups::{parse_group_metadata, GroupParticipant};
 use baileys_binary::BinaryNode;
+use baileys_proto::proto::{Message, WebMessageInfo};
 
 fn parse_participants(child: &BinaryNode) -> Vec<GroupParticipant> {
     child
@@ -45,6 +46,14 @@ pub fn parse_group_notification(node: &BinaryNode) -> Vec<BaileysEvent> {
             "create" => {
                 is_update = false;
                 if let Ok(meta) = parse_group_metadata(child) {
+                    // Baileys emits chats.upsert before groups.upsert for a new group.
+                    events.push(BaileysEvent::ChatsUpsert {
+                        chats: vec![ChatUpsert {
+                            jid: meta.id.clone(),
+                            name: Some(meta.subject.clone()),
+                            conversation_timestamp: Some(meta.creation),
+                        }],
+                    });
                     events.push(BaileysEvent::GroupsUpsert { groups: vec![meta] });
                 }
             }
@@ -139,6 +148,56 @@ pub fn parse_group_notification(node: &BinaryNode) -> Vec<BaileysEvent> {
         }
     }
     events
+}
+
+/// Unwraps the containers a reaction can arrive in (our own devices send `deviceSentMessage`).
+fn inner_message(m: &Message) -> &Message {
+    if let Some(inner) = m
+        .device_sent_message
+        .as_ref()
+        .and_then(|d| d.message.as_deref())
+    {
+        return inner_message(inner);
+    }
+    if let Some(inner) = m
+        .ephemeral_message
+        .as_ref()
+        .and_then(|e| e.message.as_deref())
+    {
+        return inner_message(inner);
+    }
+    m
+}
+
+/// Builds a `messages.reaction` event when `info` carries a reaction (Baileys `processMessage`).
+pub fn reaction_event(info: &WebMessageInfo) -> Option<BaileysEvent> {
+    let reaction = inner_message(info.message.as_ref()?)
+        .reaction_message
+        .as_ref()?;
+    let target = reaction.key.as_ref()?;
+    let sender_key = info.key.as_ref()?;
+    let chat_jid = target
+        .remote_jid
+        .clone()
+        .or_else(|| sender_key.remote_jid.clone())?;
+    let text = reaction.text.clone().unwrap_or_default();
+    Some(BaileysEvent::MessagesReaction {
+        reaction: MessageReaction {
+            chat_jid,
+            message_id: target.id.clone()?,
+            target_from_me: target.from_me.unwrap_or(false),
+            target_participant: target.participant.clone(),
+            sender: sender_key
+                .participant
+                .clone()
+                .or_else(|| sender_key.remote_jid.clone())
+                .unwrap_or_default(),
+            sender_from_me: sender_key.from_me.unwrap_or(false),
+            removed: text.is_empty(),
+            text,
+            sender_timestamp_ms: reaction.sender_timestamp_ms,
+        },
+    })
 }
 
 /// Parses a `<notification type="newsletter">` stanza into zero or more events.
@@ -382,5 +441,95 @@ mod tests {
             }
             other => panic!("unexpected events: {other:?}"),
         }
+    }
+
+    #[test]
+    fn create_emits_chats_upsert_then_groups_upsert() {
+        let n = notif(
+            "123@g.us",
+            BinaryNode::new("create").with_child(
+                BinaryNode::new("group")
+                    .with_attr("id", "123")
+                    .with_attr("subject", "New group")
+                    .with_attr("creation", "1700000000"),
+            ),
+        );
+        match &parse_group_notification(&n)[..] {
+            [BaileysEvent::ChatsUpsert { chats }, BaileysEvent::GroupsUpsert { groups }] => {
+                assert_eq!(chats[0].jid, "123@g.us");
+                assert_eq!(chats[0].name.as_deref(), Some("New group"));
+                assert_eq!(chats[0].conversation_timestamp, Some(1_700_000_000));
+                assert_eq!(groups[0].id, "123@g.us");
+            }
+            other => panic!("unexpected events: {other:?}"),
+        }
+    }
+
+    fn reaction_info(text: &str, wrap_dsm: bool) -> WebMessageInfo {
+        use baileys_proto::proto::{message, MessageKey};
+        let reaction = Message {
+            reaction_message: Some(message::ReactionMessage {
+                key: Some(MessageKey {
+                    remote_jid: Some("555@g.us".into()),
+                    from_me: Some(true),
+                    id: Some("TARGET".into()),
+                    participant: None,
+                }),
+                text: Some(text.into()),
+                sender_timestamp_ms: Some(42),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let message = if wrap_dsm {
+            Message {
+                device_sent_message: Some(Box::new(message::DeviceSentMessage {
+                    destination_jid: Some("555@g.us".into()),
+                    message: Some(Box::new(reaction)),
+                    phash: None,
+                })),
+                ..Default::default()
+            }
+        } else {
+            reaction
+        };
+        WebMessageInfo {
+            key: Some(MessageKey {
+                remote_jid: Some("555@g.us".into()),
+                from_me: Some(false),
+                id: Some("REACTION".into()),
+                participant: Some("777@s.whatsapp.net".into()),
+            }),
+            message: Some(message),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn reaction_event_reports_target_sender_and_removal() {
+        match reaction_event(&reaction_info("👍", false)) {
+            Some(BaileysEvent::MessagesReaction { reaction }) => {
+                assert_eq!(reaction.chat_jid, "555@g.us");
+                assert_eq!(reaction.message_id, "TARGET");
+                assert!(reaction.target_from_me);
+                assert_eq!(reaction.sender, "777@s.whatsapp.net");
+                assert_eq!(reaction.text, "👍");
+                assert!(!reaction.removed);
+                assert_eq!(reaction.sender_timestamp_ms, Some(42));
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+        match reaction_event(&reaction_info("", true)) {
+            Some(BaileysEvent::MessagesReaction { reaction }) => assert!(reaction.removed),
+            other => panic!("deviceSentMessage-wrapped removal not recognised: {other:?}"),
+        }
+        let plain = WebMessageInfo {
+            message: Some(Message {
+                conversation: Some("hi".into()),
+                ..Default::default()
+            }),
+            ..reaction_info("", false)
+        };
+        assert!(reaction_event(&plain).is_none());
     }
 }

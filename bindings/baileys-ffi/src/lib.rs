@@ -928,7 +928,9 @@ impl AuroraClient {
                     | BaileysEvent::LidMappingUpdate { .. }
                     | BaileysEvent::ContactsUpsert { .. }
                     | BaileysEvent::MessagesDelete { .. }
-                    | BaileysEvent::MessageStarred { .. } => continue,
+                    | BaileysEvent::MessageStarred { .. }
+                    | BaileysEvent::ChatsUpsert { .. }
+                    | BaileysEvent::MessagesReaction { .. } => continue,
                 };
 
                 listener.on_event(ffi_event);

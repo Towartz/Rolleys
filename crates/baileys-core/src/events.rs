@@ -195,6 +195,36 @@ pub enum BaileysEvent {
         from_me: bool,
         starred: bool,
     },
+    /// New chats (Baileys `chats.upsert`); emitted when a group is created or we are added to one.
+    ChatsUpsert { chats: Vec<ChatUpsert> },
+    /// Reaction added or removed on a message (Baileys `messages.reaction`)
+    MessagesReaction { reaction: MessageReaction },
+}
+
+/// A chat carried by [`BaileysEvent::ChatsUpsert`].
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct ChatUpsert {
+    pub jid: String,
+    pub name: Option<String>,
+    pub conversation_timestamp: Option<i64>,
+}
+
+/// A reaction carried by [`BaileysEvent::MessagesReaction`].
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct MessageReaction {
+    /// Chat the reacted-to message lives in.
+    pub chat_jid: String,
+    /// Id of the reacted-to message.
+    pub message_id: String,
+    pub target_from_me: bool,
+    pub target_participant: Option<String>,
+    /// Who reacted (participant in groups, the chat JID in 1:1 chats).
+    pub sender: String,
+    pub sender_from_me: bool,
+    /// Emoji; empty when the reaction was removed.
+    pub text: String,
+    pub removed: bool,
+    pub sender_timestamp_ms: Option<i64>,
 }
 
 /// Partial group metadata carried by [`BaileysEvent::GroupsUpdate`].

@@ -982,7 +982,9 @@ impl RoseBaileysClient {
                     | BaileysEvent::LidMappingUpdate { .. }
                     | BaileysEvent::ContactsUpsert { .. }
                     | BaileysEvent::MessagesDelete { .. }
-                    | BaileysEvent::MessageStarred { .. } => {
+                    | BaileysEvent::MessageStarred { .. }
+                    | BaileysEvent::ChatsUpsert { .. }
+                    | BaileysEvent::MessagesReaction { .. } => {
                         NapiEventPayload::Raw(serde_json::to_value(&event).unwrap_or_default())
                     }
                 };

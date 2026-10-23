@@ -506,6 +506,30 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                         &format!("{} in {} starred={}", message_id, chat_jid, starred),
                     );
                 }
+                BaileysEvent::ChatsUpsert { chats } => {
+                    for chat in chats {
+                        print_comfy_event(
+                            "CHAT",
+                            ANSI_CYAN,
+                            &format!("New chat {} {:?}", chat.jid, chat.name),
+                        );
+                    }
+                }
+                BaileysEvent::MessagesReaction { reaction } => {
+                    let what = if reaction.removed {
+                        "removed reaction".to_string()
+                    } else {
+                        format!("reacted {}", reaction.text)
+                    };
+                    print_comfy_event(
+                        "REACT",
+                        ANSI_CYAN,
+                        &format!(
+                            "{} {} to {} in {}",
+                            reaction.sender, what, reaction.message_id, reaction.chat_jid
+                        ),
+                    );
+                }
                 BaileysEvent::BlocklistUpdate { added, removed } => {
                     let filter = CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed);
                     if filter <= 1 {

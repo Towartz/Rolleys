@@ -1296,6 +1296,11 @@ impl BaileysClient {
                                                         let from_me = msg_for_db.key.as_ref().and_then(|k| k.from_me).unwrap_or(false);
                                                         let ts = msg_for_db.message_timestamp.unwrap_or(0);
 
+                                                        // Reactions are also stored and emitted as messages, like Baileys.
+                                                        if let Some(ev) = crate::notifications::reaction_event(&msg_for_db) {
+                                                            events_live.emit(ev);
+                                                        }
+
                                                         if let Some(ref m) = msg_for_db.message {
                                                             if let Some(parsed_pm) = crate::ephemeral::parse_protocol_message(m, &chat_jid) {
                                                                 match parsed_pm {
