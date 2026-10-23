@@ -6,7 +6,7 @@ use baileys_crypto::{
 };
 use baileys_proto::proto::{
     sync_action_value, ExternalBlobReference, KeyId, SyncActionData, SyncActionValue, SyncdIndex,
-    SyncdMutation, SyncdPatch, SyncdRecord, SyncdSnapshot, SyncdValue,
+    SyncdMutation, SyncdMutations, SyncdPatch, SyncdRecord, SyncdSnapshot, SyncdValue,
 };
 use prost::Message;
 use std::collections::HashMap;
@@ -459,6 +459,42 @@ pub fn build_resync_iq(
         .with_attr("type", "set")
         .with_attr("xmlns", "w:sync:app:state")
         .with_child(BinaryNode::new("sync").with_children(collection_nodes))
+}
+
+async fn download_blob(blob: &ExternalBlobReference) -> Result<Vec<u8>, CoreError> {
+    let key = blob
+        .media_key
+        .as_deref()
+        .ok_or_else(|| CoreError::Protocol("External syncd blob has no media key".into()))?;
+    let path = blob
+        .direct_path
+        .as_deref()
+        .ok_or_else(|| CoreError::Protocol("External syncd blob has no direct path".into()))?;
+    baileys_media::download_app_state_blob(path, key)
+        .await
+        .map_err(|e| CoreError::Media(format!("Syncd blob download failed: {}", e)))
+}
+
+/// Downloads and decodes a snapshot the server returned as an external blob reference.
+pub async fn download_external_snapshot(
+    blob: &ExternalBlobReference,
+) -> Result<SyncdSnapshot, CoreError> {
+    let bytes = download_blob(blob).await?;
+    SyncdSnapshot::decode(bytes.as_slice())
+        .map_err(|e| CoreError::Protocol(format!("Syncd snapshot decode failed: {}", e)))
+}
+
+/// Returns `patch` with its mutations filled in when the server sent them as an external blob.
+pub async fn resolve_external_mutations(patch: &SyncdPatch) -> Result<SyncdPatch, CoreError> {
+    let Some(blob) = patch.external_mutations.as_ref() else {
+        return Ok(patch.clone());
+    };
+    let bytes = download_blob(blob).await?;
+    let external = SyncdMutations::decode(bytes.as_slice())
+        .map_err(|e| CoreError::Protocol(format!("Syncd mutations decode failed: {}", e)))?;
+    let mut resolved = patch.clone();
+    resolved.mutations = external.mutations;
+    Ok(resolved)
 }
 
 /// Extracts snapshots, patches, and blob references from an AppState sync `<iq>` response.

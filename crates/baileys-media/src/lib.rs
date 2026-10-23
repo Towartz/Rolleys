@@ -74,6 +74,8 @@ pub enum MediaType {
     Document,
     Sticker,
     History,
+    /// External app-state (syncd) snapshots and patch mutation blobs.
+    AppState,
 }
 
 impl MediaType {
@@ -85,6 +87,7 @@ impl MediaType {
             MediaType::Document => b"WhatsApp Document Keys",
             MediaType::Sticker => b"WhatsApp Image Keys",
             MediaType::History => b"WhatsApp History Keys",
+            MediaType::AppState => b"WhatsApp App State Keys",
         }
     }
 
@@ -164,6 +167,7 @@ impl MediaType {
             MediaType::Document => "bin",
             MediaType::Sticker => "webp",
             MediaType::History => "gz",
+            MediaType::AppState => "bin",
         }
     }
 
@@ -175,6 +179,7 @@ impl MediaType {
             MediaType::Document => "/mms/document",
             MediaType::Sticker => "/mms/image",
             MediaType::History => "/mms/md-app-state",
+            MediaType::AppState => "/mms/md-app-state",
         }
     }
 
@@ -186,6 +191,7 @@ impl MediaType {
             MediaType::Document => "/newsletter/newsletter-document",
             MediaType::Sticker => "/newsletter/newsletter-image",
             MediaType::History => "/newsletter/newsletter-document",
+            MediaType::AppState => "/newsletter/newsletter-document",
         }
     }
 }
@@ -595,6 +601,20 @@ pub async fn download_and_decrypt_media(
     }
 
     Err(MediaError::HttpError(last_err))
+}
+
+/// Downloads and decrypts an external app-state blob (a syncd snapshot or a patch's mutations)
+/// referenced by `direct_path` and protected with `media_key`.
+pub async fn download_app_state_blob(
+    direct_path: &str,
+    media_key: &[u8],
+) -> Result<Vec<u8>, MediaError> {
+    let url = if direct_path.starts_with('/') {
+        format!("https://{}{}", DEF_MEDIA_HOST, direct_path)
+    } else {
+        format!("https://{}/{}", DEF_MEDIA_HOST, direct_path)
+    };
+    download_and_decrypt_media(&url, media_key, MediaType::AppState).await
 }
 
 /// Downloads media from an attachment and saves it into the target directory.

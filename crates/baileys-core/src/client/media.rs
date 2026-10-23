@@ -579,7 +579,9 @@ impl BaileysClient {
                 })),
                 ..Default::default()
             },
-            baileys_media::MediaType::Document | baileys_media::MediaType::History => Message {
+            baileys_media::MediaType::Document
+            | baileys_media::MediaType::History
+            | baileys_media::MediaType::AppState => Message {
                 document_message: Some(Box::new(baileys_proto::proto::message::DocumentMessage {
                     url: stream_res.upload_res.url,
                     mimetype: Some("application/octet-stream".to_string()),

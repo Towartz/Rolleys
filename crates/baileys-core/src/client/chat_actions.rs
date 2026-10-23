@@ -50,24 +50,6 @@ impl BaileysClient {
             states.clear();
         }
 
-        // 2. Build wire resync IQ
-        let iq = crate::syncd::build_resync_iq(collections, &states, force_snapshot);
-        debug!(
-            "Dispatching AppState resync IQ for {:?} (force_snapshot={})",
-            collections, force_snapshot
-        );
-
-        let response = match self.send_iq(iq, Duration::from_secs(20)).await {
-            Ok(resp) => resp,
-            Err(e) => {
-                warn!("AppState resync IQ failed: {}", e);
-                return Err(e);
-            }
-        };
-
-        // 3. Extract collections data from IQ response
-        let collections_data = crate::syncd::extract_syncd_response(&response)?;
-
         // 4. Preload all app state keys into in-memory resolver map
         let mut key_map: HashMap<String, Vec<u8>> = HashMap::new();
         if let Ok(all_keys) = self.store.get_all_keys("app-state-sync-key").await {
@@ -96,148 +78,230 @@ impl BaileysClient {
 
         let mut summary = AppStateSyncSummary::default();
 
-        // 5. Process each collection
-        for (col_name, col_data) in collections_data {
-            let mut curr_state = states.remove(&col_name).unwrap_or_default();
-            let mut all_mutations = Vec::new();
+        // Keep asking while the server reports more patches; each round continues from the state
+        // the previous one produced.
+        let mut pending: Vec<String> = collections.iter().map(|c| c.to_string()).collect();
+        let mut round = 0usize;
+        loop {
+            let mut next_pending: Vec<String> = Vec::new();
+            // 2. Build wire resync IQ
+            let refs: Vec<&str> = pending.iter().map(String::as_str).collect();
+            let iq = crate::syncd::build_resync_iq(&refs, &states, force_snapshot && round == 0);
+            debug!(
+                "Dispatching AppState resync IQ for {:?} (force_snapshot={}, round={})",
+                refs,
+                force_snapshot && round == 0,
+                round
+            );
 
-            // A. Decode snapshot if present
-            if let Some(ref snapshot) = col_data.snapshot {
-                match crate::syncd::decode_syncd_snapshot(snapshot, &col_name, key_resolver, false)
-                {
-                    Ok((new_state, mut muts)) => {
-                        curr_state = new_state;
-                        all_mutations.append(&mut muts);
+            let response = match self.send_iq(iq, Duration::from_secs(20)).await {
+                Ok(resp) => resp,
+                Err(e) => {
+                    warn!("AppState resync IQ failed: {}", e);
+                    return Err(e);
+                }
+            };
+
+            // 3. Extract collections data from IQ response
+            let collections_data = crate::syncd::extract_syncd_response(&response)?;
+
+            // 5. Process each collection
+            for (col_name, col_data) in collections_data {
+                let mut curr_state = states.remove(&col_name).unwrap_or_default();
+                let mut all_mutations = Vec::new();
+
+                // A. Decode snapshot if present (the server sends it as an external blob reference)
+                let mut snapshot = col_data.snapshot.clone();
+                if snapshot.is_none() {
+                    if let Some(blob) = col_data.snapshot_blob_ref.as_ref() {
+                        match crate::syncd::download_external_snapshot(blob).await {
+                            Ok(snap) => snapshot = Some(snap),
+                            Err(e) => {
+                                warn!("Failed to fetch Syncd snapshot for '{}': {}", col_name, e);
+                                summary.collections_failed += 1;
+                                continue;
+                            }
+                        }
                     }
-                    Err(e) => {
-                        warn!("Failed to decode Syncd snapshot for '{}': {}", col_name, e);
+                }
+                if let Some(ref snapshot) = snapshot {
+                    match crate::syncd::decode_syncd_snapshot(
+                        snapshot,
+                        &col_name,
+                        key_resolver,
+                        true,
+                    ) {
+                        Ok((new_state, mut muts)) => {
+                            curr_state = new_state;
+                            all_mutations.append(&mut muts);
+                        }
+                        Err(e) => {
+                            warn!("Failed to decode Syncd snapshot for '{}': {}", col_name, e);
+                            summary.collections_failed += 1;
+                            continue;
+                        }
                     }
+                }
+
+                // B. Decode patches (mutations may also be an external blob)
+                let mut patches_ok = true;
+                for raw_patch in &col_data.patches {
+                    let patch = match crate::syncd::resolve_external_mutations(raw_patch).await {
+                        Ok(p) => p,
+                        Err(e) => {
+                            warn!("Failed to fetch Syncd patch for '{}': {}", col_name, e);
+                            patches_ok = false;
+                            break;
+                        }
+                    };
+                    match crate::syncd::decode_syncd_patch(
+                        &patch,
+                        &col_name,
+                        &curr_state,
+                        key_resolver,
+                        true,
+                    ) {
+                        Ok((new_state, mut muts)) => {
+                            curr_state = new_state;
+                            all_mutations.append(&mut muts);
+                        }
+                        Err(e) => {
+                            warn!("Failed to decode Syncd patch for '{}': {}", col_name, e);
+                            patches_ok = false;
+                            break;
+                        }
+                    }
+                }
+                if !patches_ok {
+                    // A broken chain must not be persisted: later patches would build on a wrong hash.
+                    summary.collections_failed += 1;
+                    continue;
+                }
+
+                // C. Apply decoded mutations to SQLite stores
+                for m in &all_mutations {
+                    let action = m.parse_action();
+                    match action {
+                        crate::syncd::SyncdAction::Mute {
+                            jid,
+                            muted,
+                            mute_end_timestamp,
+                        } => {
+                            let mute_until = if muted {
+                                mute_end_timestamp.map(|t| t as u64).or(Some(u64::MAX))
+                            } else {
+                                None
+                            };
+                            let _ = self.store.update_chat_mute(&jid, mute_until).await;
+                            self.events.emit(BaileysEvent::ChatUpdate {
+                                jid,
+                                pinned: None,
+                                archived: None,
+                                mute_until: Some(mute_until),
+                                unread_count: None,
+                            });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::Pin { jid, pinned } => {
+                            let _ = self.store.update_chat_pin(&jid, pinned).await;
+                            self.events.emit(BaileysEvent::ChatUpdate {
+                                jid,
+                                pinned: Some(pinned),
+                                archived: None,
+                                mute_until: None,
+                                unread_count: None,
+                            });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::Archive { jid, archived } => {
+                            let _ = self.store.update_chat_archive(&jid, archived).await;
+                            self.events.emit(BaileysEvent::ChatUpdate {
+                                jid,
+                                pinned: None,
+                                archived: Some(archived),
+                                mute_until: None,
+                                unread_count: None,
+                            });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::Star {
+                            jid,
+                            msg_id,
+                            starred,
+                            ..
+                        } => {
+                            let _ = self.store.update_message_star(&jid, &msg_id, starred).await;
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::Contact { id, name, lid, .. } => {
+                            let contact = baileys_store::StoredContact {
+                                jid: id.clone(),
+                                name: name.clone(),
+                                push_name: name.clone(),
+                                lid,
+                            };
+                            let _ = self.store.save_contact(&contact).await;
+                            self.events.emit(BaileysEvent::ContactUpdate { contact });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::MarkChatAsRead { jid, read } => {
+                            let _ = self.store.update_chat_unread(&jid, !read).await;
+                            let unread_count = if read { 0 } else { 1 };
+                            self.events.emit(BaileysEvent::ChatUpdate {
+                                jid,
+                                pinned: None,
+                                archived: None,
+                                mute_until: None,
+                                unread_count: Some(unread_count),
+                            });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::ClearChat { jid } => {
+                            let _ = self.store.clear_chat_messages(&jid, true).await;
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::DeleteChat { jid } => {
+                            let _ = self.store.delete_chat(&jid).await;
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::Other { .. } => {}
+                    }
+                }
+
+                // D. Persist updated LTHashState for this collection
+                let stored = crate::syncd::StoredLTHashState::from(&curr_state);
+                if let Ok(json_bytes) = serde_json::to_vec(&stored) {
+                    let _ = self
+                        .store
+                        .set_keys(vec![baileys_store::KeyEntry {
+                            key_type: "app-state-sync-version".to_string(),
+                            id: col_name.clone(),
+                            data: json_bytes,
+                        }])
+                        .await;
+                }
+
+                if col_data.has_more_patches {
+                    states.insert(col_name.clone(), curr_state.clone());
+                    next_pending.push(col_name.clone());
+                } else {
+                    summary.collections_synced += 1;
                 }
             }
 
-            // B. Decode patches
-            for patch in &col_data.patches {
-                match crate::syncd::decode_syncd_patch(
-                    patch,
-                    &col_name,
-                    &curr_state,
-                    key_resolver,
-                    false,
-                ) {
-                    Ok((new_state, mut muts)) => {
-                        curr_state = new_state;
-                        all_mutations.append(&mut muts);
-                    }
-                    Err(e) => {
-                        warn!("Failed to decode Syncd patch for '{}': {}", col_name, e);
-                    }
-                }
+            round += 1;
+            if next_pending.is_empty() {
+                break;
             }
-
-            // C. Apply decoded mutations to SQLite stores
-            for m in &all_mutations {
-                let action = m.parse_action();
-                match action {
-                    crate::syncd::SyncdAction::Mute {
-                        jid,
-                        muted,
-                        mute_end_timestamp,
-                    } => {
-                        let mute_until = if muted {
-                            mute_end_timestamp.map(|t| t as u64).or(Some(u64::MAX))
-                        } else {
-                            None
-                        };
-                        let _ = self.store.update_chat_mute(&jid, mute_until).await;
-                        self.events.emit(BaileysEvent::ChatUpdate {
-                            jid,
-                            pinned: None,
-                            archived: None,
-                            mute_until: Some(mute_until),
-                            unread_count: None,
-                        });
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::Pin { jid, pinned } => {
-                        let _ = self.store.update_chat_pin(&jid, pinned).await;
-                        self.events.emit(BaileysEvent::ChatUpdate {
-                            jid,
-                            pinned: Some(pinned),
-                            archived: None,
-                            mute_until: None,
-                            unread_count: None,
-                        });
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::Archive { jid, archived } => {
-                        let _ = self.store.update_chat_archive(&jid, archived).await;
-                        self.events.emit(BaileysEvent::ChatUpdate {
-                            jid,
-                            pinned: None,
-                            archived: Some(archived),
-                            mute_until: None,
-                            unread_count: None,
-                        });
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::Star {
-                        jid,
-                        msg_id,
-                        starred,
-                        ..
-                    } => {
-                        let _ = self.store.update_message_star(&jid, &msg_id, starred).await;
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::Contact { id, name, lid, .. } => {
-                        let contact = baileys_store::StoredContact {
-                            jid: id.clone(),
-                            name: name.clone(),
-                            push_name: name.clone(),
-                            lid,
-                        };
-                        let _ = self.store.save_contact(&contact).await;
-                        self.events.emit(BaileysEvent::ContactUpdate { contact });
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::MarkChatAsRead { jid, read } => {
-                        let _ = self.store.update_chat_unread(&jid, !read).await;
-                        let unread_count = if read { 0 } else { 1 };
-                        self.events.emit(BaileysEvent::ChatUpdate {
-                            jid,
-                            pinned: None,
-                            archived: None,
-                            mute_until: None,
-                            unread_count: Some(unread_count),
-                        });
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::ClearChat { jid } => {
-                        let _ = self.store.clear_chat_messages(&jid, true).await;
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::DeleteChat { jid } => {
-                        let _ = self.store.delete_chat(&jid).await;
-                        summary.mutations_applied += 1;
-                    }
-                    crate::syncd::SyncdAction::Other { .. } => {}
-                }
+            if round >= 50 {
+                warn!(
+                    "AppState resync gave up after {} rounds; still pending: {:?}",
+                    round, next_pending
+                );
+                summary.collections_failed += next_pending.len();
+                break;
             }
-
-            // D. Persist updated LTHashState for this collection
-            let stored = crate::syncd::StoredLTHashState::from(&curr_state);
-            if let Ok(json_bytes) = serde_json::to_vec(&stored) {
-                let _ = self
-                    .store
-                    .set_keys(vec![baileys_store::KeyEntry {
-                        key_type: "app-state-sync-version".to_string(),
-                        id: col_name.clone(),
-                        data: json_bytes,
-                    }])
-                    .await;
-            }
-
-            summary.collections_synced += 1;
+            pending = next_pending;
         }
 
         // 6. Emit AppStateSynced event
