@@ -404,18 +404,11 @@ pub trait ChatStore: Send + Sync {
         Ok(Vec::new())
     }
 
-    async fn get_starred_messages(
-        &self,
-        _limit: u32,
-    ) -> Result<Vec<StoredMessage>, StoreError> {
+    async fn get_starred_messages(&self, _limit: u32) -> Result<Vec<StoredMessage>, StoreError> {
         Ok(Vec::new())
     }
 
-    async fn delete_message(
-        &self,
-        _chat_jid: &str,
-        _message_id: &str,
-    ) -> Result<(), StoreError> {
+    async fn delete_message(&self, _chat_jid: &str, _message_id: &str) -> Result<(), StoreError> {
         Ok(())
     }
 

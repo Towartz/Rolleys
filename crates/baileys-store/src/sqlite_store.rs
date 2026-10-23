@@ -1395,10 +1395,7 @@ impl ChatStore for SqliteStore {
         Ok(msgs)
     }
 
-    async fn get_starred_messages(
-        &self,
-        limit: u32,
-    ) -> Result<Vec<StoredMessage>, StoreError> {
+    async fn get_starred_messages(&self, limit: u32) -> Result<Vec<StoredMessage>, StoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
             .prepare(
@@ -1439,11 +1436,7 @@ impl ChatStore for SqliteStore {
         Ok(msgs)
     }
 
-    async fn delete_message(
-        &self,
-        chat_jid: &str,
-        message_id: &str,
-    ) -> Result<(), StoreError> {
+    async fn delete_message(&self, chat_jid: &str, message_id: &str) -> Result<(), StoreError> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
             "DELETE FROM messages WHERE id = ?1 AND chat_jid = ?2",
