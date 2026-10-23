@@ -111,6 +111,38 @@ impl SignalKeysStore for FileStore {
         }
         Ok(())
     }
+
+    async fn get_key_count(&self, key_type: &str) -> Result<usize, StoreError> {
+        Ok(self.get_all_keys(key_type).await?.len())
+    }
+
+    async fn get_all_keys(&self, key_type: &str) -> Result<Vec<(String, Vec<u8>)>, StoreError> {
+        let prefix = Self::fix_file_name(&format!("{key_type}-"));
+        let mut dir = fs::read_dir(&self.folder)
+            .await
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        let mut out = Vec::new();
+        while let Some(entry) = dir
+            .next_entry()
+            .await
+            .map_err(|e| StoreError::Io(e.to_string()))?
+        {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let Some(id) = name
+                .strip_prefix(&prefix)
+                .and_then(|rest| rest.strip_suffix(".json"))
+            else {
+                continue;
+            };
+            let data = fs::read(entry.path())
+                .await
+                .map_err(|e| StoreError::Io(e.to_string()))?;
+            // `/` was stored as `__`; `:` became `-` and cannot be told apart from a real `-`, but
+            // the same file name results when the id is used again, so lookups and removal work.
+            out.push((id.replace("__", "/"), data));
+        }
+        Ok(out)
+    }
 }
 
 #[async_trait]
@@ -121,3 +153,60 @@ impl NewsletterStore for FileStore {}
 
 #[async_trait]
 impl AppStateStore for FileStore {}
+
+#[cfg(test)]
+mod key_listing_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn lists_counts_and_removes_keys_of_one_type() {
+        let dir = std::env::temp_dir().join(format!("rolleys-filestore-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let store = FileStore::new(&dir).await.unwrap();
+        let entry = |t: &str, id: &str, d: &[u8]| KeyEntry {
+            key_type: t.into(),
+            id: id.into(),
+            data: d.to_vec(),
+        };
+        store
+            .set_keys(vec![
+                entry("pre-key", "1", b"a"),
+                entry("pre-key", "2", b"b"),
+                entry("session", "628111:5@s.whatsapp.net", b"s"),
+                entry("app-state-sync-key", "AAAA/BBB=", b"k"),
+            ])
+            .await
+            .unwrap();
+
+        assert_eq!(store.get_key_count("pre-key").await.unwrap(), 2);
+        assert_eq!(store.get_key_count("session").await.unwrap(), 1);
+        assert_eq!(store.get_key_count("sender-key").await.unwrap(), 0);
+
+        let mut pre = store.get_all_keys("pre-key").await.unwrap();
+        pre.sort();
+        assert_eq!(
+            pre,
+            vec![
+                ("1".to_string(), b"a".to_vec()),
+                ("2".to_string(), b"b".to_vec())
+            ]
+        );
+        // `/` survives the round trip through the file name.
+        assert_eq!(
+            store.get_all_keys("app-state-sync-key").await.unwrap()[0].0,
+            "AAAA/BBB="
+        );
+
+        // Ids returned by the listing can be used to remove, even when ':' was folded to '-'.
+        let sessions = store.get_all_keys("session").await.unwrap();
+        let ids: Vec<String> = sessions.into_iter().map(|(id, _)| id).collect();
+        store.remove_keys("session", &ids).await.unwrap();
+        assert_eq!(store.get_key_count("session").await.unwrap(), 0);
+        assert_eq!(
+            store.get_key_count("pre-key").await.unwrap(),
+            2,
+            "other types untouched"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}

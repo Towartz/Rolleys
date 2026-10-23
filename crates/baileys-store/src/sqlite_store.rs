@@ -225,387 +225,119 @@ impl SqliteStore {
                 let _ = std::fs::create_dir_all(parent);
             }
         }
-        let conn = Connection::open(p).map_err(|e| StoreError::Database(e.to_string()))?;
-
-        // Initialize schema with WAL and NORMAL sync for maximum mobile/desktop I/O throughput
-        let batch = format!(
-            "{} PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;",
-            SCHEMA_SQL
-        );
-        conn.execute_batch(&batch)
-            .map_err(|e| StoreError::Database(e.to_string()))?;
-
-        // Backward-compatible non-destructive migrations for existing databases
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN archived INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute("ALTER TABLE chats ADD COLUMN mute_until INTEGER", []);
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN ephemeral_expiration INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN ephemeral_setting_timestamp INTEGER",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE messages ADD COLUMN is_starred INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE messages ADD COLUMN is_revoked INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE messages ADD COLUMN is_edited INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS newsletters (
-            jid TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT,
-            invite_code TEXT,
-            picture_url TEXT,
-            role TEXT,
-            muted INTEGER NOT NULL DEFAULT 0,
-            subscribers_count INTEGER NOT NULL DEFAULT 0,
-            updated_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS polls (
-            id TEXT PRIMARY KEY,
-            chat_jid TEXT NOT NULL,
-            sender_jid TEXT NOT NULL,
-            question TEXT NOT NULL,
-            options_json TEXT NOT NULL,
-            enc_key BLOB NOT NULL,
-            selectable_count INTEGER NOT NULL DEFAULT 1,
-            created_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS poll_votes (
-            poll_id TEXT NOT NULL,
-            voter_jid TEXT NOT NULL,
-            selected_options_json TEXT NOT NULL,
-            updated_at INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (poll_id, voter_jid)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS community_links (
-            community_jid TEXT NOT NULL,
-            group_jid TEXT NOT NULL,
-            subject TEXT,
-            creation INTEGER,
-            creator TEXT,
-            size INTEGER,
-            linked_at INTEGER NOT NULL,
-            PRIMARY KEY (community_jid, group_jid)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS call_logs (
-            call_id TEXT PRIMARY KEY,
-            chat_jid TEXT NOT NULL,
-            caller_jid TEXT NOT NULL,
-            is_group INTEGER NOT NULL,
-            group_jid TEXT,
-            is_video INTEGER NOT NULL,
-            status TEXT NOT NULL,
-            timestamp INTEGER NOT NULL,
-            duration INTEGER
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_call_logs_ts ON call_logs(timestamp DESC)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS status_stories (
-            msg_id TEXT PRIMARY KEY,
-            author_jid TEXT NOT NULL,
-            author_name TEXT,
-            timestamp INTEGER NOT NULL,
-            message_type TEXT NOT NULL,
-            content TEXT,
-            caption TEXT,
-            has_media INTEGER NOT NULL DEFAULT 0,
-            viewed INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_status_stories_ts ON status_stories(timestamp DESC)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_status_stories_author ON status_stories(author_jid)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS blocked_contacts (
-            jid TEXT PRIMARY KEY,
-            blocked_at INTEGER NOT NULL
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS labels (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            color INTEGER NOT NULL,
-            predefined_id INTEGER,
-            deleted INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS chat_labels (
-            chat_jid TEXT NOT NULL,
-            label_id TEXT NOT NULL,
-            PRIMARY KEY (chat_jid, label_id)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_chat_labels_label ON chat_labels(label_id)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS message_labels (
-            chat_jid TEXT NOT NULL,
-            message_id TEXT NOT NULL,
-            label_id TEXT NOT NULL,
-            PRIMARY KEY (chat_jid, message_id, label_id)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_msg_labels_label ON message_labels(label_id)",
-            [],
-        );
-
+        let conn = Connection::open(p).map_err(db_err)?;
+        // Auto-vacuum must be chosen before WAL initialises the file, and only a new file can take it.
+        prepare_new_database(&conn)?;
+        // WAL + NORMAL sync: the best throughput for mobile and desktop I/O.
+        conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
+            .map_err(db_err)?;
+        init_connection(&conn)?;
         Ok(Self {
             conn: Mutex::new(conn),
         })
     }
 
     pub fn open_in_memory() -> Result<Self, StoreError> {
-        let conn = Connection::open_in_memory().map_err(|e| StoreError::Database(e.to_string()))?;
-
-        conn.execute_batch(SCHEMA_SQL)
-            .map_err(|e| StoreError::Database(e.to_string()))?;
-
-        // Backward-compatible non-destructive migrations for existing databases
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN archived INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute("ALTER TABLE chats ADD COLUMN mute_until INTEGER", []);
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN ephemeral_expiration INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE chats ADD COLUMN ephemeral_setting_timestamp INTEGER",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE messages ADD COLUMN is_starred INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE messages ADD COLUMN is_revoked INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "ALTER TABLE messages ADD COLUMN is_edited INTEGER NOT NULL DEFAULT 0",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS newsletters (
-            jid TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT,
-            invite_code TEXT,
-            picture_url TEXT,
-            role TEXT,
-            muted INTEGER NOT NULL DEFAULT 0,
-            subscribers_count INTEGER NOT NULL DEFAULT 0,
-            updated_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS polls (
-            id TEXT PRIMARY KEY,
-            chat_jid TEXT NOT NULL,
-            sender_jid TEXT NOT NULL,
-            question TEXT NOT NULL,
-            options_json TEXT NOT NULL,
-            enc_key BLOB NOT NULL,
-            selectable_count INTEGER NOT NULL DEFAULT 1,
-            created_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS poll_votes (
-            poll_id TEXT NOT NULL,
-            voter_jid TEXT NOT NULL,
-            selected_options_json TEXT NOT NULL,
-            updated_at INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (poll_id, voter_jid)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS community_links (
-            community_jid TEXT NOT NULL,
-            group_jid TEXT NOT NULL,
-            subject TEXT NOT NULL,
-            creator TEXT,
-            size INTEGER,
-            linked_at INTEGER NOT NULL,
-            PRIMARY KEY (community_jid, group_jid)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS call_logs (
-            call_id TEXT PRIMARY KEY,
-            chat_jid TEXT NOT NULL,
-            caller_jid TEXT NOT NULL,
-            is_group INTEGER NOT NULL,
-            group_jid TEXT,
-            is_video INTEGER NOT NULL,
-            status TEXT NOT NULL,
-            timestamp INTEGER NOT NULL,
-            duration INTEGER
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_call_logs_ts ON call_logs(timestamp DESC)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS status_stories (
-            msg_id TEXT PRIMARY KEY,
-            author_jid TEXT NOT NULL,
-            author_name TEXT,
-            timestamp INTEGER NOT NULL,
-            message_type TEXT NOT NULL,
-            content TEXT,
-            caption TEXT,
-            has_media INTEGER NOT NULL DEFAULT 0,
-            viewed INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_status_stories_ts ON status_stories(timestamp DESC)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_status_stories_author ON status_stories(author_jid)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS blocked_contacts (
-            jid TEXT PRIMARY KEY,
-            blocked_at INTEGER NOT NULL
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS labels (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            color INTEGER NOT NULL,
-            predefined_id INTEGER,
-            deleted INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS chat_labels (
-            chat_jid TEXT NOT NULL,
-            label_id TEXT NOT NULL,
-            PRIMARY KEY (chat_jid, label_id)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_chat_labels_label ON chat_labels(label_id)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS message_labels (
-            chat_jid TEXT NOT NULL,
-            message_id TEXT NOT NULL,
-            label_id TEXT NOT NULL,
-            PRIMARY KEY (chat_jid, message_id, label_id)
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_msg_labels_label ON message_labels(label_id)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS kv_store (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            updated_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS media_downloads (
-            message_id TEXT PRIMARY KEY,
-            chat_jid TEXT NOT NULL,
-            file_path TEXT NOT NULL,
-            file_size INTEGER NOT NULL DEFAULT 0,
-            mimetype TEXT,
-            downloaded_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_media_downloads_chat ON media_downloads(chat_jid)",
-            [],
-        );
-        let _ = conn.execute(
-            "CREATE TABLE IF NOT EXISTS sync_cursors (
-            sync_type TEXT PRIMARY KEY,
-            cursor_val TEXT NOT NULL,
-            updated_at INTEGER NOT NULL DEFAULT 0
-        )",
-            [],
-        );
-
+        let conn = Connection::open_in_memory().map_err(db_err)?;
+        prepare_new_database(&conn)?;
+        init_connection(&conn)?;
         Ok(Self {
             conn: Mutex::new(conn),
         })
     }
+
+    /// Rewrites the database without its free pages and switches it to incremental auto-vacuum,
+    /// so deleted data stops inflating the file. Databases created before auto-vacuum was enabled
+    /// need this once; it can take a moment on a large file.
+    pub fn compact(&self) -> Result<(), StoreError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute_batch("PRAGMA auto_vacuum = INCREMENTAL; VACUUM;")
+            .map_err(db_err)
+    }
+}
+
+fn db_err(e: rusqlite::Error) -> StoreError {
+    StoreError::Database(e.to_string())
+}
+
+/// Version of the schema, kept in `PRAGMA user_version`. Bump it and extend [`migrate`] whenever
+/// the schema changes in a way `CREATE TABLE IF NOT EXISTS` cannot express.
+const SCHEMA_VERSION: u32 = 1;
+
+/// Columns added after the first release, as `(table, definition)`. Databases from before schema
+/// versioning may or may not have them already.
+const COLUMNS_ADDED_IN_V1: &[(&str, &str)] = &[
+    ("chats", "pinned INTEGER NOT NULL DEFAULT 0"),
+    ("chats", "archived INTEGER NOT NULL DEFAULT 0"),
+    ("chats", "mute_until INTEGER"),
+    ("chats", "ephemeral_expiration INTEGER NOT NULL DEFAULT 0"),
+    ("chats", "ephemeral_setting_timestamp INTEGER"),
+    ("messages", "is_starred INTEGER NOT NULL DEFAULT 0"),
+    ("messages", "is_revoked INTEGER NOT NULL DEFAULT 0"),
+    ("messages", "is_edited INTEGER NOT NULL DEFAULT 0"),
+];
+
+fn is_new_database(conn: &Connection) -> Result<bool, StoreError> {
+    let tables: u32 = conn
+        .query_row(
+            "SELECT count(*) FROM sqlite_master WHERE type = 'table'",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(db_err)?;
+    Ok(tables == 0)
+}
+
+/// Settings that only take effect on an empty database; call before anything else touches the file.
+fn prepare_new_database(conn: &Connection) -> Result<(), StoreError> {
+    if is_new_database(conn)? {
+        conn.execute_batch("PRAGMA auto_vacuum = INCREMENTAL;")
+            .map_err(db_err)?;
+    }
+    Ok(())
+}
+
+/// Shared by file and in-memory databases: busy timeout, schema, migrations and free-page cleanup.
+fn init_connection(conn: &Connection) -> Result<(), StoreError> {
+    // A second process on the same file waits for the lock instead of failing at once.
+    conn.busy_timeout(std::time::Duration::from_secs(5))
+        .map_err(db_err)?;
+
+    let is_new = is_new_database(conn)?;
+    conn.execute_batch(SCHEMA_SQL).map_err(db_err)?;
+    migrate(conn, is_new)?;
+
+    // Give back pages freed by earlier deletes (a no-op unless auto-vacuum is incremental).
+    conn.execute_batch("PRAGMA incremental_vacuum;")
+        .map_err(db_err)?;
+    Ok(())
+}
+
+fn migrate(conn: &Connection, is_new: bool) -> Result<(), StoreError> {
+    let current: u32 = conn
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(db_err)?;
+    if current > SCHEMA_VERSION {
+        return Err(StoreError::Database(format!(
+            "database schema version {current} is newer than this build supports ({SCHEMA_VERSION})"
+        )));
+    }
+    if current < 1 && !is_new {
+        for (table, definition) in COLUMNS_ADDED_IN_V1 {
+            match conn.execute(&format!("ALTER TABLE {table} ADD COLUMN {definition}"), []) {
+                Ok(_) => {}
+                // Present already (a database from before versioning): fine. Anything else is real.
+                Err(e) if e.to_string().contains("duplicate column name") => {}
+                Err(e) => {
+                    return Err(StoreError::Database(format!(
+                        "migration to schema v1 failed on {table} ({definition}): {e}"
+                    )))
+                }
+            }
+        }
+    }
+    conn.pragma_update(None, "user_version", SCHEMA_VERSION)
+        .map_err(db_err)
 }
 
 #[async_trait]
@@ -2845,5 +2577,197 @@ impl AppStateStore for SqliteStore {
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(StoreError::Database(e.to_string())),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_db(name: &str) -> std::path::PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("rolleys-store-test-{}-{name}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir.join("session.db")
+    }
+
+    fn pragma<T: rusqlite::types::FromSql>(path: &Path, name: &str) -> T {
+        Connection::open(path)
+            .unwrap()
+            .query_row(&format!("PRAGMA {name}"), [], |r| r.get(0))
+            .unwrap()
+    }
+
+    fn columns(path: &Path, table: &str) -> Vec<String> {
+        let conn = Connection::open(path).unwrap();
+        let mut stmt = conn
+            .prepare(&format!("PRAGMA table_info({table})"))
+            .unwrap();
+        let rows = stmt.query_map([], |r| r.get::<_, String>(1)).unwrap();
+        rows.map(Result::unwrap).collect()
+    }
+
+    #[test]
+    fn fresh_database_gets_version_wal_and_incremental_vacuum() {
+        let path = temp_db("fresh");
+        drop(SqliteStore::open(&path).unwrap());
+        assert_eq!(pragma::<u32>(&path, "user_version"), SCHEMA_VERSION);
+        assert_eq!(pragma::<String>(&path, "journal_mode"), "wal");
+        assert_eq!(pragma::<u32>(&path, "auto_vacuum"), 2, "INCREMENTAL");
+        // Opening again changes nothing and does not fail.
+        drop(SqliteStore::open(&path).unwrap());
+        assert_eq!(pragma::<u32>(&path, "user_version"), SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn old_database_without_the_later_columns_is_migrated_and_keeps_its_rows() {
+        let path = temp_db("old");
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE chats (jid TEXT PRIMARY KEY, name TEXT, unread_count INTEGER NOT NULL DEFAULT 0,
+                    last_message_timestamp INTEGER NOT NULL DEFAULT 0, last_message_summary TEXT);
+                 CREATE TABLE messages (id TEXT PRIMARY KEY, chat_jid TEXT NOT NULL, sender_jid TEXT NOT NULL,
+                    from_me INTEGER NOT NULL, timestamp INTEGER NOT NULL, summary TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'received', has_media INTEGER NOT NULL DEFAULT 0,
+                    proto_bytes BLOB NOT NULL);
+                 INSERT INTO chats (jid, name) VALUES ('a@s.whatsapp.net', 'Old chat');",
+            )
+            .unwrap();
+        }
+        assert_eq!(pragma::<u32>(&path, "user_version"), 0);
+        drop(SqliteStore::open(&path).unwrap());
+
+        assert_eq!(pragma::<u32>(&path, "user_version"), SCHEMA_VERSION);
+        let chat_cols = columns(&path, "chats");
+        for c in [
+            "pinned",
+            "archived",
+            "mute_until",
+            "ephemeral_expiration",
+            "ephemeral_setting_timestamp",
+        ] {
+            assert!(
+                chat_cols.iter().any(|x| x == c),
+                "chats.{c} missing: {chat_cols:?}"
+            );
+        }
+        let msg_cols = columns(&path, "messages");
+        for c in ["is_starred", "is_revoked", "is_edited"] {
+            assert!(msg_cols.iter().any(|x| x == c), "messages.{c} missing");
+        }
+        let name: String = Connection::open(&path)
+            .unwrap()
+            .query_row(
+                "SELECT name FROM chats WHERE jid = 'a@s.whatsapp.net'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(name, "Old chat");
+    }
+
+    #[test]
+    fn unversioned_database_that_already_has_the_columns_opens() {
+        let path = temp_db("already");
+        drop(SqliteStore::open(&path).unwrap());
+        Connection::open(&path)
+            .unwrap()
+            .pragma_update(None, "user_version", 0u32)
+            .unwrap();
+        drop(SqliteStore::open(&path).unwrap());
+        assert_eq!(pragma::<u32>(&path, "user_version"), SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn a_real_migration_failure_is_reported_not_swallowed() {
+        let path = temp_db("broken");
+        Connection::open(&path)
+            .unwrap()
+            .execute_batch("CREATE TABLE real_chats (jid TEXT); CREATE VIEW chats AS SELECT jid FROM real_chats;")
+            .unwrap();
+        let err = SqliteStore::open(&path)
+            .err()
+            .expect("migration must fail")
+            .to_string();
+        assert!(err.contains("migration to schema v1 failed"), "{err}");
+    }
+
+    #[test]
+    fn a_database_from_a_newer_build_is_refused() {
+        let path = temp_db("newer");
+        drop(SqliteStore::open(&path).unwrap());
+        Connection::open(&path)
+            .unwrap()
+            .pragma_update(None, "user_version", SCHEMA_VERSION + 1)
+            .unwrap();
+        let err = SqliteStore::open(&path)
+            .err()
+            .expect("must refuse")
+            .to_string();
+        assert!(err.contains("newer than this build"), "{err}");
+    }
+
+    #[test]
+    fn compact_returns_free_pages_of_a_legacy_database() {
+        let path = temp_db("compact");
+        {
+            // Legacy file: created without auto-vacuum.
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "PRAGMA journal_mode = WAL; CREATE TABLE junk (b BLOB);
+                 WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 400)
+                 INSERT INTO junk SELECT zeroblob(4000) FROM n; DELETE FROM junk;",
+            )
+            .unwrap();
+        }
+        assert_eq!(pragma::<u32>(&path, "auto_vacuum"), 0);
+        assert!(
+            pragma::<u32>(&path, "freelist_count") > 100,
+            "setup should leave free pages"
+        );
+
+        let store = SqliteStore::open(&path).unwrap();
+        store.compact().unwrap();
+        drop(store);
+        assert_eq!(pragma::<u32>(&path, "freelist_count"), 0);
+        assert_eq!(pragma::<u32>(&path, "auto_vacuum"), 2);
+    }
+
+    #[tokio::test]
+    async fn a_second_writer_waits_for_the_lock_instead_of_failing() {
+        let path = temp_db("busy");
+        let store = SqliteStore::open(&path).unwrap();
+        // rusqlite's default is also 5 s; assert the value actually in effect so a change in
+        // either place is noticed.
+        let timeout_ms: i64 = store
+            .conn
+            .lock()
+            .unwrap()
+            .query_row("PRAGMA busy_timeout", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(timeout_ms, 5000);
+
+        // Another process holds the write lock for a moment.
+        let holder_path = path.clone();
+        let holder = std::thread::spawn(move || {
+            let conn = Connection::open(holder_path).unwrap();
+            conn.execute_batch("BEGIN IMMEDIATE;").unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(400));
+            conn.execute_batch("COMMIT;").unwrap();
+        });
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        let started = std::time::Instant::now();
+        store
+            .save_creds(&AuthCreds::init())
+            .await
+            .expect("must wait for the lock, not fail with 'database is locked'");
+        assert!(
+            started.elapsed() >= std::time::Duration::from_millis(200),
+            "it should have waited"
+        );
+        holder.join().unwrap();
     }
 }
