@@ -1,8 +1,9 @@
 use async_trait::async_trait;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OpenFlags};
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Mutex, MutexGuard, TryLockError};
 
 use crate::traits::{
     AppStateStore, AuthCreds, ChatStore, KeyEntry, NewsletterStore, PollTally, SessionStore,
@@ -212,13 +213,62 @@ const SCHEMA_SQL: &str = "
     );
 ";
 
+/// Indexes on columns that older databases only get from [`migrate`], so they are created after it.
+const INDEXES_SQL: &str = "
+    CREATE INDEX IF NOT EXISTS idx_contacts_lid ON contacts (lid) WHERE lid IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_messages_starred ON messages (timestamp DESC) WHERE is_starred = 1;
+";
+
+/// Tuning for [`SqliteStore::open_with`]. The default suits the platform it is compiled for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SqliteOptions {
+    /// Page cache per connection, in KiB.
+    pub cache_kib: u32,
+    /// Bytes of the file read through memory mapping instead of read() calls; 0 disables it.
+    pub mmap_bytes: u64,
+    /// Read-only connections that serve queries next to the single writer (WAL lets them read
+    /// while it writes). 0 sends every query through the writer.
+    pub read_connections: usize,
+    /// Size the write-ahead log is truncated back to after a checkpoint, in bytes.
+    pub journal_size_limit: u64,
+}
+
+impl Default for SqliteOptions {
+    fn default() -> Self {
+        // Phones have less memory and slower flash to spare; desktops get bigger caches.
+        let mobile = cfg!(any(target_os = "android", target_os = "ios"));
+        Self {
+            cache_kib: if mobile { 4 * 1024 } else { 16 * 1024 },
+            // A 32-bit address space is too small to map a growing database safely.
+            mmap_bytes: if cfg!(target_pointer_width = "32") {
+                0
+            } else if mobile {
+                32 << 20
+            } else {
+                128 << 20
+            },
+            read_connections: if mobile { 2 } else { 4 },
+            journal_size_limit: 8 << 20,
+        }
+    }
+}
+
 /// High-performance embedded SQLite database store, recommended for Android and desktop apps.
+///
+/// Writes go through one connection; reads are spread over a small pool of read-only
+/// connections, so lookups (Signal sessions, contacts, messages) do not wait behind a write.
 pub struct SqliteStore {
-    conn: Mutex<Connection>,
+    writer: Mutex<Connection>,
+    readers: Vec<Mutex<Connection>>,
+    next_reader: AtomicUsize,
 }
 
 impl SqliteStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StoreError> {
+        Self::open_with(path, SqliteOptions::default())
+    }
+
+    pub fn open_with(path: impl AsRef<Path>, options: SqliteOptions) -> Result<Self, StoreError> {
         let p = path.as_ref();
         if let Some(parent) = p.parent() {
             if !parent.as_os_str().is_empty() && !parent.exists() {
@@ -231,38 +281,191 @@ impl SqliteStore {
         // WAL + NORMAL sync: the best throughput for mobile and desktop I/O.
         conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
             .map_err(db_err)?;
+        tune_connection(&conn, &options)?;
+        set_pragma(&conn, "journal_size_limit", options.journal_size_limit)?;
         init_connection(&conn)?;
+
+        // Opened after the writer, so the schema and WAL mode already exist. Every connection to
+        // an in-memory path gets its own empty database, so those keep reading from the writer.
+        let in_memory = p.as_os_str().is_empty() || p.as_os_str() == ":memory:";
+        let reader_count = if in_memory {
+            0
+        } else {
+            options.read_connections
+        };
+        let readers = (0..reader_count)
+            .map(|_| {
+                let reader = Connection::open_with_flags(
+                    p,
+                    OpenFlags::SQLITE_OPEN_READ_ONLY
+                        | OpenFlags::SQLITE_OPEN_NO_MUTEX
+                        | OpenFlags::SQLITE_OPEN_URI,
+                )
+                .map_err(db_err)?;
+                tune_connection(&reader, &options)?;
+                Ok(Mutex::new(reader))
+            })
+            .collect::<Result<_, StoreError>>()?;
+
         Ok(Self {
-            conn: Mutex::new(conn),
+            writer: Mutex::new(conn),
+            readers,
+            next_reader: AtomicUsize::new(0),
         })
     }
 
     pub fn open_in_memory() -> Result<Self, StoreError> {
         let conn = Connection::open_in_memory().map_err(db_err)?;
         prepare_new_database(&conn)?;
+        conn.set_prepared_statement_cache_capacity(STATEMENT_CACHE);
         init_connection(&conn)?;
+        // Another connection would see a different, empty in-memory database: no readers.
         Ok(Self {
-            conn: Mutex::new(conn),
+            writer: Mutex::new(conn),
+            readers: Vec::new(),
+            next_reader: AtomicUsize::new(0),
         })
+    }
+
+    fn writer(&self) -> MutexGuard<'_, Connection> {
+        // A panic while holding the lock leaves SQLite itself consistent (the transaction rolls
+        // back), so a poisoned lock is still safe to use.
+        self.writer.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// A free read-only connection, or the writer when there are none.
+    fn reader(&self) -> MutexGuard<'_, Connection> {
+        let n = self.readers.len();
+        if n == 0 {
+            return self.writer();
+        }
+        let start = self.next_reader.fetch_add(1, Ordering::Relaxed);
+        for i in 0..n {
+            match self.readers[(start + i) % n].try_lock() {
+                Ok(guard) => return guard,
+                Err(TryLockError::Poisoned(e)) => return e.into_inner(),
+                Err(TryLockError::WouldBlock) => {}
+            }
+        }
+        self.readers[start % n]
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
     }
 
     /// Rewrites the database without its free pages and switches it to incremental auto-vacuum,
     /// so deleted data stops inflating the file. Databases created before auto-vacuum was enabled
     /// need this once; it can take a moment on a large file.
     pub fn compact(&self) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute_batch("PRAGMA auto_vacuum = INCREMENTAL; VACUUM;")
             .map_err(db_err)
     }
+}
+
+impl Drop for SqliteStore {
+    fn drop(&mut self) {
+        // Refresh the query planner statistics the way SQLite recommends before closing; bounded
+        // by `analysis_limit`, so it stays cheap even on a large database.
+        let _ = self.writer().execute_batch("PRAGMA optimize;");
+    }
+}
+
+/// Prepared statements kept per connection; above the number of distinct queries in this file.
+const STATEMENT_CACHE: usize = 128;
+
+/// Per-connection settings shared by the writer and the readers.
+fn tune_connection(conn: &Connection, options: &SqliteOptions) -> Result<(), StoreError> {
+    conn.set_prepared_statement_cache_capacity(STATEMENT_CACHE);
+    conn.busy_timeout(std::time::Duration::from_secs(5))
+        .map_err(db_err)?;
+    conn.pragma_update(None, "cache_size", -i64::from(options.cache_kib))
+        .map_err(db_err)?;
+    conn.pragma_update(None, "temp_store", "MEMORY")
+        .map_err(db_err)?;
+    if options.mmap_bytes > 0 {
+        set_pragma(conn, "mmap_size", options.mmap_bytes)?;
+    }
+    Ok(())
+}
+
+/// Sets a pragma that may answer with its new value (file databases) or with nothing
+/// (in-memory ones), which `pragma_update` and `pragma_update_and_check` each reject one of.
+fn set_pragma(conn: &Connection, name: &str, value: u64) -> Result<(), StoreError> {
+    let mut stmt = conn
+        .prepare(&format!("PRAGMA {name} = {value}"))
+        .map_err(db_err)?;
+    let mut rows = stmt.query([]).map_err(db_err)?;
+    while rows.next().map_err(db_err)?.is_some() {}
+    Ok(())
 }
 
 fn db_err(e: rusqlite::Error) -> StoreError {
     StoreError::Database(e.to_string())
 }
 
-/// Version of the schema, kept in `PRAGMA user_version`. Bump it and extend [`migrate`] whenever
-/// the schema changes in a way `CREATE TABLE IF NOT EXISTS` cannot express.
-const SCHEMA_VERSION: u32 = 1;
+/// Inserts or merges one chat; shared by single and batch saves.
+fn upsert_chat(conn: &Connection, chat: &StoredChat) -> Result<(), StoreError> {
+    conn.prepare_cached(
+        "INSERT INTO chats (jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+                 ON CONFLICT(jid) DO UPDATE SET
+                    name = COALESCE(excluded.name, chats.name),
+                    unread_count = excluded.unread_count,
+                    last_message_timestamp = MAX(chats.last_message_timestamp, excluded.last_message_timestamp),
+                    last_message_summary = COALESCE(excluded.last_message_summary, chats.last_message_summary),
+                    pinned = CASE WHEN excluded.pinned != 0 THEN excluded.pinned ELSE chats.pinned END,
+                    archived = CASE WHEN excluded.archived != 0 THEN excluded.archived ELSE chats.archived END,
+                    mute_until = COALESCE(excluded.mute_until, chats.mute_until),
+                    ephemeral_expiration = CASE WHEN excluded.ephemeral_expiration != 0 THEN excluded.ephemeral_expiration ELSE chats.ephemeral_expiration END,
+                    ephemeral_setting_timestamp = COALESCE(excluded.ephemeral_setting_timestamp, chats.ephemeral_setting_timestamp)",
+    )
+    .and_then(|mut stmt| {
+        stmt.execute(params![
+                        chat.jid,
+                        chat.name,
+                        chat.unread_count,
+                        chat.last_message_timestamp as i64,
+                        chat.last_message_summary,
+                        if chat.pinned { 1 } else { 0 },
+                        if chat.archived { 1 } else { 0 },
+                        chat.mute_until.map(|ts| ts as i64),
+                        chat.ephemeral_expiration as i64,
+                        chat.ephemeral_setting_timestamp,
+                    ])
+    })
+    .map(|_| ())
+    .map_err(db_err)
+}
+
+/// Inserts or merges one contact; shared by single and batch saves.
+fn upsert_contact(conn: &Connection, contact: &StoredContact) -> Result<(), StoreError> {
+    conn.prepare_cached(
+        "INSERT INTO contacts (jid, name, push_name, lid)
+                 VALUES (?1, ?2, ?3, ?4)
+                 ON CONFLICT(jid) DO UPDATE SET
+                    name = COALESCE(excluded.name, contacts.name),
+                    push_name = COALESCE(excluded.push_name, contacts.push_name),
+                    lid = COALESCE(excluded.lid, contacts.lid)",
+    )
+    .and_then(|mut stmt| {
+        stmt.execute(params![
+            contact.jid,
+            contact.name,
+            contact.push_name,
+            contact.lid
+        ])
+    })
+    .map(|_| ())
+    .map_err(db_err)
+}
+
+/// Version of the schema, kept in `PRAGMA user_version`. Bump it whenever [`SCHEMA_SQL`] changes,
+/// so existing databases run it again on open, and extend [`migrate`] for changes that
+/// `CREATE ... IF NOT EXISTS` cannot express.
+///
+/// - v1: chat and message flag columns ([`COLUMNS_ADDED_IN_V1`]).
+/// - v2: indexes for contact lookup by LID and for starred messages.
+const SCHEMA_VERSION: u32 = 2;
 
 /// Columns added after the first release, as `(table, definition)`. Databases from before schema
 /// versioning may or may not have them already.
@@ -303,13 +506,27 @@ fn init_connection(conn: &Connection) -> Result<(), StoreError> {
     conn.busy_timeout(std::time::Duration::from_secs(5))
         .map_err(db_err)?;
 
-    let is_new = is_new_database(conn)?;
-    conn.execute_batch(SCHEMA_SQL).map_err(db_err)?;
-    migrate(conn, is_new)?;
-
-    // Give back pages freed by earlier deletes (a no-op unless auto-vacuum is incremental).
-    conn.execute_batch("PRAGMA incremental_vacuum;")
+    let version: u32 = conn
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(db_err)?;
+    // An up-to-date database already has every table and index: skip the schema work on open.
+    if version != SCHEMA_VERSION {
+        let is_new = is_new_database(conn)?;
+        conn.execute_batch(SCHEMA_SQL).map_err(db_err)?;
+        migrate(conn, is_new)?;
+        conn.execute_batch(INDEXES_SQL).map_err(db_err)?;
+        // New tables or indexes: give the query planner statistics for them, cheaply.
+        conn.execute_batch("PRAGMA analysis_limit = 400; PRAGMA optimize = 0x10002;")
+            .map_err(db_err)?;
+    }
+
+    // Give back pages freed by earlier deletes (a no-op unless auto-vacuum is incremental). The
+    // pragma frees one page per step, so it is stepped to the end, and capped to keep open fast.
+    let mut vacuum = conn
+        .prepare("PRAGMA incremental_vacuum(4096)")
+        .map_err(db_err)?;
+    let mut rows = vacuum.query([]).map_err(db_err)?;
+    while rows.next().map_err(db_err)?.is_some() {}
     Ok(())
 }
 
@@ -343,9 +560,9 @@ fn migrate(conn: &Connection, is_new: bool) -> Result<(), StoreError> {
 #[async_trait]
 impl SessionStore for SqliteStore {
     async fn get_creds(&self) -> Result<Option<AuthCreds>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT json FROM creds WHERE id = 1")
+            .prepare_cached("SELECT json FROM creds WHERE id = 1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let mut rows = stmt
@@ -371,7 +588,7 @@ impl SessionStore for SqliteStore {
         let json_str =
             serde_json::to_string(creds).map_err(|e| StoreError::Serialization(e.to_string()))?;
 
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO creds (id, json) VALUES (1, ?1)
              ON CONFLICT(id) DO UPDATE SET json = excluded.json",
@@ -383,7 +600,7 @@ impl SessionStore for SqliteStore {
     }
 
     async fn clear(&self) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute_batch(
             "DELETE FROM creds;
              DELETE FROM session_keys;
@@ -400,9 +617,9 @@ impl SessionStore for SqliteStore {
 #[async_trait]
 impl SignalKeysStore for SqliteStore {
     async fn get_key(&self, key_type: &str, id: &str) -> Result<Option<Vec<u8>>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT data FROM session_keys WHERE key_type = ?1 AND id = ?2")
+            .prepare_cached("SELECT data FROM session_keys WHERE key_type = ?1 AND id = ?2")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let mut rows = stmt
@@ -423,14 +640,14 @@ impl SignalKeysStore for SqliteStore {
     }
 
     async fn set_keys(&self, entries: Vec<KeyEntry>) -> Result<(), StoreError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.writer();
         let tx = conn
             .transaction()
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         {
             let mut stmt = tx
-                .prepare(
+                .prepare_cached(
                     "INSERT INTO session_keys (key_type, id, data) VALUES (?1, ?2, ?3)
                      ON CONFLICT(key_type, id) DO UPDATE SET data = excluded.data",
                 )
@@ -449,14 +666,14 @@ impl SignalKeysStore for SqliteStore {
     }
 
     async fn remove_keys(&self, key_type: &str, ids: &[String]) -> Result<(), StoreError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.writer();
         let tx = conn
             .transaction()
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         {
             let mut stmt = tx
-                .prepare("DELETE FROM session_keys WHERE key_type = ?1 AND id = ?2")
+                .prepare_cached("DELETE FROM session_keys WHERE key_type = ?1 AND id = ?2")
                 .map_err(|e| StoreError::Database(e.to_string()))?;
 
             for id in ids {
@@ -472,9 +689,9 @@ impl SignalKeysStore for SqliteStore {
     }
 
     async fn get_key_count(&self, key_type: &str) -> Result<usize, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT COUNT(*) FROM session_keys WHERE key_type = ?1")
+            .prepare_cached("SELECT COUNT(*) FROM session_keys WHERE key_type = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let count: usize = stmt
             .query_row(params![key_type], |r| r.get(0))
@@ -483,9 +700,9 @@ impl SignalKeysStore for SqliteStore {
     }
 
     async fn get_all_keys(&self, key_type: &str) -> Result<Vec<(String, Vec<u8>)>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT id, data FROM session_keys WHERE key_type = ?1")
+            .prepare_cached("SELECT id, data FROM session_keys WHERE key_type = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![key_type], |row| Ok((row.get(0)?, row.get(1)?)))
@@ -498,41 +715,22 @@ impl SignalKeysStore for SqliteStore {
 #[async_trait]
 impl ChatStore for SqliteStore {
     async fn save_chat(&self, chat: &StoredChat) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "INSERT INTO chats (jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
-             ON CONFLICT(jid) DO UPDATE SET
-                name = COALESCE(excluded.name, chats.name),
-                unread_count = excluded.unread_count,
-                last_message_timestamp = MAX(chats.last_message_timestamp, excluded.last_message_timestamp),
-                last_message_summary = COALESCE(excluded.last_message_summary, chats.last_message_summary),
-                pinned = CASE WHEN excluded.pinned != 0 THEN excluded.pinned ELSE chats.pinned END,
-                archived = CASE WHEN excluded.archived != 0 THEN excluded.archived ELSE chats.archived END,
-                mute_until = COALESCE(excluded.mute_until, chats.mute_until),
-                ephemeral_expiration = CASE WHEN excluded.ephemeral_expiration != 0 THEN excluded.ephemeral_expiration ELSE chats.ephemeral_expiration END,
-                ephemeral_setting_timestamp = COALESCE(excluded.ephemeral_setting_timestamp, chats.ephemeral_setting_timestamp)",
-            params![
-                chat.jid,
-                chat.name,
-                chat.unread_count,
-                chat.last_message_timestamp as i64,
-                chat.last_message_summary,
-                if chat.pinned { 1 } else { 0 },
-                if chat.archived { 1 } else { 0 },
-                chat.mute_until.map(|ts| ts as i64),
-                chat.ephemeral_expiration as i64,
-                chat.ephemeral_setting_timestamp,
-            ],
-        )
-        .map_err(|e| StoreError::Database(e.to_string()))?;
-        Ok(())
+        upsert_chat(&self.writer(), chat)
+    }
+
+    async fn save_chats_batch(&self, chats: &[StoredChat]) -> Result<(), StoreError> {
+        let mut conn = self.writer();
+        let tx = conn.transaction().map_err(db_err)?;
+        for chat in chats {
+            upsert_chat(&tx, chat)?;
+        }
+        tx.commit().map_err(db_err)
     }
 
     async fn get_chats(&self) -> Result<Vec<StoredChat>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats ORDER BY pinned DESC, last_message_timestamp DESC")
+            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats ORDER BY pinned DESC, last_message_timestamp DESC")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let rows = stmt
@@ -566,9 +764,9 @@ impl ChatStore for SqliteStore {
     }
 
     async fn get_chat(&self, jid: &str) -> Result<Option<StoredChat>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats WHERE jid = ?1")
+            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats WHERE jid = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let mut rows = stmt
@@ -613,7 +811,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn save_message(&self, msg: &StoredMessage) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO messages (id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
@@ -643,14 +841,14 @@ impl ChatStore for SqliteStore {
     }
 
     async fn save_messages_batch(&self, messages: &[StoredMessage]) -> Result<(), StoreError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.writer();
         let tx = conn
             .transaction()
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         {
             let mut stmt = tx
-                .prepare(
+                .prepare_cached(
                     "INSERT INTO messages (id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
                      ON CONFLICT(id) DO UPDATE SET
@@ -693,12 +891,12 @@ impl ChatStore for SqliteStore {
         limit: u32,
         before_timestamp: Option<u64>,
     ) -> Result<Vec<StoredMessage>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut messages = Vec::new();
 
         if let Some(before_ts) = before_timestamp {
             let mut stmt = conn
-                .prepare(
+                .prepare_cached(
                     "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
                      FROM messages
                      WHERE chat_jid = ?1 AND timestamp < ?2
@@ -736,7 +934,7 @@ impl ChatStore for SqliteStore {
             }
         } else {
             let mut stmt = conn
-                .prepare(
+                .prepare_cached(
                     "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
                      FROM messages
                      WHERE chat_jid = ?1
@@ -778,9 +976,9 @@ impl ChatStore for SqliteStore {
     }
 
     async fn get_message(&self, id: &str) -> Result<Option<StoredMessage>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
                  FROM messages WHERE id = ?1",
             )
@@ -838,9 +1036,9 @@ impl ChatStore for SqliteStore {
     }
 
     async fn get_latest_message(&self) -> Result<Option<StoredMessage>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
                  FROM messages ORDER BY timestamp DESC LIMIT 1",
             )
@@ -898,7 +1096,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn update_chat_pin(&self, jid: &str, pinned: bool) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO chats (jid, pinned) VALUES (?1, ?2)
              ON CONFLICT(jid) DO UPDATE SET pinned = excluded.pinned",
@@ -909,7 +1107,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn update_chat_archive(&self, jid: &str, archived: bool) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO chats (jid, archived) VALUES (?1, ?2)
              ON CONFLICT(jid) DO UPDATE SET archived = excluded.archived",
@@ -920,7 +1118,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn update_chat_mute(&self, jid: &str, mute_until: Option<u64>) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO chats (jid, mute_until) VALUES (?1, ?2)
              ON CONFLICT(jid) DO UPDATE SET mute_until = excluded.mute_until",
@@ -936,7 +1134,7 @@ impl ChatStore for SqliteStore {
         msg_id: &str,
         is_starred: bool,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "UPDATE messages SET is_starred = ?1 WHERE id = ?2 AND chat_jid = ?3",
             params![if is_starred { 1 } else { 0 }, msg_id, chat_jid],
@@ -946,7 +1144,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn update_message_status(&self, msg_id: &str, status: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "UPDATE messages SET status = ?1 WHERE id = ?2",
             params![status, msg_id],
@@ -960,7 +1158,7 @@ impl ChatStore for SqliteStore {
         chat_jid: &str,
         keep_starred: bool,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         if keep_starred {
             conn.execute(
                 "DELETE FROM messages WHERE chat_jid = ?1 AND is_starred = 0",
@@ -982,7 +1180,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn delete_chat(&self, chat_jid: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "DELETE FROM messages WHERE chat_jid = ?1",
             params![chat_jid],
@@ -998,7 +1196,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn update_chat_unread(&self, chat_jid: &str, unread: bool) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let unread_count = if unread { 1 } else { 0 };
         conn.execute(
             "INSERT INTO chats (jid, unread_count) VALUES (?1, ?2)
@@ -1010,24 +1208,27 @@ impl ChatStore for SqliteStore {
     }
 
     async fn save_contact(&self, contact: &StoredContact) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "INSERT INTO contacts (jid, name, push_name, lid)
-             VALUES (?1, ?2, ?3, ?4)
-             ON CONFLICT(jid) DO UPDATE SET
-                name = COALESCE(excluded.name, contacts.name),
-                push_name = COALESCE(excluded.push_name, contacts.push_name),
-                lid = COALESCE(excluded.lid, contacts.lid)",
-            params![contact.jid, contact.name, contact.push_name, contact.lid],
-        )
-        .map_err(|e| StoreError::Database(e.to_string()))?;
-        Ok(())
+        upsert_contact(&self.writer(), contact)
+    }
+
+    async fn save_contacts_batch(&self, contacts: &[StoredContact]) -> Result<(), StoreError> {
+        let mut conn = self.writer();
+        let tx = conn.transaction().map_err(db_err)?;
+        for contact in contacts {
+            upsert_contact(&tx, contact)?;
+        }
+        tx.commit().map_err(db_err)
     }
 
     async fn get_contact(&self, jid: &str) -> Result<Option<StoredContact>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT jid, name, push_name, lid FROM contacts WHERE jid = ?1 OR lid = ?1")
+            .prepare_cached(
+                "SELECT jid, name, push_name, lid FROM contacts WHERE jid = ?1
+                 UNION ALL
+                 SELECT jid, name, push_name, lid FROM contacts WHERE lid = ?1 AND jid != ?1
+                 LIMIT 1",
+            )
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let mut rows = stmt
@@ -1058,9 +1259,9 @@ impl ChatStore for SqliteStore {
     }
 
     async fn get_contacts(&self) -> Result<Vec<StoredContact>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT jid, name, push_name, lid FROM contacts ORDER BY name ASC")
+            .prepare_cached("SELECT jid, name, push_name, lid FROM contacts ORDER BY name ASC")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let rows = stmt
@@ -1086,10 +1287,10 @@ impl ChatStore for SqliteStore {
         query: &str,
         limit: u32,
     ) -> Result<Vec<StoredMessage>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let pattern = format!("%{}%", query);
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
                  FROM messages WHERE summary LIKE ?1 ORDER BY timestamp DESC LIMIT ?2"
             )
@@ -1128,9 +1329,9 @@ impl ChatStore for SqliteStore {
     }
 
     async fn get_starred_messages(&self, limit: u32) -> Result<Vec<StoredMessage>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT id, chat_jid, sender_jid, from_me, timestamp, summary, status, has_media, proto_bytes, is_starred, is_revoked, is_edited
                  FROM messages WHERE is_starred = 1 ORDER BY timestamp DESC LIMIT ?1",
             )
@@ -1169,7 +1370,7 @@ impl ChatStore for SqliteStore {
     }
 
     async fn delete_message(&self, chat_jid: &str, message_id: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "DELETE FROM messages WHERE id = ?1 AND chat_jid = ?2",
             params![message_id, chat_jid],
@@ -1185,7 +1386,7 @@ impl ChatStore for SqliteStore {
         new_content: &str,
         new_proto_bytes: Option<&[u8]>,
     ) -> Result<bool, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let count = if let Some(bytes) = new_proto_bytes {
             conn.execute(
                 "UPDATE messages SET summary = ?1, proto_bytes = ?2, is_edited = 1 WHERE id = ?3 AND chat_jid = ?4",
@@ -1217,7 +1418,7 @@ impl ChatStore for SqliteStore {
         message_id: &str,
         anti_revoke: bool,
     ) -> Result<bool, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let msg_sql = if anti_revoke {
             "UPDATE messages SET summary = CASE WHEN summary LIKE '[REVOKED]%' THEN summary ELSE '[REVOKED] ' || summary END, is_revoked = 1 WHERE id = ?1 AND chat_jid = ?2"
         } else {
@@ -1245,7 +1446,7 @@ impl ChatStore for SqliteStore {
         ephemeral_expiration: u32,
         setting_timestamp: Option<i64>,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO chats (jid, ephemeral_expiration, ephemeral_setting_timestamp)
              VALUES (?1, ?2, ?3)
@@ -1262,9 +1463,9 @@ impl ChatStore for SqliteStore {
         &self,
         chat_jid: &str,
     ) -> Result<Option<(u32, Option<i64>)>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT ephemeral_expiration, ephemeral_setting_timestamp FROM chats WHERE jid = ?1")
+            .prepare_cached("SELECT ephemeral_expiration, ephemeral_setting_timestamp FROM chats WHERE jid = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let mut rows = stmt
             .query(params![chat_jid])
@@ -1285,7 +1486,7 @@ impl ChatStore for SqliteStore {
 #[async_trait]
 impl NewsletterStore for SqliteStore {
     async fn save_newsletter(&self, newsletter: &StoredNewsletter) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO newsletters (jid, name, description, invite_code, picture_url, role, muted, subscribers_count, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
@@ -1315,9 +1516,9 @@ impl NewsletterStore for SqliteStore {
     }
 
     async fn get_newsletters(&self) -> Result<Vec<StoredNewsletter>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT jid, name, description, invite_code, picture_url, role, muted, subscribers_count, updated_at
                  FROM newsletters ORDER BY updated_at DESC",
             )
@@ -1350,9 +1551,9 @@ impl NewsletterStore for SqliteStore {
     }
 
     async fn get_newsletter(&self, jid: &str) -> Result<Option<StoredNewsletter>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT jid, name, description, invite_code, picture_url, role, muted, subscribers_count, updated_at
                  FROM newsletters WHERE jid = ?1",
             )
@@ -1407,7 +1608,7 @@ impl NewsletterStore for SqliteStore {
 #[async_trait]
 impl AppStateStore for SqliteStore {
     async fn save_poll(&self, poll: &StoredPoll) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let options_json =
             serde_json::to_string(&poll.options).unwrap_or_else(|_| "[]".to_string());
         conn.execute(
@@ -1428,8 +1629,8 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_poll(&self, poll_id: &str) -> Result<Option<StoredPoll>, StoreError> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
+        let conn = self.reader();
+        let mut stmt = conn.prepare_cached(
             "SELECT id, chat_jid, sender_jid, question, options_json, enc_key, selectable_count, created_at
              FROM polls WHERE id = ?1"
         ).map_err(|e| StoreError::Database(e.to_string()))?;
@@ -1481,7 +1682,7 @@ impl AppStateStore for SqliteStore {
         voter_jid: &str,
         selected_options: &[String],
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let options_json =
             serde_json::to_string(&selected_options).unwrap_or_else(|_| "[]".to_string());
         let now = std::time::SystemTime::now()
@@ -1497,9 +1698,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_poll_votes(&self, poll_id: &str) -> Result<Vec<StoredPollVote>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT poll_id, voter_jid, selected_options_json, updated_at
              FROM poll_votes WHERE poll_id = ?1",
             )
@@ -1554,7 +1755,7 @@ impl AppStateStore for SqliteStore {
         community_jid: &str,
         subgroup: &StoredCommunitySubgroup,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR REPLACE INTO community_links (community_jid, group_jid, subject, creation, creator, size, linked_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
@@ -1576,7 +1777,7 @@ impl AppStateStore for SqliteStore {
         community_jid: &str,
         group_jid: &str,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "DELETE FROM community_links WHERE community_jid = ?1 AND group_jid = ?2",
             params![community_jid, group_jid],
@@ -1589,9 +1790,9 @@ impl AppStateStore for SqliteStore {
         &self,
         community_jid: &str,
     ) -> Result<Vec<StoredCommunitySubgroup>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT group_jid, subject, creation, creator, size, linked_at
              FROM community_links WHERE community_jid = ?1
              ORDER BY linked_at ASC",
@@ -1620,9 +1821,11 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_parent_community(&self, group_jid: &str) -> Result<Option<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT community_jid FROM community_links WHERE group_jid = ?1 LIMIT 1")
+            .prepare_cached(
+                "SELECT community_jid FROM community_links WHERE group_jid = ?1 LIMIT 1",
+            )
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let mut rows = stmt
             .query(params![group_jid])
@@ -1641,7 +1844,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn save_call(&self, call: &StoredCall) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR REPLACE INTO call_logs (
                 call_id, chat_jid, caller_jid, is_group, group_jid, is_video, status, timestamp, duration
@@ -1662,8 +1865,8 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_call(&self, call_id: &str) -> Result<Option<StoredCall>, StoreError> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
+        let conn = self.reader();
+        let mut stmt = conn.prepare_cached(
             "SELECT call_id, chat_jid, caller_jid, is_group, group_jid, is_video, status, timestamp, duration
              FROM call_logs WHERE call_id = ?1 LIMIT 1"
         ).map_err(|e| StoreError::Database(e.to_string()))?;
@@ -1713,8 +1916,8 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_call_history(&self, limit: u32) -> Result<Vec<StoredCall>, StoreError> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
+        let conn = self.reader();
+        let mut stmt = conn.prepare_cached(
             "SELECT call_id, chat_jid, caller_jid, is_group, group_jid, is_video, status, timestamp, duration
              FROM call_logs ORDER BY timestamp DESC LIMIT ?1"
         ).map_err(|e| StoreError::Database(e.to_string()))?;
@@ -1746,7 +1949,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn save_story(&self, story: &StoredStory) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR REPLACE INTO status_stories (
                 msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
@@ -1771,7 +1974,7 @@ impl AppStateStore for SqliteStore {
         limit: u32,
         unviewed_only: bool,
     ) -> Result<Vec<StoredStory>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let sql = if unviewed_only {
             "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
              FROM status_stories WHERE viewed = 0 ORDER BY timestamp DESC LIMIT ?1"
@@ -1780,7 +1983,7 @@ impl AppStateStore for SqliteStore {
              FROM status_stories ORDER BY timestamp DESC LIMIT ?1"
         };
         let mut stmt = conn
-            .prepare(sql)
+            .prepare_cached(sql)
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![limit as i64], |row| {
@@ -1812,8 +2015,8 @@ impl AppStateStore for SqliteStore {
         &self,
         author_jid: &str,
     ) -> Result<Vec<StoredStory>, StoreError> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
+        let conn = self.reader();
+        let mut stmt = conn.prepare_cached(
             "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
              FROM status_stories WHERE author_jid = ?1 ORDER BY timestamp DESC"
         ).map_err(|e| StoreError::Database(e.to_string()))?;
@@ -1844,7 +2047,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn mark_story_viewed(&self, msg_id: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "UPDATE status_stories SET viewed = 1 WHERE msg_id = ?1",
             params![msg_id],
@@ -1854,7 +2057,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn save_blocked_contact(&self, jid: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -1869,16 +2072,16 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn remove_blocked_contact(&self, jid: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute("DELETE FROM blocked_contacts WHERE jid = ?1", params![jid])
             .map_err(|e| StoreError::Database(e.to_string()))?;
         Ok(())
     }
 
     async fn get_blocked_contacts(&self) -> Result<Vec<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT jid FROM blocked_contacts ORDER BY blocked_at ASC")
+            .prepare_cached("SELECT jid FROM blocked_contacts ORDER BY blocked_at ASC")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map([], |row| row.get(0))
@@ -1891,7 +2094,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn set_blocked_contacts(&self, jids: &[String]) -> Result<(), StoreError> {
-        let mut conn = self.conn.lock().unwrap();
+        let mut conn = self.writer();
         let tx = conn
             .transaction()
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -1903,7 +2106,7 @@ impl AppStateStore for SqliteStore {
             .as_secs() as i64;
         {
             let mut stmt = tx
-                .prepare("INSERT INTO blocked_contacts (jid, blocked_at) VALUES (?1, ?2)")
+                .prepare_cached("INSERT INTO blocked_contacts (jid, blocked_at) VALUES (?1, ?2)")
                 .map_err(|e| StoreError::Database(e.to_string()))?;
             for (idx, jid) in jids.iter().enumerate() {
                 stmt.execute(params![jid, now + idx as i64])
@@ -1919,7 +2122,7 @@ impl AppStateStore for SqliteStore {
     // Track 9: Labels & WhatsApp Business Protocol
     // ==========================================
     async fn upsert_label(&self, label: &StoredLabel) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT INTO labels (id, name, color, predefined_id, deleted)
              VALUES (?1, ?2, ?3, ?4, ?5)
@@ -1941,9 +2144,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_labels(&self) -> Result<Vec<StoredLabel>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT id, name, color, predefined_id, deleted FROM labels WHERE deleted = 0 ORDER BY id ASC")
+            .prepare_cached("SELECT id, name, color, predefined_id, deleted FROM labels WHERE deleted = 0 ORDER BY id ASC")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![], |row| {
@@ -1965,9 +2168,11 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_label(&self, id: &str) -> Result<Option<StoredLabel>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT id, name, color, predefined_id, deleted FROM labels WHERE id = ?1")
+            .prepare_cached(
+                "SELECT id, name, color, predefined_id, deleted FROM labels WHERE id = ?1",
+            )
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let mut rows = stmt
             .query(params![id])
@@ -2000,7 +2205,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn delete_label(&self, id: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute("UPDATE labels SET deleted = 1 WHERE id = ?1", params![id])
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let _ = conn.execute("DELETE FROM chat_labels WHERE label_id = ?1", params![id]);
@@ -2012,7 +2217,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn add_chat_label(&self, chat_jid: &str, label_id: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR IGNORE INTO chat_labels (chat_jid, label_id) VALUES (?1, ?2)",
             params![chat_jid, label_id],
@@ -2022,7 +2227,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn remove_chat_label(&self, chat_jid: &str, label_id: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "DELETE FROM chat_labels WHERE chat_jid = ?1 AND label_id = ?2",
             params![chat_jid, label_id],
@@ -2032,9 +2237,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_chat_labels(&self, chat_jid: &str) -> Result<Vec<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT label_id FROM chat_labels WHERE chat_jid = ?1")
+            .prepare_cached("SELECT label_id FROM chat_labels WHERE chat_jid = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![chat_jid], |row| row.get(0))
@@ -2047,9 +2252,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_chats_by_label(&self, label_id: &str) -> Result<Vec<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT chat_jid FROM chat_labels WHERE label_id = ?1")
+            .prepare_cached("SELECT chat_jid FROM chat_labels WHERE label_id = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![label_id], |row| row.get(0))
@@ -2067,7 +2272,7 @@ impl AppStateStore for SqliteStore {
         message_id: &str,
         label_id: &str,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR IGNORE INTO message_labels (chat_jid, message_id, label_id) VALUES (?1, ?2, ?3)",
             params![chat_jid, message_id, label_id],
@@ -2082,7 +2287,7 @@ impl AppStateStore for SqliteStore {
         message_id: &str,
         label_id: &str,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "DELETE FROM message_labels WHERE chat_jid = ?1 AND message_id = ?2 AND label_id = ?3",
             params![chat_jid, message_id, label_id],
@@ -2096,9 +2301,11 @@ impl AppStateStore for SqliteStore {
         chat_jid: &str,
         message_id: &str,
     ) -> Result<Vec<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT label_id FROM message_labels WHERE chat_jid = ?1 AND message_id = ?2")
+            .prepare_cached(
+                "SELECT label_id FROM message_labels WHERE chat_jid = ?1 AND message_id = ?2",
+            )
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![chat_jid, message_id], |row| row.get(0))
@@ -2111,9 +2318,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_messages_by_label(&self, label_id: &str) -> Result<Vec<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT message_id FROM message_labels WHERE label_id = ?1")
+            .prepare_cached("SELECT message_id FROM message_labels WHERE label_id = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![label_id], |row| row.get(0))
@@ -2126,7 +2333,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn save_catalog_product(&self, product: &StoredCatalogProduct) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let images_json =
             serde_json::to_string(&product.image_urls).unwrap_or_else(|_| "[]".to_string());
         conn.execute(
@@ -2159,9 +2366,9 @@ impl AppStateStore for SqliteStore {
         &self,
         biz_jid: &str,
     ) -> Result<Vec<StoredCatalogProduct>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT product_id, business_owner_jid, title, description, currency,
                         price_amount_1000, sale_price_amount_1000, retailer_id, url,
                         image_urls, is_hidden, availability, updated_at
@@ -2209,9 +2416,9 @@ impl AppStateStore for SqliteStore {
         &self,
         product_id: &str,
     ) -> Result<Option<StoredCatalogProduct>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT product_id, business_owner_jid, title, description, currency,
                         price_amount_1000, sale_price_amount_1000, retailer_id, url,
                         image_urls, is_hidden, availability, updated_at
@@ -2257,7 +2464,7 @@ impl AppStateStore for SqliteStore {
         &self,
         collection: &StoredCatalogCollection,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR REPLACE INTO catalog_collections (
                 collection_id, business_owner_jid, name, products_count, status, updated_at
@@ -2279,9 +2486,9 @@ impl AppStateStore for SqliteStore {
         &self,
         biz_jid: &str,
     ) -> Result<Vec<StoredCatalogCollection>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT collection_id, business_owner_jid, name, products_count, status, updated_at
                  FROM catalog_collections
                  WHERE business_owner_jid = ?1
@@ -2312,7 +2519,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn save_order(&self, order: &StoredOrder) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "INSERT OR REPLACE INTO orders (
                 order_id, chat_jid, seller_jid, item_count, status, surface,
@@ -2339,9 +2546,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_order(&self, order_id: &str) -> Result<Option<StoredOrder>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT order_id, chat_jid, seller_jid, item_count, status, surface,
                         order_title, message, total_amount_1000, total_currency_code,
                         token, created_at
@@ -2377,9 +2584,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_orders(&self, chat_jid: &str, limit: u32) -> Result<Vec<StoredOrder>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT order_id, chat_jid, seller_jid, item_count, status, surface,
                         order_title, message, total_amount_1000, total_currency_code,
                         token, created_at
@@ -2425,7 +2632,7 @@ impl AppStateStore for SqliteStore {
         user_jid: &str,
         device_ids: &[u32],
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -2443,7 +2650,7 @@ impl AppStateStore for SqliteStore {
 
         {
             let mut stmt = tx
-                .prepare(
+                .prepare_cached(
                     "INSERT INTO user_devices (user_jid, device_id, key_index, updated_at)
                  VALUES (?1, ?2, 0, ?3)",
                 )
@@ -2461,9 +2668,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_user_devices(&self, user_jid: &str) -> Result<Vec<u32>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare(
+            .prepare_cached(
                 "SELECT device_id FROM user_devices WHERE user_jid = ?1 ORDER BY device_id ASC",
             )
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -2483,7 +2690,7 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn remove_user_device(&self, user_jid: &str, device_id: u32) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute(
             "DELETE FROM user_devices WHERE user_jid = ?1 AND device_id = ?2",
             params![user_jid, device_id as i64],
@@ -2496,7 +2703,7 @@ impl AppStateStore for SqliteStore {
     // KV Store & Media Download Tracking
     // ==========================================
     async fn set_kv(&self, key: &str, value: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -2510,9 +2717,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_kv(&self, key: &str) -> Result<Option<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT value FROM kv_store WHERE key = ?1")
+            .prepare_cached("SELECT value FROM kv_store WHERE key = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         match stmt.query_row(params![key], |row| row.get(0)) {
             Ok(val) => Ok(Some(val)),
@@ -2522,17 +2729,17 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn delete_kv(&self, key: &str) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         conn.execute("DELETE FROM kv_store WHERE key = ?1", params![key])
             .map_err(|e| StoreError::Database(e.to_string()))?;
         Ok(())
     }
 
     async fn list_kv_prefix(&self, prefix: &str) -> Result<HashMap<String, String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let pattern = format!("{}%", prefix);
         let mut stmt = conn
-            .prepare("SELECT key, value FROM kv_store WHERE key LIKE ?1")
+            .prepare_cached("SELECT key, value FROM kv_store WHERE key LIKE ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![pattern], |row| Ok((row.get(0)?, row.get(1)?)))
@@ -2553,7 +2760,7 @@ impl AppStateStore for SqliteStore {
         file_size: u64,
         mimetype: Option<&str>,
     ) -> Result<(), StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.writer();
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -2568,9 +2775,9 @@ impl AppStateStore for SqliteStore {
     }
 
     async fn get_media_download(&self, message_id: &str) -> Result<Option<String>, StoreError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.reader();
         let mut stmt = conn
-            .prepare("SELECT file_path FROM media_downloads WHERE message_id = ?1")
+            .prepare_cached("SELECT file_path FROM media_downloads WHERE message_id = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
         match stmt.query_row(params![message_id], |row| row.get(0)) {
             Ok(p) => Ok(Some(p)),
@@ -2710,6 +2917,190 @@ mod tests {
     }
 
     #[test]
+    fn a_v1_database_gets_the_v2_indexes() {
+        let path = temp_db("v1");
+        drop(SqliteStore::open(&path).unwrap());
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "DROP INDEX idx_contacts_lid; DROP INDEX idx_messages_starred;
+                 PRAGMA user_version = 1;
+                 INSERT INTO contacts (jid, lid) VALUES ('a@s.whatsapp.net', '1@lid');",
+            )
+            .unwrap();
+        }
+        drop(SqliteStore::open(&path).unwrap());
+        assert_eq!(pragma::<u32>(&path, "user_version"), SCHEMA_VERSION);
+        let indexes: u32 = Connection::open(&path)
+            .unwrap()
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE type = 'index'
+                 AND name IN ('idx_contacts_lid', 'idx_messages_starred')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(indexes, 2);
+        let jid: String = Connection::open(&path)
+            .unwrap()
+            .query_row("SELECT jid FROM contacts WHERE lid = '1@lid'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(jid, "a@s.whatsapp.net");
+    }
+
+    /// The query plan of every lookup that runs per message or per contact, so a full table
+    /// scan sneaking in (a dropped index, an `OR` across columns) fails here.
+    #[test]
+    fn hot_lookups_use_an_index() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let conn = store.writer();
+        for (sql, table) in [
+            ("SELECT data FROM session_keys WHERE key_type = 'session' AND id = 'x'", "session_keys"),
+            ("SELECT jid FROM contacts WHERE jid = 'x' UNION ALL SELECT jid FROM contacts WHERE lid = 'x' AND jid != 'x' LIMIT 1", "contacts"),
+            ("SELECT id FROM messages WHERE chat_jid = 'x' AND timestamp < 5 ORDER BY timestamp DESC LIMIT 50", "messages"),
+            ("SELECT id FROM messages WHERE is_starred = 1 ORDER BY timestamp DESC LIMIT 50", "messages"),
+        ] {
+            let mut stmt = conn.prepare(&format!("EXPLAIN QUERY PLAN {sql}")).unwrap();
+            let plan: Vec<String> = stmt
+                .query_map([], |r| r.get::<_, String>(3))
+                .unwrap()
+                .map(Result::unwrap)
+                .collect();
+            assert!(
+                // "SCAN t USING INDEX" walks only a (partial) index; a bare "SCAN t" reads it all.
+                !plan.iter().any(|step| step == &format!("SCAN {table}")),
+                "{sql} scans {table}: {plan:?}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn readers_see_what_the_writer_committed() {
+        let path = temp_db("readers");
+        let store = SqliteStore::open_with(
+            &path,
+            SqliteOptions {
+                read_connections: 2,
+                ..SqliteOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(store.readers.len(), 2);
+
+        let contacts: Vec<_> = (0..50)
+            .map(|i| StoredContact {
+                jid: format!("62{i}@s.whatsapp.net"),
+                name: None,
+                push_name: Some(format!("P{i}")),
+                lid: Some(format!("{i}@lid")),
+            })
+            .collect();
+        store.save_contacts_batch(&contacts).await.unwrap();
+        let chats: Vec<_> = (0..20)
+            .map(|i| StoredChat {
+                jid: format!("62{i}@s.whatsapp.net"),
+                name: None,
+                unread_count: 0,
+                last_message_timestamp: i,
+                last_message_summary: None,
+                pinned: false,
+                archived: false,
+                mute_until: None,
+                ephemeral_expiration: 0,
+                ephemeral_setting_timestamp: None,
+            })
+            .collect();
+        store.save_chats_batch(&chats).await.unwrap();
+
+        // Several reads in a row land on different connections; each must see the writes.
+        for i in 0..4 {
+            let by_lid = store
+                .get_contact(&format!("{i}@lid"))
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(by_lid.jid, format!("62{i}@s.whatsapp.net"));
+            let by_jid = store.get_contact(&by_lid.jid).await.unwrap().unwrap();
+            assert_eq!(by_jid.push_name.as_deref(), Some(format!("P{i}").as_str()));
+        }
+        assert_eq!(store.get_contacts().await.unwrap().len(), 50);
+        assert_eq!(store.get_chats().await.unwrap().len(), 20);
+
+        // A batch merges like single saves do: a later pushname keeps the stored LID.
+        store
+            .save_contacts_batch(&[StoredContact {
+                jid: "620@s.whatsapp.net".into(),
+                name: None,
+                push_name: Some("New".into()),
+                lid: None,
+            }])
+            .await
+            .unwrap();
+        let c = store.get_contact("0@lid").await.unwrap().unwrap();
+        assert_eq!(c.push_name.as_deref(), Some("New"));
+    }
+
+    #[test]
+    fn options_apply_to_the_writer_and_every_reader() {
+        let path = temp_db("options");
+        let options = SqliteOptions {
+            cache_kib: 1234,
+            mmap_bytes: 1 << 20,
+            read_connections: 3,
+            journal_size_limit: 1 << 19,
+        };
+        let store = SqliteStore::open_with(&path, options.clone()).unwrap();
+        let get = |conn: &Connection, name: &str| -> i64 {
+            conn.query_row(&format!("PRAGMA {name}"), [], |r| r.get(0))
+                .unwrap()
+        };
+        let check = |conn: &Connection| {
+            assert_eq!(get(conn, "cache_size"), -1234);
+            assert_eq!(get(conn, "mmap_size"), 1 << 20);
+            assert_eq!(get(conn, "temp_store"), 2, "MEMORY");
+            assert_eq!(get(conn, "busy_timeout"), 5000);
+        };
+        {
+            let writer = store.writer();
+            assert_eq!(get(&writer, "journal_size_limit"), 1 << 19);
+            assert_eq!(get(&writer, "synchronous"), 1, "NORMAL");
+            check(&writer);
+        }
+        for reader in &store.readers {
+            check(&reader.lock().unwrap());
+        }
+        assert_eq!(store.readers.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn an_in_memory_path_reads_from_the_writer() {
+        let store = SqliteStore::open(":memory:").unwrap();
+        assert!(store.readers.is_empty());
+        store.set_kv("k", "v").await.unwrap();
+        assert_eq!(store.get_kv("k").await.unwrap().as_deref(), Some("v"));
+    }
+
+    #[test]
+    fn opening_returns_pages_freed_since_the_last_open() {
+        let path = temp_db("reclaim");
+        drop(SqliteStore::open(&path).unwrap());
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 400)
+                 INSERT INTO kv_store (key, value) SELECT 'k' || i, hex(zeroblob(4000)) FROM n;
+                 DELETE FROM kv_store;",
+            )
+            .unwrap();
+        }
+        assert!(pragma::<u32>(&path, "freelist_count") > 100);
+        drop(SqliteStore::open(&path).unwrap());
+        assert_eq!(pragma::<u32>(&path, "freelist_count"), 0);
+    }
+
+    #[test]
     fn compact_returns_free_pages_of_a_legacy_database() {
         let path = temp_db("compact");
         {
@@ -2742,9 +3133,7 @@ mod tests {
         // rusqlite's default is also 5 s; assert the value actually in effect so a change in
         // either place is noticed.
         let timeout_ms: i64 = store
-            .conn
-            .lock()
-            .unwrap()
+            .writer()
             .query_row("PRAGMA busy_timeout", [], |r| r.get(0))
             .unwrap();
         assert_eq!(timeout_ms, 5000);
