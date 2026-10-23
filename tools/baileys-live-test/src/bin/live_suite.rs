@@ -145,7 +145,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, account, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, account, status, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!(
         "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
@@ -290,6 +290,7 @@ async fn main() {
     run_newsletter(&mut suite).await;
     run_privacy(&mut suite, &self_jid).await;
     run_account(&mut suite, &self_jid).await;
+    run_status(&mut suite, &self_jid).await;
 
     report(&suite.results, json);
     let failed = suite.results.iter().any(|r| r.status == Status::Fail);
@@ -1656,6 +1657,103 @@ async fn run_account(s: &mut Suite, self_jid: &str) {
             Ok(format!("id={id} {st}"))
         },
     )
+    .await;
+}
+
+async fn run_status(s: &mut Suite, self_jid: &str) {
+    println!("== status stories (audience: ourselves only, revoked afterwards) ==");
+    if !s.selected("status") {
+        return;
+    }
+    // Every story goes to ourselves only, so nobody else is shown anything.
+    let audience = Some(vec![self_jid.to_string()]);
+    let ids: Slot<Vec<(String, &'static str)>> =
+        Arc::new(tokio::sync::Mutex::new(Some(Vec::new())));
+
+    let (a, sink) = (audience.clone(), ids.clone());
+    s.step("status", "text story", move |c| async move {
+        let (id, st) = send_acked(&c, || {
+            c.send_text_status("live-suite status", Some("#1E88E5"), Some(1), a.clone())
+        })
+        .await?;
+        sink.lock()
+            .await
+            .as_mut()
+            .unwrap()
+            .push((id.clone(), "text"));
+        Ok(format!("id={id} {st}"))
+    })
+    .await;
+
+    let (a, sink) = (audience.clone(), ids.clone());
+    s.step("status", "link story", move |c| async move {
+        let (id, st) = send_acked(&c, || {
+            c.send_link_status(
+                "https://github.com/Towartz/Rolleys",
+                Some("Rolleys"),
+                Some("live-suite link story"),
+                Some("live-suite link story https://github.com/Towartz/Rolleys"),
+                Some("#7B1FA2"),
+                Some(2),
+                None,
+                a.clone(),
+            )
+        })
+        .await?;
+        sink.lock()
+            .await
+            .as_mut()
+            .unwrap()
+            .push((id.clone(), "link"));
+        Ok(format!("id={id} {st}"))
+    })
+    .await;
+
+    let (a, sink) = (audience.clone(), ids.clone());
+    s.step("status", "image story", move |c| async move {
+        let (id, st) = send_acked(&c, || {
+            c.send_status_image(&TINY_PNG, Some("live-suite"), Some("image/png"), a.clone())
+        })
+        .await?;
+        sink.lock()
+            .await
+            .as_mut()
+            .unwrap()
+            .push((id.clone(), "image"));
+        Ok(format!("id={id} {st}"))
+    })
+    .await;
+
+    let sink = ids.clone();
+    s.step("status", "stories stored locally", move |c| async move {
+        let sent = sink.lock().await.clone().unwrap_or_default();
+        if sent.is_empty() {
+            return Err("no story was sent".into());
+        }
+        let stored = c.get_recent_stories(200, false).await.map_err(e)?;
+        let missing: Vec<_> = sent
+            .iter()
+            .filter(|(id, _)| !stored.iter().any(|st| &st.msg_id == id))
+            .map(|(_, kind)| *kind)
+            .collect();
+        if !missing.is_empty() {
+            return Err(format!("sent but not in the story store: {missing:?}"));
+        }
+        Ok(format!("{} of {} stories found", sent.len(), stored.len()))
+    })
+    .await;
+
+    // Cleanup always runs, even when an earlier step failed.
+    let sink = ids.clone();
+    s.step("status", "revoke stories (cleanup)", move |c| async move {
+        let sent = sink.lock().await.take().unwrap_or_default();
+        let mut revoked = 0;
+        for (id, _) in &sent {
+            send_acked(&c, || c.send_revoke_message("status@broadcast", id)).await?;
+            revoked += 1;
+        }
+        Ok(format!("{revoked} revoked"))
+    })
     .await;
 }
 

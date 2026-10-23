@@ -61,7 +61,7 @@ dikecualikan dengan alasan. Daftar pengecualian ada di test masing-masing.
 | Grup (CRUD, peserta, invite, setelan, approval, foto, label anggota) | done (live) | peserta add/remove perlu akun kedua |
 | Komunitas | done (live, opt-in) | `leave` oleh pemilik tidak berefek |
 | Newsletter/channel (termasuk deskripsi, foto, subscriber) | done (live) | |
-| Status/story | done | belum di live-suite |
+| Status/story | done (live) | area `status`: teks, link, gambar ke diri sendiri, tersimpan lokal, lalu dihapus |
 | Privasi, blocklist, profil, mode disappearing default | done (live) | |
 | Kontak (`addOrEditContact`/`removeContact`) | done (live) | operasi REMOVE; encoder diperbaiki |
 | Quick reply, profil bisnis, detail order | done (unit) | butuh akun WhatsApp Business / token order; tidak diuji live |
@@ -184,3 +184,8 @@ diambil dari metadata channel; (4) `update_profile_picture` tidak mengecilkan/me
 (persegi 640 px JPEG); (5) `send_read_receipt` tidak menyertakan atribut `t`.
 Dua id query newsletter Baileys (UPDATE_METADATA dan lainnya) berbeda dari yang dipakai core; yang dipakai core terbukti
 bekerja live, jadi tidak diubah.
+
+**Regresi penuh (2026-10-23):** `live-suite` tanpa filter area, akun 6283162498175: 77 lulus, 0 gagal, 3 dilewati
+(`history` butuh `--chat-group`; peserta grup butuh akun kedua; komunitas opt-in karena tak bisa dihapus lewat API).
+Belum terbukti live: history sync awal (`INITIAL_BOOTSTRAP`/`RECENT`/`PUSH_NAME`, `is_latest=true`,
+`messaging-history.status`), karena hanya terjadi saat pairing perangkat baru.
