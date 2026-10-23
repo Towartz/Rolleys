@@ -69,7 +69,7 @@ Toggles Ghost Mode: automatically suppresses read receipts (`read`) and status s
 use baileys_core::BaileysConfigBuilder;
 
 let config = BaileysConfigBuilder::new()
-    .with_browser("Rolleys", "Linux", "1.0.0")
+    .with_browser("Chrome", "Mac OS", "14.4.1") // Baileys' default (Browsers.macOS("Chrome"))
     .with_phone_pairing("+1234567890") // Optional phone pairing mode
     .with_anti_revoke(true)            // Intercept message deletions
     .with_auto_save_view_once(true)    // Save view-once media to disk

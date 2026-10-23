@@ -1,6 +1,7 @@
 # Rose-Baileys Android JNI & UniFFI Build Pipeline
 # Compiles native .so libraries for arm64-v8a, armeabi-v7a, and x86_64,
-# generates UniFFI Kotlin bindings, and packages them into AuroraChat_Android.
+# generates UniFFI Kotlin bindings, and packages them into the Android app project
+# ($env:ANDROID_PROJECT_DIR, default ..\Rolleys_Android).
 
 param(
     [string]$TargetAbi = "all", # "all", "arm64", "armv7", "x86_64"
@@ -11,8 +12,9 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $WorkspaceRoot = Split-Path -Parent $ScriptDir
-$AndroidJniDir = Join-Path $WorkspaceRoot "..\AuroraChat_Android\android\app\src\main\jniLibs"
-$AndroidJavaDir = Join-Path $WorkspaceRoot "..\AuroraChat_Android\android\app\src\main\java"
+$AndroidProjectDir = if ($env:ANDROID_PROJECT_DIR) { $env:ANDROID_PROJECT_DIR } else { Join-Path $WorkspaceRoot "..\Rolleys_Android" }
+$AndroidJniDir = Join-Path $AndroidProjectDir "android\app\src\main\jniLibs"
+$AndroidJavaDir = Join-Path $AndroidProjectDir "android\app\src\main\java"
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "   Rose-Baileys Android UniFFI & JNI Build Automation       " -ForegroundColor Cyan

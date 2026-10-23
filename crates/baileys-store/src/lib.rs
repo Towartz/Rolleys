@@ -1,7 +1,7 @@
 //! Storage engine for WhatsApp sessions and authentication keys.
 //!
 //! Provides pluggable backends:
-//! - `SqliteStore`: Embedded SQLite (recommended for Aurora Chats on Android and desktop apps).
+//! - `SqliteStore`: Embedded SQLite (recommended for Android and desktop apps).
 //! - `FileStore`: Multi-file JSON store (100% backward compatible with Baileys `useMultiFileAuthState`).
 //! - `MemoryStore`: In-memory store (for testing and ephemeral bots).
 
@@ -229,7 +229,7 @@ mod tests {
         // 3. Save and query contacts
         let contact = StoredContact {
             jid: "6283162498175@s.whatsapp.net".to_string(),
-            name: Some("Aurora Tester".to_string()),
+            name: Some("Test Contact".to_string()),
             push_name: Some("Rose".to_string()),
             lid: Some("92810518745139:37@lid".to_string()),
         };
@@ -240,7 +240,7 @@ mod tests {
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(fetched_contact.name.as_deref(), Some("Aurora Tester"));
+        assert_eq!(fetched_contact.name.as_deref(), Some("Test Contact"));
         assert_eq!(
             fetched_contact.lid.as_deref(),
             Some("92810518745139:37@lid")

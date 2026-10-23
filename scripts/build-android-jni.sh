@@ -4,8 +4,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ANDROID_JNI_DIR="$WORKSPACE_ROOT/../AuroraChat_Android/android/app/src/main/jniLibs"
-ANDROID_JAVA_DIR="$WORKSPACE_ROOT/../AuroraChat_Android/android/app/src/main/java"
+# Android app project that receives the .so files and Kotlin bindings (override with ANDROID_PROJECT_DIR).
+ANDROID_PROJECT_DIR="${ANDROID_PROJECT_DIR:-$WORKSPACE_ROOT/../Rolleys_Android}"
+ANDROID_JNI_DIR="$ANDROID_PROJECT_DIR/android/app/src/main/jniLibs"
+ANDROID_JAVA_DIR="$ANDROID_PROJECT_DIR/android/app/src/main/java"
 
 echo "============================================================"
 echo "   Rose-Baileys Android UniFFI & JNI Build Automation       "

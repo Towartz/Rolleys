@@ -212,7 +212,7 @@ const SCHEMA_SQL: &str = "
     );
 ";
 
-/// High-performance embedded SQLite database store, recommended for Aurora Chats (Android) and desktop apps.
+/// High-performance embedded SQLite database store, recommended for Android and desktop apps.
 pub struct SqliteStore {
     conn: Mutex<Connection>,
 }

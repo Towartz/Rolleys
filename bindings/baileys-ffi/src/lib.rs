@@ -18,7 +18,7 @@ pub enum FfiError {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraClientConfig {
+pub struct RolleysClientConfig {
     pub database_path: String,
     pub browser_name: String,
     pub platform: String,
@@ -27,7 +27,7 @@ pub struct AuroraClientConfig {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraMessage {
+pub struct RolleysMessage {
     pub id: String,
     pub remote_jid: String,
     pub participant_jid: Option<String>,
@@ -39,7 +39,7 @@ pub struct AuroraMessage {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraChat {
+pub struct RolleysChat {
     pub jid: String,
     pub name: Option<String>,
     pub unread_count: u32,
@@ -51,7 +51,7 @@ pub struct AuroraChat {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraTelemetrySnapshot {
+pub struct RolleysTelemetrySnapshot {
     pub messages_in: u64,
     pub messages_out: u64,
     pub last_ping_latency_ms: u64,
@@ -60,7 +60,7 @@ pub struct AuroraTelemetrySnapshot {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraContact {
+pub struct RolleysContact {
     pub jid: String,
     pub name: Option<String>,
     pub push_name: Option<String>,
@@ -68,13 +68,13 @@ pub struct AuroraContact {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraParticipantUpdateResult {
+pub struct RolleysParticipantUpdateResult {
     pub jid: String,
     pub status: String,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraGroupInfo {
+pub struct RolleysGroupInfo {
     pub jid: String,
     pub subject: String,
     pub owner: Option<String>,
@@ -83,7 +83,7 @@ pub struct AuroraGroupInfo {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraGroupParticipant {
+pub struct RolleysGroupParticipant {
     pub jid: String,
     pub phone_number: Option<String>,
     pub lid: Option<String>,
@@ -91,7 +91,7 @@ pub struct AuroraGroupParticipant {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraGroupMetadata {
+pub struct RolleysGroupMetadata {
     pub id: String,
     pub subject: String,
     pub subject_owner: Option<String>,
@@ -108,17 +108,17 @@ pub struct AuroraGroupMetadata {
     pub join_approval_mode: bool,
     pub member_add_mode: String,
     pub ephemeral_duration: Option<u32>,
-    pub participants: Vec<AuroraGroupParticipant>,
+    pub participants: Vec<RolleysGroupParticipant>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraGroupJoinRequest {
+pub struct RolleysGroupJoinRequest {
     pub jid: String,
     pub requested_time: i64,
     pub request_method: Option<String>,
 }
 
-impl From<baileys_core::groups::GroupParticipant> for AuroraGroupParticipant {
+impl From<baileys_core::groups::GroupParticipant> for RolleysGroupParticipant {
     fn from(p: baileys_core::groups::GroupParticipant) -> Self {
         Self {
             jid: p.jid,
@@ -129,7 +129,7 @@ impl From<baileys_core::groups::GroupParticipant> for AuroraGroupParticipant {
     }
 }
 
-impl From<baileys_core::groups::GroupMetadata> for AuroraGroupMetadata {
+impl From<baileys_core::groups::GroupMetadata> for RolleysGroupMetadata {
     fn from(g: baileys_core::groups::GroupMetadata) -> Self {
         Self {
             id: g.id,
@@ -153,7 +153,7 @@ impl From<baileys_core::groups::GroupMetadata> for AuroraGroupMetadata {
     }
 }
 
-impl From<baileys_core::groups::GroupJoinRequest> for AuroraGroupJoinRequest {
+impl From<baileys_core::groups::GroupJoinRequest> for RolleysGroupJoinRequest {
     fn from(r: baileys_core::groups::GroupJoinRequest) -> Self {
         Self {
             jid: r.jid,
@@ -164,7 +164,7 @@ impl From<baileys_core::groups::GroupJoinRequest> for AuroraGroupJoinRequest {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraNewsletter {
+pub struct RolleysNewsletter {
     pub jid: String,
     pub name: String,
     pub description: Option<String>,
@@ -177,7 +177,7 @@ pub struct AuroraNewsletter {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraNewsletterMessage {
+pub struct RolleysNewsletterMessage {
     pub server_id: u64,
     pub views_count: Option<u64>,
     pub timestamp: u64,
@@ -186,7 +186,7 @@ pub struct AuroraNewsletterMessage {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraPoll {
+pub struct RolleysPoll {
     pub id: String,
     pub chat_jid: String,
     pub sender_jid: String,
@@ -197,7 +197,7 @@ pub struct AuroraPoll {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraPollTally {
+pub struct RolleysPollTally {
     pub poll_id: String,
     pub question: String,
     pub total_voters: u32,
@@ -205,32 +205,32 @@ pub struct AuroraPollTally {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraInteractiveButton {
+pub struct RolleysInteractiveButton {
     pub name: String,
     pub button_params_json: String,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraListRow {
+pub struct RolleysListRow {
     pub title: String,
     pub description: Option<String>,
     pub row_id: String,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraListSection {
+pub struct RolleysListSection {
     pub title: String,
-    pub rows: Vec<AuroraListRow>,
+    pub rows: Vec<RolleysListRow>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCommunityParticipant {
+pub struct RolleysCommunityParticipant {
     pub jid: String,
     pub admin: Option<String>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCommunityMetadata {
+pub struct RolleysCommunityMetadata {
     pub id: String,
     pub subject: String,
     pub subject_owner: Option<String>,
@@ -245,11 +245,11 @@ pub struct AuroraCommunityMetadata {
     pub is_community_announce: bool,
     pub join_approval_mode: bool,
     pub member_add_mode: bool,
-    pub participants: Vec<AuroraCommunityParticipant>,
+    pub participants: Vec<RolleysCommunityParticipant>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCommunitySubgroup {
+pub struct RolleysCommunitySubgroup {
     pub id: String,
     pub subject: String,
     pub creation: Option<u64>,
@@ -258,7 +258,7 @@ pub struct AuroraCommunitySubgroup {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCallEvent {
+pub struct RolleysCallEvent {
     pub id: String,
     pub chat_jid: String,
     pub from: String,
@@ -273,7 +273,7 @@ pub struct AuroraCallEvent {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraStoredCall {
+pub struct RolleysStoredCall {
     pub call_id: String,
     pub chat_jid: String,
     pub caller_jid: String,
@@ -286,7 +286,7 @@ pub struct AuroraStoredCall {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraStoredStory {
+pub struct RolleysStoredStory {
     pub msg_id: String,
     pub author_jid: String,
     pub author_name: Option<String>,
@@ -299,7 +299,7 @@ pub struct AuroraStoredStory {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraPrivacySettings {
+pub struct RolleysPrivacySettings {
     pub readreceipts: Option<String>,
     pub profile: Option<String>,
     pub status: Option<String>,
@@ -311,13 +311,13 @@ pub struct AuroraPrivacySettings {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraProfileStatus {
+pub struct RolleysProfileStatus {
     pub status: String,
     pub set_at: Option<u64>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraBusinessProfile {
+pub struct RolleysBusinessProfile {
     pub jid: String,
     pub address: Option<String>,
     pub description: Option<String>,
@@ -327,7 +327,7 @@ pub struct AuroraBusinessProfile {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraLabel {
+pub struct RolleysLabel {
     pub id: String,
     pub name: String,
     pub color: i32,
@@ -335,7 +335,7 @@ pub struct AuroraLabel {
     pub deleted: bool,
 }
 
-impl From<baileys_store::StoredLabel> for AuroraLabel {
+impl From<baileys_store::StoredLabel> for RolleysLabel {
     fn from(l: baileys_store::StoredLabel) -> Self {
         Self {
             id: l.id,
@@ -348,7 +348,7 @@ impl From<baileys_store::StoredLabel> for AuroraLabel {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCatalogProduct {
+pub struct RolleysCatalogProduct {
     pub id: String,
     pub biz_jid: String,
     pub title: String,
@@ -363,7 +363,7 @@ pub struct AuroraCatalogProduct {
     pub availability: String,
 }
 
-impl From<baileys_core::CatalogProduct> for AuroraCatalogProduct {
+impl From<baileys_core::CatalogProduct> for RolleysCatalogProduct {
     fn from(p: baileys_core::CatalogProduct) -> Self {
         Self {
             id: p.id,
@@ -382,7 +382,7 @@ impl From<baileys_core::CatalogProduct> for AuroraCatalogProduct {
     }
 }
 
-impl From<baileys_store::StoredCatalogProduct> for AuroraCatalogProduct {
+impl From<baileys_store::StoredCatalogProduct> for RolleysCatalogProduct {
     fn from(p: baileys_store::StoredCatalogProduct) -> Self {
         Self {
             id: p.product_id,
@@ -402,7 +402,7 @@ impl From<baileys_store::StoredCatalogProduct> for AuroraCatalogProduct {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCatalogCollection {
+pub struct RolleysCatalogCollection {
     pub id: String,
     pub biz_jid: String,
     pub name: String,
@@ -410,7 +410,7 @@ pub struct AuroraCatalogCollection {
     pub status: String,
 }
 
-impl From<baileys_core::CatalogCollection> for AuroraCatalogCollection {
+impl From<baileys_core::CatalogCollection> for RolleysCatalogCollection {
     fn from(c: baileys_core::CatalogCollection) -> Self {
         Self {
             id: c.id,
@@ -422,7 +422,7 @@ impl From<baileys_core::CatalogCollection> for AuroraCatalogCollection {
     }
 }
 
-impl From<baileys_store::StoredCatalogCollection> for AuroraCatalogCollection {
+impl From<baileys_store::StoredCatalogCollection> for RolleysCatalogCollection {
     fn from(c: baileys_store::StoredCatalogCollection) -> Self {
         Self {
             id: c.collection_id,
@@ -435,19 +435,19 @@ impl From<baileys_store::StoredCatalogCollection> for AuroraCatalogCollection {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCatalogResult {
-    pub products: Vec<AuroraCatalogProduct>,
+pub struct RolleysCatalogResult {
+    pub products: Vec<RolleysCatalogProduct>,
     pub cursor: Option<String>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCollectionsResult {
-    pub collections: Vec<AuroraCatalogCollection>,
+pub struct RolleysCollectionsResult {
+    pub collections: Vec<RolleysCatalogCollection>,
     pub cursor: Option<String>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraOrder {
+pub struct RolleysOrder {
     pub order_id: String,
     pub chat_jid: String,
     pub seller_jid: String,
@@ -462,7 +462,7 @@ pub struct AuroraOrder {
     pub created_at: u64,
 }
 
-impl From<baileys_store::StoredOrder> for AuroraOrder {
+impl From<baileys_store::StoredOrder> for RolleysOrder {
     fn from(o: baileys_store::StoredOrder) -> Self {
         Self {
             order_id: o.order_id,
@@ -482,20 +482,20 @@ impl From<baileys_store::StoredOrder> for AuroraOrder {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraDeviceRecord {
+pub struct RolleysDeviceRecord {
     pub id: u32,
     pub key_index: Option<u32>,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraOnWhatsAppResult {
+pub struct RolleysOnWhatsAppResult {
     pub jid: String,
     pub exists: bool,
     pub phone_number: String,
 }
 
 #[derive(uniffi::Enum, Clone, Debug)]
-pub enum AuroraEvent {
+pub enum RolleysEvent {
     Connecting,
     Connected {
         me_jid: String,
@@ -510,7 +510,7 @@ pub enum AuroraEvent {
         code: String,
     },
     MessageReceived {
-        message: AuroraMessage,
+        message: RolleysMessage,
     },
     ReceiptUpdate {
         id: String,
@@ -530,13 +530,13 @@ pub enum AuroraEvent {
         poll_id: String,
         voter_jid: String,
         selected_options: Vec<String>,
-        tally: AuroraPollTally,
+        tally: RolleysPollTally,
     },
     CallReceived {
-        call: AuroraCallEvent,
+        call: RolleysCallEvent,
     },
     StoryReceived {
-        story: AuroraStoredStory,
+        story: RolleysStoredStory,
     },
     BlocklistUpdate {
         added: Vec<String>,
@@ -557,7 +557,7 @@ pub enum AuroraEvent {
         ephemeral_expiration: u32,
     },
     LabelEdit {
-        label: AuroraLabel,
+        label: RolleysLabel,
     },
     ChatLabelUpdate {
         chat_jid: String,
@@ -608,7 +608,7 @@ pub enum AuroraEvent {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraUrlPreview {
+pub struct RolleysUrlPreview {
     pub matched_text: String,
     pub canonical_url: String,
     pub title: Option<String>,
@@ -617,14 +617,14 @@ pub struct AuroraUrlPreview {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraUserStatus {
+pub struct RolleysUserStatus {
     pub jid: String,
     pub status: String,
     pub timestamp: u64,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraCommunityInviteInfo {
+pub struct RolleysCommunityInviteInfo {
     pub jid: String,
     pub subject: String,
     pub creator: Option<String>,
@@ -632,40 +632,45 @@ pub struct AuroraCommunityInviteInfo {
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraBotEntry {
+pub struct RolleysBotEntry {
     pub jid: String,
     pub persona_id: String,
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
-pub struct AuroraAccountReachoutTimelock {
+pub struct RolleysAccountReachoutTimelock {
     pub is_active: bool,
     pub enforcement_type: Option<String>,
     pub time_enforcement_ends: Option<u64>,
 }
 
 #[uniffi::export(callback_interface)]
-pub trait AuroraEventListener: Send + Sync + 'static {
-    fn on_event(&self, event: AuroraEvent);
+pub trait RolleysEventListener: Send + Sync + 'static {
+    fn on_event(&self, event: RolleysEvent);
 }
 
 #[derive(uniffi::Object)]
-pub struct AuroraClient {
+pub struct RolleysClient {
     client: Arc<BaileysClient>,
     runtime: Arc<Runtime>,
 }
 
 #[uniffi::export]
-impl AuroraClient {
+impl RolleysClient {
     #[uniffi::constructor]
-    pub fn new(config: AuroraClientConfig) -> Result<Arc<Self>, FfiError> {
+    pub fn new(config: RolleysClientConfig) -> Result<Arc<Self>, FfiError> {
         let runtime = Runtime::new().map_err(|e| FfiError::InitError(e.to_string()))?;
 
         let store = SqliteStore::open(&config.database_path)
             .map_err(|e| FfiError::InitError(e.to_string()))?;
 
-        let mut config_builder =
-            BaileysConfigBuilder::new().with_browser(config.browser_name, config.platform, "1.0.0");
+        // Keep the default browser version (Baileys' Browsers.macOS: 14.4.1) instead of a made-up one.
+        let browser_version = baileys_core::BaileysConfig::default().browser_version;
+        let mut config_builder = BaileysConfigBuilder::new().with_browser(
+            config.browser_name,
+            config.platform,
+            browser_version,
+        );
 
         if let Some(ref phone) = config.phone_number {
             config_builder = config_builder.with_phone_pairing(phone);
@@ -685,18 +690,18 @@ impl AuroraClient {
     }
 
     /// Starts the client connection and forwards real-time events to the native Kotlin listener.
-    pub fn start(&self, listener: Box<dyn AuroraEventListener>) -> Result<(), FfiError> {
+    pub fn start(&self, listener: Box<dyn RolleysEventListener>) -> Result<(), FfiError> {
         let mut rx = self.client.events();
 
         // Spawn event forwarding background task
         self.runtime.spawn(async move {
             while let Ok(event) = rx.recv().await {
                 let ffi_event = match event {
-                    BaileysEvent::Connecting => AuroraEvent::Connecting,
-                    BaileysEvent::Connected { me_jid } => AuroraEvent::Connected { me_jid },
-                    BaileysEvent::Disconnected { reason } => AuroraEvent::Disconnected { reason },
-                    BaileysEvent::QrCode { code } => AuroraEvent::QrCode { code },
-                    BaileysEvent::PairingCode { code } => AuroraEvent::PairingCode { code },
+                    BaileysEvent::Connecting => RolleysEvent::Connecting,
+                    BaileysEvent::Connected { me_jid } => RolleysEvent::Connected { me_jid },
+                    BaileysEvent::Disconnected { reason } => RolleysEvent::Disconnected { reason },
+                    BaileysEvent::QrCode { code } => RolleysEvent::QrCode { code },
+                    BaileysEvent::PairingCode { code } => RolleysEvent::PairingCode { code },
                     BaileysEvent::Message { message } => {
                         let id = message
                             .key
@@ -729,8 +734,8 @@ impl AuroraClient {
                             ("<empty>".to_string(), false)
                         };
 
-                        AuroraEvent::MessageReceived {
-                            message: AuroraMessage {
+                        RolleysEvent::MessageReceived {
+                            message: RolleysMessage {
                                 id,
                                 remote_jid,
                                 participant_jid,
@@ -746,12 +751,12 @@ impl AuroraClient {
                         key_id,
                         remote_jid,
                         status,
-                    } => AuroraEvent::ReceiptUpdate {
+                    } => RolleysEvent::ReceiptUpdate {
                         id: key_id,
                         remote_jid,
                         status,
                     },
-                    BaileysEvent::Presence { jid, presence } => AuroraEvent::PresenceUpdate {
+                    BaileysEvent::Presence { jid, presence } => RolleysEvent::PresenceUpdate {
                         jid,
                         state: presence,
                     },
@@ -760,7 +765,7 @@ impl AuroraClient {
                         progress,
                         conversations,
                         ..
-                    } => AuroraEvent::HistorySync {
+                    } => RolleysEvent::HistorySync {
                         sync_type,
                         progress,
                         conversation_count: conversations.len() as u32,
@@ -770,19 +775,19 @@ impl AuroraClient {
                         voter_jid,
                         selected_options,
                         tally,
-                    } => AuroraEvent::PollVoteReceived {
+                    } => RolleysEvent::PollVoteReceived {
                         poll_id,
                         voter_jid,
                         selected_options,
-                        tally: AuroraPollTally {
+                        tally: RolleysPollTally {
                             poll_id: tally.poll_id,
                             question: tally.question,
                             total_voters: tally.total_voters as u32,
                             option_votes: tally.option_votes,
                         },
                     },
-                    BaileysEvent::Call { call } => AuroraEvent::CallReceived {
-                        call: AuroraCallEvent {
+                    BaileysEvent::Call { call } => RolleysEvent::CallReceived {
+                        call: RolleysCallEvent {
                             id: call.id,
                             chat_jid: call.chat_jid,
                             from: call.from,
@@ -796,8 +801,8 @@ impl AuroraClient {
                             latency_ms: call.latency_ms,
                         },
                     },
-                    BaileysEvent::StoryReceived { story } => AuroraEvent::StoryReceived {
-                        story: AuroraStoredStory {
+                    BaileysEvent::StoryReceived { story } => RolleysEvent::StoryReceived {
+                        story: RolleysStoredStory {
                             msg_id: story.msg_id,
                             author_jid: story.author_jid,
                             author_name: story.author_name,
@@ -810,13 +815,13 @@ impl AuroraClient {
                         },
                     },
                     BaileysEvent::BlocklistUpdate { added, removed } => {
-                        AuroraEvent::BlocklistUpdate { added, removed }
+                        RolleysEvent::BlocklistUpdate { added, removed }
                     }
                     BaileysEvent::MessageEdited {
                         chat_jid,
                         message_id,
                         new_text,
-                    } => AuroraEvent::MessageEdited {
+                    } => RolleysEvent::MessageEdited {
                         chat_jid,
                         message_id,
                         new_text,
@@ -825,7 +830,7 @@ impl AuroraClient {
                         chat_jid,
                         message_id,
                         participant,
-                    } => AuroraEvent::MessageRevoked {
+                    } => RolleysEvent::MessageRevoked {
                         chat_jid,
                         message_id,
                         participant,
@@ -833,18 +838,18 @@ impl AuroraClient {
                     BaileysEvent::ChatEphemeralUpdate {
                         chat_jid,
                         ephemeral_expiration,
-                    } => AuroraEvent::ChatEphemeralUpdate {
+                    } => RolleysEvent::ChatEphemeralUpdate {
                         chat_jid,
                         ephemeral_expiration,
                     },
-                    BaileysEvent::LabelEdit { label } => AuroraEvent::LabelEdit {
+                    BaileysEvent::LabelEdit { label } => RolleysEvent::LabelEdit {
                         label: label.into(),
                     },
                     BaileysEvent::ChatLabelUpdate {
                         chat_jid,
                         label_id,
                         labeled,
-                    } => AuroraEvent::ChatLabelUpdate {
+                    } => RolleysEvent::ChatLabelUpdate {
                         chat_jid,
                         label_id,
                         labeled,
@@ -854,22 +859,22 @@ impl AuroraClient {
                         message_id,
                         label_id,
                         labeled,
-                    } => AuroraEvent::MessageLabelUpdate {
+                    } => RolleysEvent::MessageLabelUpdate {
                         chat_jid,
                         message_id,
                         label_id,
                         labeled,
                     },
                     BaileysEvent::DeviceUpdate { user_jid, devices } => {
-                        AuroraEvent::DeviceUpdate { user_jid, devices }
+                        RolleysEvent::DeviceUpdate { user_jid, devices }
                     }
                     BaileysEvent::IdentityChanged { jid, timestamp } => {
-                        AuroraEvent::IdentityChanged { jid, timestamp }
+                        RolleysEvent::IdentityChanged { jid, timestamp }
                     }
                     BaileysEvent::MediaUpdated {
                         message_id,
                         direct_path,
-                    } => AuroraEvent::MediaUpdated {
+                    } => RolleysEvent::MediaUpdated {
                         message_id,
                         direct_path,
                     },
@@ -879,14 +884,14 @@ impl AuroraClient {
                         archived,
                         mute_until,
                         unread_count,
-                    } => AuroraEvent::ChatUpdate {
+                    } => RolleysEvent::ChatUpdate {
                         jid,
                         pinned,
                         archived,
                         mute_until: mute_until.flatten(),
                         unread_count,
                     },
-                    BaileysEvent::ContactUpdate { contact } => AuroraEvent::ContactUpdate {
+                    BaileysEvent::ContactUpdate { contact } => RolleysEvent::ContactUpdate {
                         jid: contact.jid,
                         name: contact.name,
                         push_name: contact.push_name,
@@ -894,7 +899,7 @@ impl AuroraClient {
                     BaileysEvent::AppStateSynced {
                         collections_synced,
                         mutations_applied,
-                    } => AuroraEvent::AppStateSynced {
+                    } => RolleysEvent::AppStateSynced {
                         collections_synced: collections_synced as u32,
                         mutations_applied: mutations_applied as u32,
                     },
@@ -904,14 +909,14 @@ impl AuroraClient {
                         bytes_transferred,
                         total_bytes,
                         percentage,
-                    } => AuroraEvent::MediaProgress {
+                    } => RolleysEvent::MediaProgress {
                         task_id,
                         direction,
                         bytes_transferred,
                         total_bytes,
                         percentage,
                     },
-                    // TODO(parity phase 5): expose these through AuroraEvent once the
+                    // TODO(parity phase 5): expose these through RolleysEvent once the
                     // Swift/Kotlin bindings are regenerated.
                     BaileysEvent::CredsUpdate
                     | BaileysEvent::GroupsUpsert { .. }
@@ -1210,7 +1215,7 @@ impl AuroraClient {
     }
 
     /// Sends a local media file using the streaming upload pipeline (zero-OOM spooling for >= 10MB)
-    /// and emits real-time AuroraEvent::MediaProgress events.
+    /// and emits real-time RolleysEvent::MediaProgress events.
     pub fn send_media_file(
         &self,
         chat_jid: String,
@@ -1247,7 +1252,7 @@ impl AuroraClient {
     }
 
     /// Queries group info (subject, participants) from WhatsApp server.
-    pub fn get_group_info(&self, group_jid: String) -> Result<AuroraGroupInfo, FfiError> {
+    pub fn get_group_info(&self, group_jid: String) -> Result<RolleysGroupInfo, FfiError> {
         let client = self.client.clone();
         self.runtime
             .block_on(async move {
@@ -1266,7 +1271,7 @@ impl AuroraClient {
                     .collect();
                 let participant_count = participants.len() as u32;
 
-                Ok(AuroraGroupInfo {
+                Ok(RolleysGroupInfo {
                     jid: group_jid,
                     subject,
                     owner,
@@ -1301,7 +1306,7 @@ impl AuroraClient {
     }
 
     /// Returns all saved chats ordered by recent activity.
-    pub fn get_chats(&self) -> Result<Vec<AuroraChat>, FfiError> {
+    pub fn get_chats(&self) -> Result<Vec<RolleysChat>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let chats = client
@@ -1310,7 +1315,7 @@ impl AuroraClient {
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
             Ok(chats
                 .into_iter()
-                .map(|c| AuroraChat {
+                .map(|c| RolleysChat {
                     jid: c.jid,
                     name: c.name,
                     unread_count: c.unread_count,
@@ -1330,7 +1335,7 @@ impl AuroraClient {
         chat_jid: String,
         limit: u32,
         before_timestamp: Option<u64>,
-    ) -> Result<Vec<AuroraMessage>, FfiError> {
+    ) -> Result<Vec<RolleysMessage>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let msgs = client
@@ -1339,7 +1344,7 @@ impl AuroraClient {
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
             Ok(msgs
                 .into_iter()
-                .map(|m| AuroraMessage {
+                .map(|m| RolleysMessage {
                     id: m.id,
                     remote_jid: m.chat_jid,
                     participant_jid: Some(m.sender_jid),
@@ -1354,14 +1359,14 @@ impl AuroraClient {
     }
 
     /// Queries contact info by JID from SQLite.
-    pub fn get_contact(&self, jid: String) -> Result<Option<AuroraContact>, FfiError> {
+    pub fn get_contact(&self, jid: String) -> Result<Option<RolleysContact>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let contact = client
                 .get_contact(&jid)
                 .await
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
-            Ok(contact.map(|c| AuroraContact {
+            Ok(contact.map(|c| RolleysContact {
                 jid: c.jid,
                 name: c.name,
                 push_name: c.push_name,
@@ -1388,7 +1393,7 @@ impl AuroraClient {
         group_jid: String,
         participants: Vec<String>,
         action: String,
-    ) -> Result<Vec<AuroraParticipantUpdateResult>, FfiError> {
+    ) -> Result<Vec<RolleysParticipantUpdateResult>, FfiError> {
         let client = self.client.clone();
         self.runtime
             .block_on(async move {
@@ -1397,7 +1402,7 @@ impl AuroraClient {
                     .await?;
                 Ok(res
                     .into_iter()
-                    .map(|(jid, status)| AuroraParticipantUpdateResult { jid, status })
+                    .map(|(jid, status)| RolleysParticipantUpdateResult { jid, status })
                     .collect())
             })
             .map_err(|e: baileys_core::CoreError| FfiError::OperationError(e.to_string()))
@@ -1468,7 +1473,10 @@ impl AuroraClient {
     }
 
     /// Fetches comprehensive group metadata including participants, roles, and configuration.
-    pub fn group_fetch_metadata(&self, group_jid: String) -> Result<AuroraGroupMetadata, FfiError> {
+    pub fn group_fetch_metadata(
+        &self,
+        group_jid: String,
+    ) -> Result<RolleysGroupMetadata, FfiError> {
         let client = self.client.clone();
         self.runtime
             .block_on(async move {
@@ -1479,7 +1487,7 @@ impl AuroraClient {
     }
 
     /// Fetches all participating groups for the authenticated account and caches them locally.
-    pub fn group_fetch_all_participating(&self) -> Result<Vec<AuroraGroupMetadata>, FfiError> {
+    pub fn group_fetch_all_participating(&self) -> Result<Vec<RolleysGroupMetadata>, FfiError> {
         let client = self.client.clone();
         self.runtime
             .block_on(async move {
@@ -1505,7 +1513,7 @@ impl AuroraClient {
     pub fn group_request_participants_list(
         &self,
         group_jid: String,
-    ) -> Result<Vec<AuroraGroupJoinRequest>, FfiError> {
+    ) -> Result<Vec<RolleysGroupJoinRequest>, FfiError> {
         let client = self.client.clone();
         self.runtime
             .block_on(async move {
@@ -1521,7 +1529,7 @@ impl AuroraClient {
         group_jid: String,
         participants: Vec<String>,
         action: String,
-    ) -> Result<Vec<AuroraParticipantUpdateResult>, FfiError> {
+    ) -> Result<Vec<RolleysParticipantUpdateResult>, FfiError> {
         let client = self.client.clone();
         self.runtime
             .block_on(async move {
@@ -1530,7 +1538,7 @@ impl AuroraClient {
                     .await?;
                 Ok(res
                     .into_iter()
-                    .map(|(jid, status)| AuroraParticipantUpdateResult { jid, status })
+                    .map(|(jid, status)| RolleysParticipantUpdateResult { jid, status })
                     .collect())
             })
             .map_err(|e: baileys_core::CoreError| FfiError::OperationError(e.to_string()))
@@ -1587,14 +1595,14 @@ impl AuroraClient {
     }
 
     /// Fetches the user's current privacy settings from WhatsApp gateway.
-    pub fn fetch_privacy_settings(&self) -> Result<AuroraPrivacySettings, FfiError> {
+    pub fn fetch_privacy_settings(&self) -> Result<RolleysPrivacySettings, FfiError> {
         let client = self.client.clone();
         let s = self
             .runtime
             .block_on(async move { client.fetch_privacy_settings().await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(AuroraPrivacySettings {
+        Ok(RolleysPrivacySettings {
             readreceipts: s.readreceipts,
             profile: s.profile,
             status: s.status,
@@ -1639,14 +1647,14 @@ impl AuroraClient {
     }
 
     /// Fetches the About / Bio status string of a user.
-    pub fn fetch_status(&self, jid: String) -> Result<Option<AuroraProfileStatus>, FfiError> {
+    pub fn fetch_status(&self, jid: String) -> Result<Option<RolleysProfileStatus>, FfiError> {
         let client = self.client.clone();
         let st = self
             .runtime
             .block_on(async move { client.fetch_status(&jid).await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(st.map(|s| AuroraProfileStatus {
+        Ok(st.map(|s| RolleysProfileStatus {
             status: s.status,
             set_at: s.set_at,
         }))
@@ -1656,14 +1664,14 @@ impl AuroraClient {
     pub fn get_business_profile(
         &self,
         jid: String,
-    ) -> Result<Option<AuroraBusinessProfile>, FfiError> {
+    ) -> Result<Option<RolleysBusinessProfile>, FfiError> {
         let client = self.client.clone();
         let bp = self
             .runtime
             .block_on(async move { client.get_business_profile(&jid).await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(bp.map(|b| AuroraBusinessProfile {
+        Ok(bp.map(|b| RolleysBusinessProfile {
             jid: b.jid,
             address: b.address,
             description: b.description,
@@ -1820,14 +1828,14 @@ impl AuroraClient {
     pub fn newsletter_query_metadata(
         &self,
         jid_or_invite: String,
-    ) -> Result<AuroraNewsletter, FfiError> {
+    ) -> Result<RolleysNewsletter, FfiError> {
         let client = self.client.clone();
         let meta = self
             .runtime
             .block_on(async move { client.newsletter_query_metadata(&jid_or_invite).await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(AuroraNewsletter {
+        Ok(RolleysNewsletter {
             jid: meta.jid,
             name: meta.name,
             description: meta.description,
@@ -1841,7 +1849,7 @@ impl AuroraClient {
     }
 
     /// Fetches all WhatsApp Channels the user is subscribed to.
-    pub fn newsletter_get_subscribed(&self) -> Result<Vec<AuroraNewsletter>, FfiError> {
+    pub fn newsletter_get_subscribed(&self) -> Result<Vec<RolleysNewsletter>, FfiError> {
         let client = self.client.clone();
         let list = self
             .runtime
@@ -1850,7 +1858,7 @@ impl AuroraClient {
 
         Ok(list
             .into_iter()
-            .map(|meta| AuroraNewsletter {
+            .map(|meta| RolleysNewsletter {
                 jid: meta.jid,
                 name: meta.name,
                 description: meta.description,
@@ -1893,7 +1901,7 @@ impl AuroraClient {
         &self,
         name: String,
         description: Option<String>,
-    ) -> Result<AuroraNewsletter, FfiError> {
+    ) -> Result<RolleysNewsletter, FfiError> {
         let client = self.client.clone();
         let meta = self
             .runtime
@@ -1904,7 +1912,7 @@ impl AuroraClient {
             })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(AuroraNewsletter {
+        Ok(RolleysNewsletter {
             jid: meta.jid,
             name: meta.name,
             description: meta.description,
@@ -1923,7 +1931,7 @@ impl AuroraClient {
         jid: String,
         count: u32,
         before: Option<u64>,
-    ) -> Result<Vec<AuroraNewsletterMessage>, FfiError> {
+    ) -> Result<Vec<RolleysNewsletterMessage>, FfiError> {
         let client = self.client.clone();
         let msgs = self
             .runtime
@@ -1932,7 +1940,7 @@ impl AuroraClient {
 
         Ok(msgs
             .into_iter()
-            .map(|m| AuroraNewsletterMessage {
+            .map(|m| RolleysNewsletterMessage {
                 server_id: m.server_id,
                 views_count: m.views_count,
                 timestamp: m.timestamp,
@@ -1992,9 +2000,9 @@ impl AuroraClient {
     }
 
     /// Returns current health telemetry snapshot (message throughput, ping latency, Signal hit rate).
-    pub fn get_telemetry_snapshot(&self) -> AuroraTelemetrySnapshot {
+    pub fn get_telemetry_snapshot(&self) -> RolleysTelemetrySnapshot {
         let snap = self.client.telemetry_snapshot();
-        AuroraTelemetrySnapshot {
+        RolleysTelemetrySnapshot {
             messages_in: snap.messages_in,
             messages_out: snap.messages_out,
             last_ping_latency_ms: snap.last_ping_latency_ms,
@@ -2044,14 +2052,14 @@ impl AuroraClient {
     }
 
     /// Fetches the aggregated vote tally for a poll from the local SQLite database.
-    pub fn get_poll_tally(&self, poll_id: String) -> Result<Option<AuroraPollTally>, FfiError> {
+    pub fn get_poll_tally(&self, poll_id: String) -> Result<Option<RolleysPollTally>, FfiError> {
         let client = self.client.clone();
         let tally_opt = self
             .runtime
             .block_on(async move { client.get_poll_tally(&poll_id).await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(tally_opt.map(|t| AuroraPollTally {
+        Ok(tally_opt.map(|t| RolleysPollTally {
             poll_id: t.poll_id,
             question: t.question,
             total_voters: t.total_voters as u32,
@@ -2064,7 +2072,7 @@ impl AuroraClient {
         &self,
         target_jid: String,
         body: String,
-        buttons: Vec<AuroraInteractiveButton>,
+        buttons: Vec<RolleysInteractiveButton>,
         header: Option<String>,
         footer: Option<String>,
     ) -> Result<String, FfiError> {
@@ -2099,7 +2107,7 @@ impl AuroraClient {
         title: String,
         description: String,
         button_text: String,
-        sections: Vec<AuroraListSection>,
+        sections: Vec<RolleysListSection>,
         footer: Option<String>,
     ) -> Result<String, FfiError> {
         let client = self.client.clone();
@@ -2140,7 +2148,7 @@ impl AuroraClient {
         &self,
         subject: String,
         description: Option<String>,
-    ) -> Result<AuroraCommunityMetadata, FfiError> {
+    ) -> Result<RolleysCommunityMetadata, FfiError> {
         let client = self.client.clone();
         let meta = self
             .runtime
@@ -2207,7 +2215,7 @@ impl AuroraClient {
     pub fn community_fetch_subgroups(
         &self,
         community_jid: String,
-    ) -> Result<Vec<AuroraCommunitySubgroup>, FfiError> {
+    ) -> Result<Vec<RolleysCommunitySubgroup>, FfiError> {
         let client = self.client.clone();
         let list = self
             .runtime
@@ -2216,7 +2224,7 @@ impl AuroraClient {
 
         Ok(list
             .into_iter()
-            .map(|s| AuroraCommunitySubgroup {
+            .map(|s| RolleysCommunitySubgroup {
                 id: s.id,
                 subject: s.subject,
                 creation: s.creation,
@@ -2230,7 +2238,7 @@ impl AuroraClient {
     pub fn community_get_metadata(
         &self,
         community_jid: String,
-    ) -> Result<AuroraCommunityMetadata, FfiError> {
+    ) -> Result<RolleysCommunityMetadata, FfiError> {
         let client = self.client.clone();
         let meta = self
             .runtime
@@ -2273,7 +2281,7 @@ impl AuroraClient {
     }
 
     /// Fetches VoIP call history from SQLite.
-    pub fn get_call_history(&self, limit: u32) -> Result<Vec<AuroraStoredCall>, FfiError> {
+    pub fn get_call_history(&self, limit: u32) -> Result<Vec<RolleysStoredCall>, FfiError> {
         let client = self.client.clone();
         let list = self
             .runtime
@@ -2282,7 +2290,7 @@ impl AuroraClient {
 
         Ok(list
             .into_iter()
-            .map(|c| AuroraStoredCall {
+            .map(|c| RolleysStoredCall {
                 call_id: c.call_id,
                 chat_jid: c.chat_jid,
                 caller_jid: c.caller_jid,
@@ -2331,7 +2339,7 @@ impl AuroraClient {
         &self,
         limit: u32,
         unviewed_only: bool,
-    ) -> Result<Vec<AuroraStoredStory>, FfiError> {
+    ) -> Result<Vec<RolleysStoredStory>, FfiError> {
         let client = self.client.clone();
         let list = self
             .runtime
@@ -2340,7 +2348,7 @@ impl AuroraClient {
 
         Ok(list
             .into_iter()
-            .map(|s| AuroraStoredStory {
+            .map(|s| RolleysStoredStory {
                 msg_id: s.msg_id,
                 author_jid: s.author_jid,
                 author_name: s.author_name,
@@ -2358,7 +2366,7 @@ impl AuroraClient {
     pub fn get_stories_by_author(
         &self,
         author_jid: String,
-    ) -> Result<Vec<AuroraStoredStory>, FfiError> {
+    ) -> Result<Vec<RolleysStoredStory>, FfiError> {
         let client = self.client.clone();
         let list = self
             .runtime
@@ -2367,7 +2375,7 @@ impl AuroraClient {
 
         Ok(list
             .into_iter()
-            .map(|s| AuroraStoredStory {
+            .map(|s| RolleysStoredStory {
                 msg_id: s.msg_id,
                 author_jid: s.author_jid,
                 author_name: s.author_name,
@@ -2432,7 +2440,7 @@ impl AuroraClient {
         Ok(res.map(|(exp, _)| exp))
     }
 
-    pub fn get_labels(&self) -> Result<Vec<AuroraLabel>, FfiError> {
+    pub fn get_labels(&self) -> Result<Vec<RolleysLabel>, FfiError> {
         let client = self.client.clone();
         let list = self
             .runtime
@@ -2441,7 +2449,7 @@ impl AuroraClient {
         Ok(list.into_iter().map(Into::into).collect())
     }
 
-    pub fn get_label(&self, id: String) -> Result<Option<AuroraLabel>, FfiError> {
+    pub fn get_label(&self, id: String) -> Result<Option<RolleysLabel>, FfiError> {
         let client = self.client.clone();
         let l = self
             .runtime
@@ -2652,14 +2660,14 @@ impl AuroraClient {
         biz_jid: String,
         limit: u32,
         cursor: Option<String>,
-    ) -> Result<AuroraCatalogResult, FfiError> {
+    ) -> Result<RolleysCatalogResult, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let res = client
                 .get_catalog(&biz_jid, limit, cursor.as_deref())
                 .await
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
-            Ok(AuroraCatalogResult {
+            Ok(RolleysCatalogResult {
                 products: res.products.into_iter().map(Into::into).collect(),
                 cursor: res.cursor,
             })
@@ -2670,7 +2678,7 @@ impl AuroraClient {
         &self,
         biz_jid: String,
         product_id: String,
-    ) -> Result<AuroraCatalogProduct, FfiError> {
+    ) -> Result<RolleysCatalogProduct, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let p = client
@@ -2686,14 +2694,14 @@ impl AuroraClient {
         biz_jid: String,
         limit: u32,
         cursor: Option<String>,
-    ) -> Result<AuroraCollectionsResult, FfiError> {
+    ) -> Result<RolleysCollectionsResult, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let res = client
                 .get_collections(&biz_jid, limit, cursor.as_deref())
                 .await
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
-            Ok(AuroraCollectionsResult {
+            Ok(RolleysCollectionsResult {
                 collections: res.collections.into_iter().map(Into::into).collect(),
                 cursor: res.cursor,
             })
@@ -2767,7 +2775,7 @@ impl AuroraClient {
         &self,
         chat_jid: String,
         limit: u32,
-    ) -> Result<Vec<AuroraOrder>, FfiError> {
+    ) -> Result<Vec<RolleysOrder>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let orders = client
@@ -2781,7 +2789,7 @@ impl AuroraClient {
     pub fn get_cached_catalog(
         &self,
         biz_jid: String,
-    ) -> Result<Vec<AuroraCatalogProduct>, FfiError> {
+    ) -> Result<Vec<RolleysCatalogProduct>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let prods = client
@@ -2795,7 +2803,7 @@ impl AuroraClient {
     pub fn get_cached_collections(
         &self,
         biz_jid: String,
-    ) -> Result<Vec<AuroraCatalogCollection>, FfiError> {
+    ) -> Result<Vec<RolleysCatalogCollection>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let cols = client
@@ -2816,7 +2824,7 @@ impl AuroraClient {
         })
     }
 
-    pub fn get_paired_devices(&self) -> Result<Vec<AuroraDeviceRecord>, FfiError> {
+    pub fn get_paired_devices(&self) -> Result<Vec<RolleysDeviceRecord>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let devs = client
@@ -2825,7 +2833,7 @@ impl AuroraClient {
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
             Ok(devs
                 .into_iter()
-                .map(|d| AuroraDeviceRecord {
+                .map(|d| RolleysDeviceRecord {
                     id: d.id,
                     key_index: d.key_index,
                 })
@@ -2846,7 +2854,7 @@ impl AuroraClient {
     pub fn check_on_whatsapp(
         &self,
         phone_numbers: Vec<String>,
-    ) -> Result<Vec<AuroraOnWhatsAppResult>, FfiError> {
+    ) -> Result<Vec<RolleysOnWhatsAppResult>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let num_refs: Vec<&str> = phone_numbers.iter().map(|s| s.as_str()).collect();
@@ -2856,7 +2864,7 @@ impl AuroraClient {
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
             Ok(results
                 .into_iter()
-                .map(|r| AuroraOnWhatsAppResult {
+                .map(|r| RolleysOnWhatsAppResult {
                     jid: r.jid,
                     exists: r.exists,
                     phone_number: r.phone_number,
@@ -2872,14 +2880,14 @@ impl AuroraClient {
             .map_err(|e| FfiError::OperationError(e.to_string()))
     }
 
-    pub fn fetch_url_preview(&self, text: String) -> Result<Option<AuroraUrlPreview>, FfiError> {
+    pub fn fetch_url_preview(&self, text: String) -> Result<Option<RolleysUrlPreview>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let res = client
                 .fetch_url_preview(&text)
                 .await
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
-            Ok(res.map(|p| AuroraUrlPreview {
+            Ok(res.map(|p| RolleysUrlPreview {
                 matched_text: p.matched_text,
                 canonical_url: p.canonical_url,
                 title: p.title,
@@ -2918,14 +2926,14 @@ impl AuroraClient {
         })
     }
 
-    pub fn get_user_status(&self, jid: String) -> Result<Option<AuroraUserStatus>, FfiError> {
+    pub fn get_user_status(&self, jid: String) -> Result<Option<RolleysUserStatus>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let res = client
                 .get_user_status(&[&jid])
                 .await
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
-            Ok(res.into_iter().next().map(|(j, s, t)| AuroraUserStatus {
+            Ok(res.into_iter().next().map(|(j, s, t)| RolleysUserStatus {
                 jid: j,
                 status: s,
                 timestamp: t,
@@ -2953,7 +2961,7 @@ impl AuroraClient {
 
     pub fn fetch_account_reachout_timelock(
         &self,
-    ) -> Result<Option<AuroraAccountReachoutTimelock>, FfiError> {
+    ) -> Result<Option<RolleysAccountReachoutTimelock>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let res = client
@@ -2962,7 +2970,7 @@ impl AuroraClient {
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
             Ok(
                 res.map(|(is_active, enforcement_type, time_enforcement_ends)| {
-                    AuroraAccountReachoutTimelock {
+                    RolleysAccountReachoutTimelock {
                         is_active,
                         enforcement_type,
                         time_enforcement_ends,
@@ -2983,7 +2991,7 @@ impl AuroraClient {
         })
     }
 
-    pub fn get_bot_list_v2(&self) -> Result<Vec<AuroraBotEntry>, FfiError> {
+    pub fn get_bot_list_v2(&self) -> Result<Vec<RolleysBotEntry>, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let list = client
@@ -2992,7 +3000,7 @@ impl AuroraClient {
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
             Ok(list
                 .into_iter()
-                .map(|(j, p)| AuroraBotEntry {
+                .map(|(j, p)| RolleysBotEntry {
                     jid: j,
                     persona_id: p,
                 })
@@ -3027,14 +3035,14 @@ impl AuroraClient {
     pub fn community_get_invite_info(
         &self,
         code: String,
-    ) -> Result<AuroraCommunityInviteInfo, FfiError> {
+    ) -> Result<RolleysCommunityInviteInfo, FfiError> {
         let client = self.client.clone();
         self.runtime.block_on(async move {
             let info = client
                 .community_get_invite_info(&code)
                 .await
                 .map_err(|e| FfiError::OperationError(e.to_string()))?;
-            Ok(AuroraCommunityInviteInfo {
+            Ok(RolleysCommunityInviteInfo {
                 jid: info.jid,
                 subject: info.subject,
                 creator: info.creator,
@@ -3152,8 +3160,8 @@ impl AuroraClient {
     }
 }
 
-fn map_core_community_metadata(meta: baileys_core::CommunityMetadata) -> AuroraCommunityMetadata {
-    AuroraCommunityMetadata {
+fn map_core_community_metadata(meta: baileys_core::CommunityMetadata) -> RolleysCommunityMetadata {
+    RolleysCommunityMetadata {
         id: meta.id,
         subject: meta.subject,
         subject_owner: meta.subject_owner,
@@ -3171,7 +3179,7 @@ fn map_core_community_metadata(meta: baileys_core::CommunityMetadata) -> AuroraC
         participants: meta
             .participants
             .into_iter()
-            .map(|p| AuroraCommunityParticipant {
+            .map(|p| RolleysCommunityParticipant {
                 jid: p.jid,
                 admin: p.admin,
             })

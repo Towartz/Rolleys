@@ -45,8 +45,7 @@ pub unsafe extern "C" fn baileys_client_create_with_url(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut builder =
-        BaileysConfigBuilder::new().with_browser("Rose-CABI", "Multiplatform", "0.1.0");
+    let mut builder = BaileysConfigBuilder::new().with_browser("Chrome", "Mac OS", "14.4.1");
 
     if let Some(url) = ws_url_str {
         builder = builder.with_websocket_url(url);

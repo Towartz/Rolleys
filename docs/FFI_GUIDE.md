@@ -32,9 +32,9 @@ void on_event_callback(const char* event_json, void* user_data) {
 
 int main() {
     baileys_config_t config = {
-        .browser_name = "Rolleys-C",
-        .platform = "Linux",
-        .browser_version = "1.0.0",
+        .browser_name = "Chrome",
+        .platform = "Mac OS",
+        .browser_version = "14.4.1",
         .db_path = "session.db"
     };
 
@@ -79,32 +79,34 @@ Or on Windows PowerShell with Android NDK:
 ```
 
 ### Kotlin Usage (Android App)
+The generated bindings live in package `uniffi.baileys_ffi` (`bindings/kotlin`).
 ```kotlin
-import uniffi.baileys.*
+import uniffi.baileys_ffi.*
 
-class WhatsAppService : CoroutineScope {
-    private val store = SqliteStore.open("/data/data/com.example.app/files/wa_session.db")
-    private val config = BaileysConfigBuilder()
-        .withBrowser("AuroraChat", "Android", "1.0.0")
-        .build()
+class WhatsAppService : RolleysEventListener {
+    private val client = RolleysClient(
+        RolleysClientConfig(
+            databasePath = "/data/data/com.example.app/files/rolleys_session.db",
+            // Same device identity as Baileys' default (Browsers.macOS("Chrome")).
+            browserName = "Chrome",
+            platform = "Mac OS",
+            phoneNumber = null, // set a number to pair by code instead of QR
+            autoDownloadMedia = false,
+        )
+    )
 
-    private val client = BaileysClient(store, config)
+    fun start() = client.start(this)
 
-    fun start() {
-        client.events().subscribe { event ->
-            when (event) {
-                is BaileysEvent.QrCode -> renderQr(event.code)
-                is BaileysEvent.Connected -> onConnected(event.meJid)
-                is BaileysEvent.Message -> handleIncoming(event.message)
-                else -> {}
-            }
+    override fun onEvent(event: RolleysEvent) {
+        when (event) {
+            is RolleysEvent.QrCode -> renderQr(event.code)
+            is RolleysEvent.Connected -> onConnected(event.meJid)
+            else -> {}
         }
-        client.connect()
     }
 
-    fun sendMessage(recipientJid: String, text: String) {
-        client.messages().sendText(recipientJid, text)
-    }
+    fun sendMessage(recipientJid: String, text: String): String =
+        client.sendText(recipientJid, text)
 }
 ```
 
@@ -119,23 +121,34 @@ class WhatsAppService : CoroutineScope {
 This generates a universal fat archive and generates Swift wrappers via `uniffi-bindgen`.
 
 ### Swift Usage (iOS / macOS)
+Add `bindings/swift/baileys_ffi.swift`, `baileys_ffiFFI.h` and `baileys_ffiFFI.modulemap` to your target.
 ```swift
-import RolleysKit
-
-class WhatsAppManager: ObservableObject {
-    private var client: BaileysClient?
+final class WhatsAppManager: RolleysEventListener {
+    private var client: RolleysClient?
 
     func initialize() throws {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dbPath = docs.appendingPathComponent("session.db").path
+        let dbPath = docs.appendingPathComponent("rolleys_session.db").path
 
-        let store = try SqliteStore.open(path: dbPath)
-        let config = BaileysConfigBuilder()
-            .withBrowser(name: "Rolleys-iOS", platform: "iOS", version: "1.0.0")
-            .build()
+        // Same device identity as Baileys' default (Browsers.macOS("Chrome")).
+        let config = RolleysClientConfig(
+            databasePath: dbPath,
+            browserName: "Chrome",
+            platform: "Mac OS",
+            phoneNumber: nil,
+            autoDownloadMedia: false
+        )
+        let client = try RolleysClient(config: config)
+        self.client = client
+        try client.start(listener: self)
+    }
 
-        self.client = BaileysClient(store: store, config: config)
-        try self.client?.connect()
+    func onEvent(event: RolleysEvent) {
+        switch event {
+        case .qrCode(let code): print("QR: \(code)")
+        case .connected(let meJid): print("Connected as \(meJid)")
+        default: break
+        }
     }
 }
 ```
@@ -158,8 +171,8 @@ import { BaileysClient, SqliteStore } from 'rolleys-napi';
 
 const store = SqliteStore.open('./session.db');
 const client = new BaileysClient(store, {
-    browserName: 'Rolleys-Node',
-    platform: 'Linux',
+    browserName: 'Chrome',
+    platform: 'Mac OS',
 });
 
 client.on('qr', (qrCode) => {

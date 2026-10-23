@@ -654,25 +654,87 @@ internal open class UniffiForeignFutureStructVoid(
 internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
     fun callback(`callbackData`: Long,`result`: UniffiForeignFutureStructVoid.UniffiByValue,)
 }
-internal interface UniffiCallbackInterfaceAuroraEventListenerMethod0 : com.sun.jna.Callback {
+internal interface UniffiCallbackInterfaceRolleysEventListenerMethod0 : com.sun.jna.Callback {
     fun callback(`uniffiHandle`: Long,`event`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
 @Structure.FieldOrder("onEvent", "uniffiFree")
-internal open class UniffiVTableCallbackInterfaceAuroraEventListener(
-    @JvmField internal var `onEvent`: UniffiCallbackInterfaceAuroraEventListenerMethod0? = null,
+internal open class UniffiVTableCallbackInterfaceRolleysEventListener(
+    @JvmField internal var `onEvent`: UniffiCallbackInterfaceRolleysEventListenerMethod0? = null,
     @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
 ) : Structure() {
     class UniffiByValue(
-        `onEvent`: UniffiCallbackInterfaceAuroraEventListenerMethod0? = null,
+        `onEvent`: UniffiCallbackInterfaceRolleysEventListenerMethod0? = null,
         `uniffiFree`: UniffiCallbackInterfaceFree? = null,
-    ): UniffiVTableCallbackInterfaceAuroraEventListener(`onEvent`,`uniffiFree`,), Structure.ByValue
+    ): UniffiVTableCallbackInterfaceRolleysEventListener(`onEvent`,`uniffiFree`,), Structure.ByValue
 
-   internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceAuroraEventListener) {
+   internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceRolleysEventListener) {
         `onEvent` = other.`onEvent`
         `uniffiFree` = other.`uniffiFree`
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -993,7 +1055,7 @@ internal interface UniffiLib : Library {
             .also { lib: UniffiLib ->
                 uniffiCheckContractApiVersion(lib)
                 uniffiCheckApiChecksums(lib)
-                uniffiCallbackInterfaceAuroraEventListener.register(lib)
+                uniffiCallbackInterfaceRolleysEventListener.register(lib)
                 }
         }
         
@@ -1003,259 +1065,321 @@ internal interface UniffiLib : Library {
         }
     }
 
-    fun uniffi_baileys_ffi_fn_clone_auroraclient(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_clone_rolleysclient(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_baileys_ffi_fn_free_auroraclient(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_free_rolleysclient(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_constructor_auroraclient_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_constructor_rolleysclient_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_baileys_ffi_fn_method_auroraclient_add_chat_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_add_chat_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_add_message_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_add_message_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_archive(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`archive`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_archive(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`archive`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_clear(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`keepStarred`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_clear(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`keepStarred`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_delete(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_delete(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_mark_unread(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`unread`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_mark_unread(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`unread`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_mute(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`durationSecs`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_mute(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`durationSecs`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_pin(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`pin`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_pin(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`pin`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_star(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`fromMe`: Byte,`star`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_star(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`fromMe`: Byte,`star`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_check_on_whatsapp(`ptr`: Pointer,`phoneNumbers`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_check_on_whatsapp(`ptr`: Pointer,`phoneNumbers`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_accept_invite(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_create(`ptr`: Pointer,`subject`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_create_subgroup(`ptr`: Pointer,`parentCommunityJid`: RustBuffer.ByValue,`subject`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_fetch_subgroups(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_get_invite_code(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_get_metadata(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_leave(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_clean_dirty_bits(`ptr`: Pointer,`cleanType`: RustBuffer.ByValue,`timestamp`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_link_subgroup(`ptr`: Pointer,`parentCommunityJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_accept_invite(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_create(`ptr`: Pointer,`subject`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_create_subgroup(`ptr`: Pointer,`parentCommunityJid`: RustBuffer.ByValue,`subject`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_fetch_all_participating(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_fetch_subgroups(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_get_invite_code(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_get_invite_info(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_get_metadata(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_join_approval_mode(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_community_unlink_subgroup(`ptr`: Pointer,`parentCommunityJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_leave(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_delete_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_link_subgroup(`ptr`: Pointer,`parentCommunityJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_disconnect(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_member_add_mode(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_download_media(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,`destDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_revoke_invite(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_edit_message(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`targetMessageId`: RustBuffer.ByValue,`newText`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_fetch_blocklist(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_fetch_message_history(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`count`: Int,`oldestMsgId`: RustBuffer.ByValue,`oldestFromMe`: Byte,`oldestTimestamp`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_fetch_privacy_settings(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_fetch_status(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_blocked_contacts(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_business_profile(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_cached_catalog(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_cached_collections(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_cached_orders(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_call_history(`ptr`: Pointer,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_catalog(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,`limit`: Int,`cursor`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_chat_ephemeral(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_chat_labels(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_chats(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_chats_by_label(`ptr`: Pointer,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_collections(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,`limit`: Int,`cursor`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_contact(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_group_info(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_labels(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_me_jid(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_message_labels(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_messages(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`limit`: Int,`beforeTimestamp`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_messages_by_label(`ptr`: Pointer,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_paired_devices(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_poll_tally(`ptr`: Pointer,`pollId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_product(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,`productId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_recent_stories(`ptr`: Pointer,`limit`: Int,`unviewedOnly`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_stories_by_author(`ptr`: Pointer,`authorJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_get_user_devices(`ptr`: Pointer,`userJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_accept_invite(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_accept_invite_v4(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`inviteCode`: RustBuffer.ByValue,`inviteExpiration`: Long,`adminJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_create(`ptr`: Pointer,`subject`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_fetch_all_participating(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_fetch_metadata(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_get_invite_code(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_join_approval_mode(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_setting_update(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,`setting`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_leave(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_toggle_ephemeral(`ptr`: Pointer,`communityJid`: RustBuffer.ByValue,`duration`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_member_add_mode(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_community_unlink_subgroup(`ptr`: Pointer,`parentCommunityJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_participants_update(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,`action`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_create_call_link(`ptr`: Pointer,`isVideo`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_request_participants_list(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_delete_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_disconnect(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_download_media(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,`destDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_request_participants_update(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,`action`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_download_media_streaming(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,`destPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_revoke_invite(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_edit_message(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`targetMessageId`: RustBuffer.ByValue,`newText`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_revoke_invite_v4(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`invitedJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_account_reachout_timelock(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_blocklist(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_message_history(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`count`: Int,`oldestMsgId`: RustBuffer.ByValue,`oldestFromMe`: Byte,`oldestTimestamp`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_new_chat_message_cap(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_privacy_settings(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_status(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_url_preview(`ptr`: Pointer,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_blocked_contacts(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_bot_list_v2(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_business_profile(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_catalog(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_collections(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_orders(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_call_history(`ptr`: Pointer,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_catalog(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,`limit`: Int,`cursor`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_chat_ephemeral(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_chat_labels(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_chats(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_chats_by_label(`ptr`: Pointer,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_collections(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,`limit`: Int,`cursor`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_connection_state(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_contact(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_group_info(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_labels(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_lid_for_pn(`ptr`: Pointer,`pnJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_me_jid(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_message_labels(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_messages(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`limit`: Int,`beforeTimestamp`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_messages_by_label(`ptr`: Pointer,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_paired_devices(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_pn_for_lid(`ptr`: Pointer,`lidJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_poll_tally(`ptr`: Pointer,`pollId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_product(`ptr`: Pointer,`bizJid`: RustBuffer.ByValue,`productId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_recent_stories(`ptr`: Pointer,`limit`: Int,`unviewedOnly`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_stories_by_author(`ptr`: Pointer,`authorJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_telemetry_snapshot(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_user_devices(`ptr`: Pointer,`userJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_user_status(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_accept_invite(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_accept_invite_v4(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`inviteCode`: RustBuffer.ByValue,`inviteExpiration`: Long,`adminJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_create(`ptr`: Pointer,`subject`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_fetch_all_participating(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_fetch_metadata(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_code(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_join_approval_mode(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_setting_update(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`setting`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_leave(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_update_description(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_member_add_mode(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_group_update_subject(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`subject`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_participants_update(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,`action`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_request_participants_list(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_request_participants_update(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`participants`: RustBuffer.ByValue,`action`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_revoke_invite(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_revoke_invite_v4(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`invitedJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_is_auto_download(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_setting_update(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`setting`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_update_description(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_update_subject(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`subject`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_is_auto_download(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun uniffi_baileys_ffi_fn_method_auroraclient_is_connected(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_is_connected(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_create(`ptr`: Pointer,`name`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_fetch_messages(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`count`: Int,`before`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_follow(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_admin_count(`ptr`: Pointer,`channelJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_change_owner(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`newOwnerJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_get_subscribed(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_create(`ptr`: Pointer,`name`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_mute(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`mute`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_demote(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`userJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_query_metadata(`ptr`: Pointer,`jidOrInvite`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_fetch_messages(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`count`: Int,`before`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_react(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`serverId`: Long,`reaction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_follow(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_send_post(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_get_subscribed(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_newsletter_unfollow(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_mute(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`mute`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_ping(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_promote(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`userJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_query_metadata(`ptr`: Pointer,`jidOrInvite`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_react(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`serverId`: Long,`reaction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_post(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_unfollow(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_ping(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    fun uniffi_baileys_ffi_fn_method_auroraclient_presence_subscribe(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_presence_subscribe(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_profile_picture_url(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`pictureType`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_reject_call(`ptr`: Pointer,`callId`: RustBuffer.ByValue,`callFrom`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_product_delete(`ptr`: Pointer,`productIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_remove_chat_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_profile_picture_url(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`pictureType`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_reject_call(`ptr`: Pointer,`callId`: RustBuffer.ByValue,`callFrom`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_remove_companion_device(`ptr`: Pointer,`deviceId`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_remove_chat_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_remove_message_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_remove_companion_device(`ptr`: Pointer,`deviceId`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_remove_profile_picture(`ptr`: Pointer,`jidOpt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_remove_cover_photo(`ptr`: Pointer,`photoId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_revoke_message(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`targetMessageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_audio(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`audioBytes`: RustBuffer.ByValue,`ptt`: Byte,`seconds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_contact(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`displayName`: RustBuffer.ByValue,`phoneNumber`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_document(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`documentBytes`: RustBuffer.ByValue,`fileName`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_document_attachment(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`docBytes`: RustBuffer.ByValue,`filename`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`pageCount`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_group_invite(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,`inviteCode`: RustBuffer.ByValue,`inviteExpiration`: Long,`groupName`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_image(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_interactive_buttons(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,`buttons`: RustBuffer.ByValue,`header`: RustBuffer.ByValue,`footer`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_list_message(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,`buttonText`: RustBuffer.ByValue,`sections`: RustBuffer.ByValue,`footer`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_live_location(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`latitude`: Double,`longitude`: Double,`accuracyInMeters`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_location(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`latitude`: Double,`longitude`: Double,`name`: RustBuffer.ByValue,`address`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_order_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`sellerJid`: RustBuffer.ByValue,`orderId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`itemCount`: Int,`totalAmount1000`: Long,`currency`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_poll(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`question`: RustBuffer.ByValue,`options`: RustBuffer.ByValue,`selectableCount`: Int,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_poll_vote(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`pollId`: RustBuffer.ByValue,`selectedOptions`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_presence(`ptr`: Pointer,`state`: RustBuffer.ByValue,`toJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_remove_message_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_product_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`bizOwnerJid`: RustBuffer.ByValue,`productId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`priceAmount1000`: Long,`currency`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_reaction(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`targetMsgId`: RustBuffer.ByValue,`emoji`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_read(`ptr`: Pointer,`remoteJid`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`participant`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_remove_profile_picture(`ptr`: Pointer,`jidOpt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_revoke(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`targetMsgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_revoke_message(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`targetMessageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_status_read_receipt(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,`authorJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_sticker(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`stickerBytes`: RustBuffer.ByValue,`isAnimated`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_audio(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`audioBytes`: RustBuffer.ByValue,`ptt`: Byte,`seconds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_text(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_contact(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`displayName`: RustBuffer.ByValue,`phoneNumber`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_text_status(`ptr`: Pointer,`text`: RustBuffer.ByValue,`backgroundColor`: RustBuffer.ByValue,`font`: RustBuffer.ByValue,`audience`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_document(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`documentBytes`: RustBuffer.ByValue,`fileName`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_text_with_quote(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,`quotedId`: RustBuffer.ByValue,`quotedParticipant`: RustBuffer.ByValue,`quotedText`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_document_attachment(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`docBytes`: RustBuffer.ByValue,`filename`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`pageCount`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_video(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`videoBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,`seconds`: RustBuffer.ByValue,`gifPlayback`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_group_invite(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,`inviteCode`: RustBuffer.ByValue,`inviteExpiration`: Long,`groupName`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_send_voice_note(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`audioBytes`: RustBuffer.ByValue,`seconds`: Int,`waveform`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_image(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_method_auroraclient_set_auto_download(`ptr`: Pointer,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_set_chat_ephemeral(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`expirationSeconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_start(`ptr`: Pointer,`listener`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_update_block_status(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`action`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_update_privacy_setting(`ptr`: Pointer,`category`: RustBuffer.ByValue,`value`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_update_profile_picture(`ptr`: Pointer,`jidOpt`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_update_profile_status(`ptr`: Pointer,`status`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    fun uniffi_baileys_ffi_fn_method_auroraclient_upsert_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,`color`: Int,`predefinedId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_interactive_buttons(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,`buttons`: RustBuffer.ByValue,`header`: RustBuffer.ByValue,`footer`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_baileys_ffi_fn_init_callback_vtable_auroraeventlistener(`vtable`: UniffiVTableCallbackInterfaceAuroraEventListener,
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_list_message(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,`buttonText`: RustBuffer.ByValue,`sections`: RustBuffer.ByValue,`footer`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_live_location(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`latitude`: Double,`longitude`: Double,`accuracyInMeters`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_location(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`latitude`: Double,`longitude`: Double,`name`: RustBuffer.ByValue,`address`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_media_file(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`filePath`: RustBuffer.ByValue,`mediaType`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_order_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`sellerJid`: RustBuffer.ByValue,`orderId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`itemCount`: Int,`totalAmount1000`: Long,`currency`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_poll(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`question`: RustBuffer.ByValue,`options`: RustBuffer.ByValue,`selectableCount`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_poll_vote(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`pollId`: RustBuffer.ByValue,`selectedOptions`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_presence(`ptr`: Pointer,`state`: RustBuffer.ByValue,`toJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_product_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`bizOwnerJid`: RustBuffer.ByValue,`productId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`priceAmount1000`: Long,`currency`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_reaction(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`targetMsgId`: RustBuffer.ByValue,`emoji`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_read(`ptr`: Pointer,`remoteJid`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`participant`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_revoke(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`targetMsgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_status_read_receipt(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,`authorJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_sticker(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`stickerBytes`: RustBuffer.ByValue,`isAnimated`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_text(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_text_status(`ptr`: Pointer,`text`: RustBuffer.ByValue,`backgroundColor`: RustBuffer.ByValue,`font`: RustBuffer.ByValue,`audience`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_preview(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_quote(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,`quotedId`: RustBuffer.ByValue,`quotedParticipant`: RustBuffer.ByValue,`quotedText`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_video(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`videoBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,`seconds`: RustBuffer.ByValue,`gifPlayback`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_voice_note(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`audioBytes`: RustBuffer.ByValue,`seconds`: Int,`waveform`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_set_auto_download(`ptr`: Pointer,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_set_chat_ephemeral(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`expirationSeconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_start(`ptr`: Pointer,`listener`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_subscribe_newsletter_updates(`ptr`: Pointer,`channelJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_block_status(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`action`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_cover_photo(`ptr`: Pointer,`photoId`: RustBuffer.ByValue,`token`: RustBuffer.ByValue,`ts`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_disable_link_previews_privacy(`ptr`: Pointer,`isDisabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_media_message(`ptr`: Pointer,`messageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_privacy_setting(`ptr`: Pointer,`category`: RustBuffer.ByValue,`value`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_picture(`ptr`: Pointer,`jidOpt`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_status(`ptr`: Pointer,`status`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_upsert_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,`color`: Int,`predefinedId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_init_callback_vtable_rolleyseventlistener(`vtable`: UniffiVTableCallbackInterfaceRolleysEventListener,
     ): Unit
     fun ffi_baileys_ffi_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1369,255 +1493,317 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_baileys_ffi_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_add_chat_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_add_chat_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_add_message_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_add_message_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_archive(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_archive(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_clear(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_clear(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_delete(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_delete(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_mark_unread(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_mark_unread(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_mute(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_mute(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_pin(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_pin(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_star(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_star(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_check_on_whatsapp(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_check_on_whatsapp(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_accept_invite(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_clean_dirty_bits(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_create(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_accept_invite(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_create_subgroup(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_create(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_fetch_subgroups(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_create_subgroup(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_get_invite_code(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_fetch_all_participating(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_get_metadata(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_fetch_subgroups(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_leave(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_invite_code(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_link_subgroup(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_invite_info(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_community_unlink_subgroup(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_metadata(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_delete_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_join_approval_mode(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_disconnect(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_leave(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_download_media(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_link_subgroup(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_edit_message(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_member_add_mode(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_fetch_blocklist(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_revoke_invite(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_fetch_message_history(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_setting_update(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_fetch_privacy_settings(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_toggle_ephemeral(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_fetch_status(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_community_unlink_subgroup(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_blocked_contacts(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_create_call_link(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_business_profile(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_delete_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_catalog(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_disconnect(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_collections(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_download_media(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_orders(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_download_media_streaming(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_call_history(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_edit_message(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_catalog(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_account_reachout_timelock(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_chat_ephemeral(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_blocklist(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_chat_labels(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_message_history(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_chats(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_new_chat_message_cap(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_chats_by_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_privacy_settings(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_collections(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_status(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_contact(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_url_preview(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_group_info(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_blocked_contacts(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_bot_list_v2(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_labels(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_business_profile(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_me_jid(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_catalog(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_message_labels(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_collections(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_messages(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_orders(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_messages_by_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_call_history(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_paired_devices(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_catalog(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_poll_tally(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_chat_ephemeral(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_product(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_chat_labels(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_recent_stories(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_chats(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_stories_by_author(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_chats_by_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_get_user_devices(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_collections(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_accept_invite(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_connection_state(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_accept_invite_v4(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_contact(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_create(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_group_info(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_fetch_all_participating(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_fetch_metadata(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_labels(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_get_invite_code(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_lid_for_pn(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_join_approval_mode(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_me_jid(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_leave(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_message_labels(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_member_add_mode(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_messages(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_participants_update(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_messages_by_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_request_participants_list(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_paired_devices(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_request_participants_update(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_pn_for_lid(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_revoke_invite(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_poll_tally(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_revoke_invite_v4(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_product(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_setting_update(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_recent_stories(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_update_description(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_stories_by_author(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_group_update_subject(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_telemetry_snapshot(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_is_auto_download(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_user_devices(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_is_connected(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_user_status(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_create(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_accept_invite(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_fetch_messages(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_accept_invite_v4(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_follow(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_create(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_get_subscribed(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_fetch_all_participating(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_mute(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_fetch_metadata(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_query_metadata(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_code(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_react(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_join_approval_mode(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_send_post(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_leave(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_unfollow(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_member_add_mode(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_ping(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_participants_update(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_presence_subscribe(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_request_participants_list(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_profile_picture_url(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_request_participants_update(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_reject_call(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_revoke_invite(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_remove_chat_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_revoke_invite_v4(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_remove_companion_device(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_setting_update(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_remove_message_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_update_description(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_remove_profile_picture(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_update_subject(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_revoke_message(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_is_auto_download(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_audio(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_is_connected(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_contact(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_admin_count(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_document(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_change_owner(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_document_attachment(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_create(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_group_invite(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_demote(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_image(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_fetch_messages(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_interactive_buttons(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_follow(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_list_message(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_get_subscribed(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_live_location(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_mute(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_location(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_promote(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_order_message(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_query_metadata(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_poll(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_react(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_poll_vote(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_post(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_presence(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_unfollow(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_product_message(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_ping(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_reaction(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_presence_subscribe(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_read(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_product_delete(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_revoke(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_profile_picture_url(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_status_read_receipt(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_reject_call(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_sticker(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_remove_chat_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_text(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_remove_companion_device(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_text_status(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_remove_cover_photo(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_text_with_quote(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_remove_message_label(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_video(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_remove_profile_picture(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_send_voice_note(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_revoke_message(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_set_auto_download(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_audio(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_set_chat_ephemeral(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_contact(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_start(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_document(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_update_block_status(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_document_attachment(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_update_privacy_setting(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_group_invite(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_update_profile_picture(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_image(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_update_profile_status(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_interactive_buttons(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraclient_upsert_label(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_list_message(
     ): Short
-    fun uniffi_baileys_ffi_checksum_constructor_auroraclient_new(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_live_location(
     ): Short
-    fun uniffi_baileys_ffi_checksum_method_auroraeventlistener_on_event(
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_location(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_media_file(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_order_message(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_poll(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_poll_vote(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_presence(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_product_message(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_reaction(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_read(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_revoke(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_read_receipt(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_sticker(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_text(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_status(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_preview(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_quote(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_video(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_voice_note(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_set_auto_download(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_set_chat_ephemeral(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_start(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_subscribe_newsletter_updates(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_block_status(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_cover_photo(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_disable_link_previews_privacy(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_media_message(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_privacy_setting(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_picture(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_status(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_upsert_label(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_constructor_rolleysclient_new(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleyseventlistener_on_event(
     ): Short
     fun ffi_baileys_ffi_uniffi_contract_version(
     ): Int
@@ -1636,379 +1822,472 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_add_chat_label() != 3699.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_add_chat_label() != 20666.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_add_message_label() != 53044.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_add_message_label() != 23579.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_archive() != 28368.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_archive() != 20091.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_clear() != 37433.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_clear() != 43689.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_delete() != 3744.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_delete() != 55238.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_mark_unread() != 22767.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_mark_unread() != 3396.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_mute() != 60328.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_mute() != 30552.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_pin() != 47368.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_pin() != 29689.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_star() != 57769.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_star() != 22669.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_check_on_whatsapp() != 52750.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_check_on_whatsapp() != 10555.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_accept_invite() != 55292.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_clean_dirty_bits() != 60253.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_create() != 49764.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_accept_invite() != 15212.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_create_subgroup() != 4129.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_create() != 64307.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_fetch_subgroups() != 25503.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_create_subgroup() != 26727.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_get_invite_code() != 23656.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_fetch_all_participating() != 19999.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_get_metadata() != 23280.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_fetch_subgroups() != 54335.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_leave() != 23353.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_invite_code() != 50180.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_link_subgroup() != 9081.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_invite_info() != 33326.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_community_unlink_subgroup() != 44165.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_metadata() != 4218.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_delete_label() != 19594.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_join_approval_mode() != 59567.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_disconnect() != 23471.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_leave() != 11990.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_download_media() != 8130.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_link_subgroup() != 3822.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_edit_message() != 30004.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_member_add_mode() != 39257.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_fetch_blocklist() != 41797.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_revoke_invite() != 38632.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_fetch_message_history() != 16873.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_setting_update() != 12524.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_fetch_privacy_settings() != 36262.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_toggle_ephemeral() != 20105.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_fetch_status() != 8583.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_community_unlink_subgroup() != 16107.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_blocked_contacts() != 64395.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_create_call_link() != 22168.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_business_profile() != 63447.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_delete_label() != 14923.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_catalog() != 61689.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_disconnect() != 38576.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_collections() != 48229.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_download_media() != 43295.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_orders() != 25241.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_download_media_streaming() != 47858.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_call_history() != 51771.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_edit_message() != 57553.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_catalog() != 24717.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_account_reachout_timelock() != 6908.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_chat_ephemeral() != 36765.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_blocklist() != 1301.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_chat_labels() != 29320.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_message_history() != 39235.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_chats() != 35805.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_new_chat_message_cap() != 40903.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_chats_by_label() != 30006.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_privacy_settings() != 21815.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_collections() != 59605.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_status() != 6998.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_contact() != 49312.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_url_preview() != 17996.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_group_info() != 9925.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_blocked_contacts() != 1849.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_label() != 33147.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_bot_list_v2() != 37626.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_labels() != 54427.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_business_profile() != 33807.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_me_jid() != 11783.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_catalog() != 10036.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_message_labels() != 43686.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_collections() != 19917.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_messages() != 52187.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_orders() != 3561.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_messages_by_label() != 45491.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_call_history() != 23903.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_paired_devices() != 8380.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_catalog() != 45372.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_poll_tally() != 54482.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_chat_ephemeral() != 26809.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_product() != 6328.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_chat_labels() != 25051.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_recent_stories() != 31335.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_chats() != 13765.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_stories_by_author() != 23914.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_chats_by_label() != 34996.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_get_user_devices() != 3639.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_collections() != 2624.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_accept_invite() != 33619.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_connection_state() != 30547.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_accept_invite_v4() != 34808.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_contact() != 54012.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_create() != 44495.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_group_info() != 64774.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_fetch_all_participating() != 56136.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_label() != 57614.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_fetch_metadata() != 59774.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_labels() != 46724.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_get_invite_code() != 34022.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_lid_for_pn() != 42509.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_join_approval_mode() != 6629.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_me_jid() != 24239.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_leave() != 146.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_message_labels() != 62642.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_member_add_mode() != 49500.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_messages() != 35143.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_participants_update() != 15011.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_messages_by_label() != 24432.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_request_participants_list() != 17732.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_paired_devices() != 64937.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_request_participants_update() != 35051.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_pn_for_lid() != 13154.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_revoke_invite() != 40679.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_poll_tally() != 25527.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_revoke_invite_v4() != 62870.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_product() != 11521.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_setting_update() != 28546.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_recent_stories() != 55721.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_update_description() != 38809.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_stories_by_author() != 3042.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_group_update_subject() != 55758.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_telemetry_snapshot() != 14442.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_is_auto_download() != 10967.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_user_devices() != 24456.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_is_connected() != 646.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_user_status() != 61500.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_create() != 30963.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_accept_invite() != 58009.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_fetch_messages() != 36107.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_accept_invite_v4() != 2455.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_follow() != 6239.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_create() != 45071.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_get_subscribed() != 4592.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_fetch_all_participating() != 16654.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_mute() != 35556.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_fetch_metadata() != 43378.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_query_metadata() != 18451.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_code() != 54537.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_react() != 64812.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_join_approval_mode() != 17372.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_send_post() != 32605.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_leave() != 23105.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_unfollow() != 14021.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_member_add_mode() != 64075.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_ping() != 3108.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_participants_update() != 13697.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_presence_subscribe() != 27094.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_request_participants_list() != 51130.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_profile_picture_url() != 49492.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_request_participants_update() != 51722.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_reject_call() != 46931.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_revoke_invite() != 4536.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_remove_chat_label() != 37168.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_revoke_invite_v4() != 28948.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_remove_companion_device() != 33615.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_setting_update() != 2611.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_remove_message_label() != 12636.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_update_description() != 49990.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_remove_profile_picture() != 25827.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_update_subject() != 42778.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_revoke_message() != 27600.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_is_auto_download() != 52037.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_audio() != 7446.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_is_connected() != 37466.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_contact() != 64196.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_admin_count() != 28366.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_document() != 62782.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_change_owner() != 39130.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_document_attachment() != 35445.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_create() != 15811.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_group_invite() != 40243.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_demote() != 33965.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_image() != 61690.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_fetch_messages() != 44051.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_interactive_buttons() != 16188.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_follow() != 16252.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_list_message() != 58594.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_get_subscribed() != 46707.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_live_location() != 7487.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_mute() != 55104.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_location() != 11400.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_promote() != 56082.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_order_message() != 43526.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_query_metadata() != 30215.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_poll() != 28946.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_react() != 31618.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_poll_vote() != 2676.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_post() != 62567.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_presence() != 52473.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_unfollow() != 18500.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_product_message() != 33188.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_ping() != 37054.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_reaction() != 38116.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_presence_subscribe() != 12248.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_read() != 26207.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_product_delete() != 30730.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_revoke() != 43004.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_profile_picture_url() != 6503.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_status_read_receipt() != 31401.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_reject_call() != 42728.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_sticker() != 43732.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_remove_chat_label() != 25444.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_text() != 49850.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_remove_companion_device() != 60052.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_text_status() != 43527.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_remove_cover_photo() != 19082.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_text_with_quote() != 17622.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_remove_message_label() != 13161.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_video() != 19697.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_remove_profile_picture() != 60441.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_send_voice_note() != 55992.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_revoke_message() != 64592.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_set_auto_download() != 24989.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_audio() != 19309.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_set_chat_ephemeral() != 10192.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_contact() != 41165.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_start() != 59664.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_document() != 40425.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_update_block_status() != 24449.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_document_attachment() != 45719.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_update_privacy_setting() != 30343.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_group_invite() != 20524.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_update_profile_picture() != 5087.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_image() != 56089.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_update_profile_status() != 63927.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_interactive_buttons() != 24656.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraclient_upsert_label() != 22523.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_list_message() != 55884.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_constructor_auroraclient_new() != 22418.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_live_location() != 14783.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_baileys_ffi_checksum_method_auroraeventlistener_on_event() != 55207.toShort()) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_location() != 31539.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_media_file() != 3707.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_order_message() != 21230.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_poll() != 25149.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_poll_vote() != 49768.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_presence() != 58389.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_product_message() != 25659.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_reaction() != 52838.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_read() != 52289.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_revoke() != 15489.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_read_receipt() != 20310.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_sticker() != 50321.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_text() != 1226.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_status() != 29586.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_preview() != 41136.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_quote() != 17178.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_video() != 9139.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_voice_note() != 16097.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_set_auto_download() != 47287.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_set_chat_ephemeral() != 41979.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_start() != 19242.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_subscribe_newsletter_updates() != 38379.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_block_status() != 46953.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_cover_photo() != 14646.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_disable_link_previews_privacy() != 25768.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_media_message() != 41105.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_privacy_setting() != 31032.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_picture() != 15024.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_status() != 60604.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_upsert_label() != 37799.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_constructor_rolleysclient_new() != 56112.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleyseventlistener_on_event() != 45190.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -2457,7 +2736,7 @@ private class JavaLangRefCleanable(
 ) : UniffiCleaner.Cleanable {
     override fun clean() = cleanable.clean()
 }
-public interface AuroraClientInterface {
+public interface RolleysClientInterface {
     
     fun `addChatLabel`(`chatJid`: kotlin.String, `labelId`: kotlin.String)
     
@@ -2498,7 +2777,9 @@ public interface AuroraClientInterface {
      */
     fun `chatModifyStar`(`jid`: kotlin.String, `msgId`: kotlin.String, `fromMe`: kotlin.Boolean, `star`: kotlin.Boolean)
     
-    fun `checkOnWhatsapp`(`phoneNumbers`: List<kotlin.String>): List<AuroraOnWhatsAppResult>
+    fun `checkOnWhatsapp`(`phoneNumbers`: List<kotlin.String>): List<RolleysOnWhatsAppResult>
+    
+    fun `cleanDirtyBits`(`cleanType`: kotlin.String, `timestamp`: kotlin.ULong?)
     
     /**
      * Accepts an invite code to join a WhatsApp Community.
@@ -2508,27 +2789,33 @@ public interface AuroraClientInterface {
     /**
      * Creates a new WhatsApp Community.
      */
-    fun `communityCreate`(`subject`: kotlin.String, `description`: kotlin.String?): AuroraCommunityMetadata
+    fun `communityCreate`(`subject`: kotlin.String, `description`: kotlin.String?): RolleysCommunityMetadata
     
     /**
      * Creates a new subgroup linked under an existing parent Community.
      */
     fun `communityCreateSubgroup`(`parentCommunityJid`: kotlin.String, `subject`: kotlin.String, `participants`: List<kotlin.String>): kotlin.String
     
+    fun `communityFetchAllParticipating`(): List<kotlin.String>
+    
     /**
      * Fetches all linked subgroups under a Community.
      */
-    fun `communityFetchSubgroups`(`communityJid`: kotlin.String): List<AuroraCommunitySubgroup>
+    fun `communityFetchSubgroups`(`communityJid`: kotlin.String): List<RolleysCommunitySubgroup>
     
     /**
      * Gets an invite code for a Community.
      */
     fun `communityGetInviteCode`(`communityJid`: kotlin.String): kotlin.String
     
+    fun `communityGetInviteInfo`(`code`: kotlin.String): RolleysCommunityInviteInfo
+    
     /**
      * Queries interactive metadata for a Community.
      */
-    fun `communityGetMetadata`(`communityJid`: kotlin.String): AuroraCommunityMetadata
+    fun `communityGetMetadata`(`communityJid`: kotlin.String): RolleysCommunityMetadata
+    
+    fun `communityJoinApprovalMode`(`communityJid`: kotlin.String, `mode`: kotlin.String)
     
     /**
      * Leaves an existing WhatsApp Community.
@@ -2540,10 +2827,20 @@ public interface AuroraClientInterface {
      */
     fun `communityLinkSubgroup`(`parentCommunityJid`: kotlin.String, `groupJid`: kotlin.String)
     
+    fun `communityMemberAddMode`(`communityJid`: kotlin.String, `mode`: kotlin.String)
+    
+    fun `communityRevokeInvite`(`communityJid`: kotlin.String): kotlin.String
+    
+    fun `communitySettingUpdate`(`communityJid`: kotlin.String, `setting`: kotlin.String)
+    
+    fun `communityToggleEphemeral`(`communityJid`: kotlin.String, `duration`: kotlin.UInt)
+    
     /**
      * Unlinks a subgroup from a parent Community.
      */
     fun `communityUnlinkSubgroup`(`parentCommunityJid`: kotlin.String, `groupJid`: kotlin.String)
+    
+    fun `createCallLink`(`isVideo`: kotlin.Boolean): kotlin.String?
     
     fun `deleteLabel`(`id`: kotlin.String)
     
@@ -2557,7 +2854,15 @@ public interface AuroraClientInterface {
      */
     fun `downloadMedia`(`msgId`: kotlin.String, `destDir`: kotlin.String): kotlin.String
     
+    /**
+     * Downloads and decrypts media from a message ID using the streaming pipeline (~64KB RAM),
+     * saving it to dest_path (or a default path if not specified) and returning the resulting path.
+     */
+    fun `downloadMediaStreaming`(`msgId`: kotlin.String, `destPath`: kotlin.String?): kotlin.String
+    
     fun `editMessage`(`chatJid`: kotlin.String, `targetMessageId`: kotlin.String, `newText`: kotlin.String): kotlin.String
+    
+    fun `fetchAccountReachoutTimelock`(): RolleysAccountReachoutTimelock?
     
     /**
      * Fetches the full list of blocked contact JIDs from WhatsApp server and syncs to SQLite.
@@ -2569,38 +2874,44 @@ public interface AuroraClientInterface {
      */
     fun `fetchMessageHistory`(`chatJid`: kotlin.String, `count`: kotlin.UInt, `oldestMsgId`: kotlin.String, `oldestFromMe`: kotlin.Boolean, `oldestTimestamp`: kotlin.ULong): kotlin.String
     
+    fun `fetchNewChatMessageCap`(): kotlin.String?
+    
     /**
      * Fetches the user's current privacy settings from WhatsApp gateway.
      */
-    fun `fetchPrivacySettings`(): AuroraPrivacySettings
+    fun `fetchPrivacySettings`(): RolleysPrivacySettings
     
     /**
      * Fetches the About / Bio status string of a user.
      */
-    fun `fetchStatus`(`jid`: kotlin.String): AuroraProfileStatus?
+    fun `fetchStatus`(`jid`: kotlin.String): RolleysProfileStatus?
+    
+    fun `fetchUrlPreview`(`text`: kotlin.String): RolleysUrlPreview?
     
     /**
      * Reads all locally stored blocked contacts from SQLite.
      */
     fun `getBlockedContacts`(): List<kotlin.String>
     
+    fun `getBotListV2`(): List<RolleysBotEntry>
+    
     /**
      * Queries business profile metadata for a WhatsApp Business account.
      */
-    fun `getBusinessProfile`(`jid`: kotlin.String): AuroraBusinessProfile?
+    fun `getBusinessProfile`(`jid`: kotlin.String): RolleysBusinessProfile?
     
-    fun `getCachedCatalog`(`bizJid`: kotlin.String): List<AuroraCatalogProduct>
+    fun `getCachedCatalog`(`bizJid`: kotlin.String): List<RolleysCatalogProduct>
     
-    fun `getCachedCollections`(`bizJid`: kotlin.String): List<AuroraCatalogCollection>
+    fun `getCachedCollections`(`bizJid`: kotlin.String): List<RolleysCatalogCollection>
     
-    fun `getCachedOrders`(`chatJid`: kotlin.String, `limit`: kotlin.UInt): List<AuroraOrder>
+    fun `getCachedOrders`(`chatJid`: kotlin.String, `limit`: kotlin.UInt): List<RolleysOrder>
     
     /**
      * Fetches VoIP call history from SQLite.
      */
-    fun `getCallHistory`(`limit`: kotlin.UInt): List<AuroraStoredCall>
+    fun `getCallHistory`(`limit`: kotlin.UInt): List<RolleysStoredCall>
     
-    fun `getCatalog`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): AuroraCatalogResult
+    fun `getCatalog`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): RolleysCatalogResult
     
     fun `getChatEphemeral`(`chatJid`: kotlin.String): kotlin.UInt?
     
@@ -2609,25 +2920,32 @@ public interface AuroraClientInterface {
     /**
      * Returns all saved chats ordered by recent activity.
      */
-    fun `getChats`(): List<AuroraChat>
+    fun `getChats`(): List<RolleysChat>
     
     fun `getChatsByLabel`(`labelId`: kotlin.String): List<kotlin.String>
     
-    fun `getCollections`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): AuroraCollectionsResult
+    fun `getCollections`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): RolleysCollectionsResult
+    
+    /**
+     * Returns the current formal connection state string.
+     */
+    fun `getConnectionState`(): kotlin.String
     
     /**
      * Queries contact info by JID from SQLite.
      */
-    fun `getContact`(`jid`: kotlin.String): AuroraContact?
+    fun `getContact`(`jid`: kotlin.String): RolleysContact?
     
     /**
      * Queries group info (subject, participants) from WhatsApp server.
      */
-    fun `getGroupInfo`(`groupJid`: kotlin.String): AuroraGroupInfo
+    fun `getGroupInfo`(`groupJid`: kotlin.String): RolleysGroupInfo
     
-    fun `getLabel`(`id`: kotlin.String): AuroraLabel?
+    fun `getLabel`(`id`: kotlin.String): RolleysLabel?
     
-    fun `getLabels`(): List<AuroraLabel>
+    fun `getLabels`(): List<RolleysLabel>
+    
+    fun `getLidForPn`(`pnJid`: kotlin.String): kotlin.String?
     
     /**
      * Returns the currently authenticated JID if paired/connected.
@@ -2639,30 +2957,39 @@ public interface AuroraClientInterface {
     /**
      * Returns historical messages for a chat from SQLite.
      */
-    fun `getMessages`(`chatJid`: kotlin.String, `limit`: kotlin.UInt, `beforeTimestamp`: kotlin.ULong?): List<AuroraMessage>
+    fun `getMessages`(`chatJid`: kotlin.String, `limit`: kotlin.UInt, `beforeTimestamp`: kotlin.ULong?): List<RolleysMessage>
     
     fun `getMessagesByLabel`(`labelId`: kotlin.String): List<kotlin.String>
     
-    fun `getPairedDevices`(): List<AuroraDeviceRecord>
+    fun `getPairedDevices`(): List<RolleysDeviceRecord>
+    
+    fun `getPnForLid`(`lidJid`: kotlin.String): kotlin.String?
     
     /**
      * Fetches the aggregated vote tally for a poll from the local SQLite database.
      */
-    fun `getPollTally`(`pollId`: kotlin.String): AuroraPollTally?
+    fun `getPollTally`(`pollId`: kotlin.String): RolleysPollTally?
     
-    fun `getProduct`(`bizJid`: kotlin.String, `productId`: kotlin.String): AuroraCatalogProduct
+    fun `getProduct`(`bizJid`: kotlin.String, `productId`: kotlin.String): RolleysCatalogProduct
     
     /**
      * Fetches recent status stories from SQLite cache.
      */
-    fun `getRecentStories`(`limit`: kotlin.UInt, `unviewedOnly`: kotlin.Boolean): List<AuroraStoredStory>
+    fun `getRecentStories`(`limit`: kotlin.UInt, `unviewedOnly`: kotlin.Boolean): List<RolleysStoredStory>
     
     /**
      * Fetches all active status stories posted by a specific contact.
      */
-    fun `getStoriesByAuthor`(`authorJid`: kotlin.String): List<AuroraStoredStory>
+    fun `getStoriesByAuthor`(`authorJid`: kotlin.String): List<RolleysStoredStory>
+    
+    /**
+     * Returns current health telemetry snapshot (message throughput, ping latency, Signal hit rate).
+     */
+    fun `getTelemetrySnapshot`(): RolleysTelemetrySnapshot
     
     fun `getUserDevices`(`userJid`: kotlin.String): List<kotlin.UInt>
+    
+    fun `getUserStatus`(`jid`: kotlin.String): RolleysUserStatus?
     
     /**
      * Joins a group using an invite code.
@@ -2682,12 +3009,12 @@ public interface AuroraClientInterface {
     /**
      * Fetches all participating groups for the authenticated account and caches them locally.
      */
-    fun `groupFetchAllParticipating`(): List<AuroraGroupMetadata>
+    fun `groupFetchAllParticipating`(): List<RolleysGroupMetadata>
     
     /**
      * Fetches comprehensive group metadata including participants, roles, and configuration.
      */
-    fun `groupFetchMetadata`(`groupJid`: kotlin.String): AuroraGroupMetadata
+    fun `groupFetchMetadata`(`groupJid`: kotlin.String): RolleysGroupMetadata
     
     /**
      * Gets the invite code for a group.
@@ -2712,17 +3039,17 @@ public interface AuroraClientInterface {
     /**
      * Updates participants in a group ("add", "remove", "promote", "demote").
      */
-    fun `groupParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<AuroraParticipantUpdateResult>
+    fun `groupParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<RolleysParticipantUpdateResult>
     
     /**
      * Fetches pending membership join requests for a group.
      */
-    fun `groupRequestParticipantsList`(`groupJid`: kotlin.String): List<AuroraGroupJoinRequest>
+    fun `groupRequestParticipantsList`(`groupJid`: kotlin.String): List<RolleysGroupJoinRequest>
     
     /**
      * Approves or rejects pending participant join requests ("approve" or "reject").
      */
-    fun `groupRequestParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<AuroraParticipantUpdateResult>
+    fun `groupRequestParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<RolleysParticipantUpdateResult>
     
     /**
      * Revokes the current invite code of a group and generates a new one.
@@ -2759,15 +3086,27 @@ public interface AuroraClientInterface {
      */
     fun `isConnected`(): kotlin.Boolean
     
+    fun `newsletterAdminCount`(`channelJid`: kotlin.String): kotlin.UInt
+    
+    /**
+     * Transfers channel ownership to another admin.
+     */
+    fun `newsletterChangeOwner`(`jid`: kotlin.String, `newOwnerJid`: kotlin.String)
+    
     /**
      * Creates a new WhatsApp Channel.
      */
-    fun `newsletterCreate`(`name`: kotlin.String, `description`: kotlin.String?): AuroraNewsletter
+    fun `newsletterCreate`(`name`: kotlin.String, `description`: kotlin.String?): RolleysNewsletter
+    
+    /**
+     * Demotes a channel admin back to subscriber.
+     */
+    fun `newsletterDemote`(`jid`: kotlin.String, `userJid`: kotlin.String)
     
     /**
      * Fetches message history from a WhatsApp Channel.
      */
-    fun `newsletterFetchMessages`(`jid`: kotlin.String, `count`: kotlin.UInt, `before`: kotlin.ULong?): List<AuroraNewsletterMessage>
+    fun `newsletterFetchMessages`(`jid`: kotlin.String, `count`: kotlin.UInt, `before`: kotlin.ULong?): List<RolleysNewsletterMessage>
     
     /**
      * Follows a WhatsApp Channel.
@@ -2777,7 +3116,7 @@ public interface AuroraClientInterface {
     /**
      * Fetches all WhatsApp Channels the user is subscribed to.
      */
-    fun `newsletterGetSubscribed`(): List<AuroraNewsletter>
+    fun `newsletterGetSubscribed`(): List<RolleysNewsletter>
     
     /**
      * Toggles mute status for a WhatsApp Channel.
@@ -2785,9 +3124,14 @@ public interface AuroraClientInterface {
     fun `newsletterMute`(`jid`: kotlin.String, `mute`: kotlin.Boolean)
     
     /**
+     * Promotes a channel subscriber to admin role.
+     */
+    fun `newsletterPromote`(`jid`: kotlin.String, `userJid`: kotlin.String)
+    
+    /**
      * Queries metadata for a WhatsApp Channel by JID or invite link/code.
      */
-    fun `newsletterQueryMetadata`(`jidOrInvite`: kotlin.String): AuroraNewsletter
+    fun `newsletterQueryMetadata`(`jidOrInvite`: kotlin.String): RolleysNewsletter
     
     /**
      * Sends an emoji reaction to a channel message post.
@@ -2814,6 +3158,8 @@ public interface AuroraClientInterface {
      */
     fun `presenceSubscribe`(`toJid`: kotlin.String)
     
+    fun `productDelete`(`productIds`: List<kotlin.String>)
+    
     /**
      * Fetches profile picture URL for a user or group.
      */
@@ -2827,6 +3173,8 @@ public interface AuroraClientInterface {
     fun `removeChatLabel`(`chatJid`: kotlin.String, `labelId`: kotlin.String)
     
     fun `removeCompanionDevice`(`deviceId`: kotlin.UInt)
+    
+    fun `removeCoverPhoto`(`photoId`: kotlin.String)
     
     fun `removeMessageLabel`(`chatJid`: kotlin.String, `messageId`: kotlin.String, `labelId`: kotlin.String)
     
@@ -2864,16 +3212,22 @@ public interface AuroraClientInterface {
     /**
      * Sends native flow interactive action buttons (quick reply, cta_url, etc.).
      */
-    fun `sendInteractiveButtons`(`targetJid`: kotlin.String, `body`: kotlin.String, `buttons`: List<AuroraInteractiveButton>, `header`: kotlin.String?, `footer`: kotlin.String?): kotlin.String
+    fun `sendInteractiveButtons`(`targetJid`: kotlin.String, `body`: kotlin.String, `buttons`: List<RolleysInteractiveButton>, `header`: kotlin.String?, `footer`: kotlin.String?): kotlin.String
     
     /**
      * Sends an interactive single-selection list message.
      */
-    fun `sendListMessage`(`targetJid`: kotlin.String, `title`: kotlin.String, `description`: kotlin.String, `buttonText`: kotlin.String, `sections`: List<AuroraListSection>, `footer`: kotlin.String?): kotlin.String
+    fun `sendListMessage`(`targetJid`: kotlin.String, `title`: kotlin.String, `description`: kotlin.String, `buttonText`: kotlin.String, `sections`: List<RolleysListSection>, `footer`: kotlin.String?): kotlin.String
     
     fun `sendLiveLocation`(`toJid`: kotlin.String, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `accuracyInMeters`: kotlin.UInt?, `caption`: kotlin.String?): kotlin.String
     
     fun `sendLocation`(`toJid`: kotlin.String, `latitude`: kotlin.Double, `longitude`: kotlin.Double, `name`: kotlin.String?, `address`: kotlin.String?): kotlin.String
+    
+    /**
+     * Sends a local media file using the streaming upload pipeline (zero-OOM spooling for >= 10MB)
+     * and emits real-time RolleysEvent::MediaProgress events.
+     */
+    fun `sendMediaFile`(`chatJid`: kotlin.String, `filePath`: kotlin.String, `mediaType`: kotlin.String, `caption`: kotlin.String?): kotlin.String
     
     fun `sendOrderMessage`(`toJid`: kotlin.String, `sellerJid`: kotlin.String, `orderId`: kotlin.String, `title`: kotlin.String, `itemCount`: kotlin.Int, `totalAmount1000`: kotlin.Long, `currency`: kotlin.String, `message`: kotlin.String?): kotlin.String
     
@@ -2929,6 +3283,8 @@ public interface AuroraClientInterface {
      */
     fun `sendTextStatus`(`text`: kotlin.String, `backgroundColor`: kotlin.String?, `font`: kotlin.Int?, `audience`: List<kotlin.String>?): kotlin.String
     
+    fun `sendTextWithPreview`(`toJid`: kotlin.String, `text`: kotlin.String): kotlin.String
+    
     /**
      * Sends a text message quoting/replying to a previous message.
      */
@@ -2954,12 +3310,20 @@ public interface AuroraClientInterface {
     /**
      * Starts the client connection and forwards real-time events to the native Kotlin listener.
      */
-    fun `start`(`listener`: AuroraEventListener)
+    fun `start`(`listener`: RolleysEventListener)
+    
+    fun `subscribeNewsletterUpdates`(`channelJid`: kotlin.String): kotlin.String?
     
     /**
      * Blocks or unblocks a contact ("block" or "unblock").
      */
     fun `updateBlockStatus`(`jid`: kotlin.String, `action`: kotlin.String)
+    
+    fun `updateCoverPhoto`(`photoId`: kotlin.String, `token`: kotlin.String, `ts`: kotlin.ULong)
+    
+    fun `updateDisableLinkPreviewsPrivacy`(`isDisabled`: kotlin.Boolean)
+    
+    fun `updateMediaMessage`(`messageId`: kotlin.String)
     
     /**
      * Updates a privacy setting (e.g. category="last", value="all"|"contacts"|"none").
@@ -2981,7 +3345,7 @@ public interface AuroraClientInterface {
     companion object
 }
 
-open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
+open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
 
     constructor(pointer: Pointer) {
         this.pointer = pointer
@@ -2998,11 +3362,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         this.pointer = null
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
     }
-    constructor(`config`: AuroraClientConfig) :
+    constructor(`config`: RolleysClientConfig) :
         this(
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_constructor_auroraclient_new(
-        FfiConverterTypeAuroraClientConfig.lower(`config`),_status)
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_constructor_rolleysclient_new(
+        FfiConverterTypeRolleysClientConfig.lower(`config`),_status)
 }
     )
 
@@ -3057,7 +3421,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_free_auroraclient(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_free_rolleysclient(ptr, status)
                 }
             }
         }
@@ -3065,7 +3429,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_clone_auroraclient(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_clone_rolleysclient(pointer!!, status)
         }
     }
 
@@ -3074,7 +3438,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_add_chat_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_add_chat_label(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`labelId`),_status)
 }
     }
@@ -3086,7 +3450,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_add_message_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_add_message_label(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`messageId`),FfiConverterString.lower(`labelId`),_status)
 }
     }
@@ -3101,7 +3465,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_archive(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_archive(
         it, FfiConverterString.lower(`jid`),FfiConverterBoolean.lower(`archive`),_status)
 }
     }
@@ -3116,7 +3480,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_clear(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_clear(
         it, FfiConverterString.lower(`chatJid`),FfiConverterBoolean.lower(`keepStarred`),_status)
 }
     }
@@ -3131,7 +3495,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_delete(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_delete(
         it, FfiConverterString.lower(`chatJid`),_status)
 }
     }
@@ -3146,7 +3510,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_mark_unread(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_mark_unread(
         it, FfiConverterString.lower(`chatJid`),FfiConverterBoolean.lower(`unread`),_status)
 }
     }
@@ -3161,7 +3525,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_mute(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_mute(
         it, FfiConverterString.lower(`jid`),FfiConverterOptionalULong.lower(`durationSecs`),_status)
 }
     }
@@ -3176,7 +3540,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_pin(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_pin(
         it, FfiConverterString.lower(`jid`),FfiConverterBoolean.lower(`pin`),_status)
 }
     }
@@ -3191,7 +3555,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_star(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_star(
         it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`msgId`),FfiConverterBoolean.lower(`fromMe`),FfiConverterBoolean.lower(`star`),_status)
 }
     }
@@ -3199,16 +3563,28 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `checkOnWhatsapp`(`phoneNumbers`: List<kotlin.String>): List<AuroraOnWhatsAppResult> {
-            return FfiConverterSequenceTypeAuroraOnWhatsAppResult.lift(
+    @Throws(FfiException::class)override fun `checkOnWhatsapp`(`phoneNumbers`: List<kotlin.String>): List<RolleysOnWhatsAppResult> {
+            return FfiConverterSequenceTypeRolleysOnWhatsAppResult.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_check_on_whatsapp(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_check_on_whatsapp(
         it, FfiConverterSequenceString.lower(`phoneNumbers`),_status)
 }
     }
     )
     }
+    
+
+    
+    @Throws(FfiException::class)override fun `cleanDirtyBits`(`cleanType`: kotlin.String, `timestamp`: kotlin.ULong?)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_clean_dirty_bits(
+        it, FfiConverterString.lower(`cleanType`),FfiConverterOptionalULong.lower(`timestamp`),_status)
+}
+    }
+    
     
 
     
@@ -3219,7 +3595,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_accept_invite(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_accept_invite(
         it, FfiConverterString.lower(`code`),_status)
 }
     }
@@ -3231,11 +3607,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Creates a new WhatsApp Community.
      */
-    @Throws(FfiException::class)override fun `communityCreate`(`subject`: kotlin.String, `description`: kotlin.String?): AuroraCommunityMetadata {
-            return FfiConverterTypeAuroraCommunityMetadata.lift(
+    @Throws(FfiException::class)override fun `communityCreate`(`subject`: kotlin.String, `description`: kotlin.String?): RolleysCommunityMetadata {
+            return FfiConverterTypeRolleysCommunityMetadata.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_create(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_create(
         it, FfiConverterString.lower(`subject`),FfiConverterOptionalString.lower(`description`),_status)
 }
     }
@@ -3251,8 +3627,21 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_create_subgroup(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_create_subgroup(
         it, FfiConverterString.lower(`parentCommunityJid`),FfiConverterString.lower(`subject`),FfiConverterSequenceString.lower(`participants`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `communityFetchAllParticipating`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_fetch_all_participating(
+        it, _status)
 }
     }
     )
@@ -3263,11 +3652,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches all linked subgroups under a Community.
      */
-    @Throws(FfiException::class)override fun `communityFetchSubgroups`(`communityJid`: kotlin.String): List<AuroraCommunitySubgroup> {
-            return FfiConverterSequenceTypeAuroraCommunitySubgroup.lift(
+    @Throws(FfiException::class)override fun `communityFetchSubgroups`(`communityJid`: kotlin.String): List<RolleysCommunitySubgroup> {
+            return FfiConverterSequenceTypeRolleysCommunitySubgroup.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_fetch_subgroups(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_fetch_subgroups(
         it, FfiConverterString.lower(`communityJid`),_status)
 }
     }
@@ -3283,8 +3672,21 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_get_invite_code(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_get_invite_code(
         it, FfiConverterString.lower(`communityJid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `communityGetInviteInfo`(`code`: kotlin.String): RolleysCommunityInviteInfo {
+            return FfiConverterTypeRolleysCommunityInviteInfo.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_get_invite_info(
+        it, FfiConverterString.lower(`code`),_status)
 }
     }
     )
@@ -3295,16 +3697,28 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Queries interactive metadata for a Community.
      */
-    @Throws(FfiException::class)override fun `communityGetMetadata`(`communityJid`: kotlin.String): AuroraCommunityMetadata {
-            return FfiConverterTypeAuroraCommunityMetadata.lift(
+    @Throws(FfiException::class)override fun `communityGetMetadata`(`communityJid`: kotlin.String): RolleysCommunityMetadata {
+            return FfiConverterTypeRolleysCommunityMetadata.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_get_metadata(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_get_metadata(
         it, FfiConverterString.lower(`communityJid`),_status)
 }
     }
     )
     }
+    
+
+    
+    @Throws(FfiException::class)override fun `communityJoinApprovalMode`(`communityJid`: kotlin.String, `mode`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_join_approval_mode(
+        it, FfiConverterString.lower(`communityJid`),FfiConverterString.lower(`mode`),_status)
+}
+    }
+    
     
 
     
@@ -3315,7 +3729,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_leave(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_leave(
         it, FfiConverterString.lower(`communityJid`),_status)
 }
     }
@@ -3330,8 +3744,57 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_link_subgroup(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_link_subgroup(
         it, FfiConverterString.lower(`parentCommunityJid`),FfiConverterString.lower(`groupJid`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `communityMemberAddMode`(`communityJid`: kotlin.String, `mode`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_member_add_mode(
+        it, FfiConverterString.lower(`communityJid`),FfiConverterString.lower(`mode`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `communityRevokeInvite`(`communityJid`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_revoke_invite(
+        it, FfiConverterString.lower(`communityJid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `communitySettingUpdate`(`communityJid`: kotlin.String, `setting`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_setting_update(
+        it, FfiConverterString.lower(`communityJid`),FfiConverterString.lower(`setting`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `communityToggleEphemeral`(`communityJid`: kotlin.String, `duration`: kotlin.UInt)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_toggle_ephemeral(
+        it, FfiConverterString.lower(`communityJid`),FfiConverterUInt.lower(`duration`),_status)
 }
     }
     
@@ -3345,7 +3808,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_community_unlink_subgroup(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_community_unlink_subgroup(
         it, FfiConverterString.lower(`parentCommunityJid`),FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -3353,11 +3816,24 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `createCallLink`(`isVideo`: kotlin.Boolean): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_create_call_link(
+        it, FfiConverterBoolean.lower(`isVideo`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(FfiException::class)override fun `deleteLabel`(`id`: kotlin.String)
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_delete_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_delete_label(
         it, FfiConverterString.lower(`id`),_status)
 }
     }
@@ -3371,7 +3847,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_disconnect(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_disconnect(
         it, _status)
 }
     }
@@ -3386,8 +3862,25 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_download_media(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_download_media(
         it, FfiConverterString.lower(`msgId`),FfiConverterString.lower(`destDir`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Downloads and decrypts media from a message ID using the streaming pipeline (~64KB RAM),
+     * saving it to dest_path (or a default path if not specified) and returning the resulting path.
+     */
+    @Throws(FfiException::class)override fun `downloadMediaStreaming`(`msgId`: kotlin.String, `destPath`: kotlin.String?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_download_media_streaming(
+        it, FfiConverterString.lower(`msgId`),FfiConverterOptionalString.lower(`destPath`),_status)
 }
     }
     )
@@ -3399,8 +3892,21 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_edit_message(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_edit_message(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`targetMessageId`),FfiConverterString.lower(`newText`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `fetchAccountReachoutTimelock`(): RolleysAccountReachoutTimelock? {
+            return FfiConverterOptionalTypeRolleysAccountReachoutTimelock.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_account_reachout_timelock(
+        it, _status)
 }
     }
     )
@@ -3415,7 +3921,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_fetch_blocklist(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_blocklist(
         it, _status)
 }
     }
@@ -3431,8 +3937,21 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_fetch_message_history(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_message_history(
         it, FfiConverterString.lower(`chatJid`),FfiConverterUInt.lower(`count`),FfiConverterString.lower(`oldestMsgId`),FfiConverterBoolean.lower(`oldestFromMe`),FfiConverterULong.lower(`oldestTimestamp`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `fetchNewChatMessageCap`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_new_chat_message_cap(
+        it, _status)
 }
     }
     )
@@ -3443,11 +3962,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches the user's current privacy settings from WhatsApp gateway.
      */
-    @Throws(FfiException::class)override fun `fetchPrivacySettings`(): AuroraPrivacySettings {
-            return FfiConverterTypeAuroraPrivacySettings.lift(
+    @Throws(FfiException::class)override fun `fetchPrivacySettings`(): RolleysPrivacySettings {
+            return FfiConverterTypeRolleysPrivacySettings.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_fetch_privacy_settings(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_privacy_settings(
         it, _status)
 }
     }
@@ -3459,12 +3978,25 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches the About / Bio status string of a user.
      */
-    @Throws(FfiException::class)override fun `fetchStatus`(`jid`: kotlin.String): AuroraProfileStatus? {
-            return FfiConverterOptionalTypeAuroraProfileStatus.lift(
+    @Throws(FfiException::class)override fun `fetchStatus`(`jid`: kotlin.String): RolleysProfileStatus? {
+            return FfiConverterOptionalTypeRolleysProfileStatus.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_fetch_status(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_status(
         it, FfiConverterString.lower(`jid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `fetchUrlPreview`(`text`: kotlin.String): RolleysUrlPreview? {
+            return FfiConverterOptionalTypeRolleysUrlPreview.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_fetch_url_preview(
+        it, FfiConverterString.lower(`text`),_status)
 }
     }
     )
@@ -3479,7 +4011,20 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_blocked_contacts(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_blocked_contacts(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `getBotListV2`(): List<RolleysBotEntry> {
+            return FfiConverterSequenceTypeRolleysBotEntry.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_bot_list_v2(
         it, _status)
 }
     }
@@ -3491,11 +4036,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Queries business profile metadata for a WhatsApp Business account.
      */
-    @Throws(FfiException::class)override fun `getBusinessProfile`(`jid`: kotlin.String): AuroraBusinessProfile? {
-            return FfiConverterOptionalTypeAuroraBusinessProfile.lift(
+    @Throws(FfiException::class)override fun `getBusinessProfile`(`jid`: kotlin.String): RolleysBusinessProfile? {
+            return FfiConverterOptionalTypeRolleysBusinessProfile.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_business_profile(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_business_profile(
         it, FfiConverterString.lower(`jid`),_status)
 }
     }
@@ -3504,11 +4049,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getCachedCatalog`(`bizJid`: kotlin.String): List<AuroraCatalogProduct> {
-            return FfiConverterSequenceTypeAuroraCatalogProduct.lift(
+    @Throws(FfiException::class)override fun `getCachedCatalog`(`bizJid`: kotlin.String): List<RolleysCatalogProduct> {
+            return FfiConverterSequenceTypeRolleysCatalogProduct.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_cached_catalog(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_catalog(
         it, FfiConverterString.lower(`bizJid`),_status)
 }
     }
@@ -3517,11 +4062,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getCachedCollections`(`bizJid`: kotlin.String): List<AuroraCatalogCollection> {
-            return FfiConverterSequenceTypeAuroraCatalogCollection.lift(
+    @Throws(FfiException::class)override fun `getCachedCollections`(`bizJid`: kotlin.String): List<RolleysCatalogCollection> {
+            return FfiConverterSequenceTypeRolleysCatalogCollection.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_cached_collections(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_collections(
         it, FfiConverterString.lower(`bizJid`),_status)
 }
     }
@@ -3530,11 +4075,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getCachedOrders`(`chatJid`: kotlin.String, `limit`: kotlin.UInt): List<AuroraOrder> {
-            return FfiConverterSequenceTypeAuroraOrder.lift(
+    @Throws(FfiException::class)override fun `getCachedOrders`(`chatJid`: kotlin.String, `limit`: kotlin.UInt): List<RolleysOrder> {
+            return FfiConverterSequenceTypeRolleysOrder.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_cached_orders(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_orders(
         it, FfiConverterString.lower(`chatJid`),FfiConverterUInt.lower(`limit`),_status)
 }
     }
@@ -3546,11 +4091,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches VoIP call history from SQLite.
      */
-    @Throws(FfiException::class)override fun `getCallHistory`(`limit`: kotlin.UInt): List<AuroraStoredCall> {
-            return FfiConverterSequenceTypeAuroraStoredCall.lift(
+    @Throws(FfiException::class)override fun `getCallHistory`(`limit`: kotlin.UInt): List<RolleysStoredCall> {
+            return FfiConverterSequenceTypeRolleysStoredCall.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_call_history(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_call_history(
         it, FfiConverterUInt.lower(`limit`),_status)
 }
     }
@@ -3559,11 +4104,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getCatalog`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): AuroraCatalogResult {
-            return FfiConverterTypeAuroraCatalogResult.lift(
+    @Throws(FfiException::class)override fun `getCatalog`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): RolleysCatalogResult {
+            return FfiConverterTypeRolleysCatalogResult.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_catalog(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_catalog(
         it, FfiConverterString.lower(`bizJid`),FfiConverterUInt.lower(`limit`),FfiConverterOptionalString.lower(`cursor`),_status)
 }
     }
@@ -3576,7 +4121,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterOptionalUInt.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_chat_ephemeral(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_chat_ephemeral(
         it, FfiConverterString.lower(`chatJid`),_status)
 }
     }
@@ -3589,7 +4134,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_chat_labels(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_chat_labels(
         it, FfiConverterString.lower(`chatJid`),_status)
 }
     }
@@ -3601,11 +4146,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Returns all saved chats ordered by recent activity.
      */
-    @Throws(FfiException::class)override fun `getChats`(): List<AuroraChat> {
-            return FfiConverterSequenceTypeAuroraChat.lift(
+    @Throws(FfiException::class)override fun `getChats`(): List<RolleysChat> {
+            return FfiConverterSequenceTypeRolleysChat.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_chats(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_chats(
         it, _status)
 }
     }
@@ -3618,7 +4163,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_chats_by_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_chats_by_label(
         it, FfiConverterString.lower(`labelId`),_status)
 }
     }
@@ -3627,12 +4172,27 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getCollections`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): AuroraCollectionsResult {
-            return FfiConverterTypeAuroraCollectionsResult.lift(
+    @Throws(FfiException::class)override fun `getCollections`(`bizJid`: kotlin.String, `limit`: kotlin.UInt, `cursor`: kotlin.String?): RolleysCollectionsResult {
+            return FfiConverterTypeRolleysCollectionsResult.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_collections(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_collections(
         it, FfiConverterString.lower(`bizJid`),FfiConverterUInt.lower(`limit`),FfiConverterOptionalString.lower(`cursor`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Returns the current formal connection state string.
+     */override fun `getConnectionState`(): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_connection_state(
+        it, _status)
 }
     }
     )
@@ -3643,11 +4203,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Queries contact info by JID from SQLite.
      */
-    @Throws(FfiException::class)override fun `getContact`(`jid`: kotlin.String): AuroraContact? {
-            return FfiConverterOptionalTypeAuroraContact.lift(
+    @Throws(FfiException::class)override fun `getContact`(`jid`: kotlin.String): RolleysContact? {
+            return FfiConverterOptionalTypeRolleysContact.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_contact(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_contact(
         it, FfiConverterString.lower(`jid`),_status)
 }
     }
@@ -3659,11 +4219,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Queries group info (subject, participants) from WhatsApp server.
      */
-    @Throws(FfiException::class)override fun `getGroupInfo`(`groupJid`: kotlin.String): AuroraGroupInfo {
-            return FfiConverterTypeAuroraGroupInfo.lift(
+    @Throws(FfiException::class)override fun `getGroupInfo`(`groupJid`: kotlin.String): RolleysGroupInfo {
+            return FfiConverterTypeRolleysGroupInfo.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_group_info(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_group_info(
         it, FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -3672,11 +4232,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getLabel`(`id`: kotlin.String): AuroraLabel? {
-            return FfiConverterOptionalTypeAuroraLabel.lift(
+    @Throws(FfiException::class)override fun `getLabel`(`id`: kotlin.String): RolleysLabel? {
+            return FfiConverterOptionalTypeRolleysLabel.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_label(
         it, FfiConverterString.lower(`id`),_status)
 }
     }
@@ -3685,12 +4245,25 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getLabels`(): List<AuroraLabel> {
-            return FfiConverterSequenceTypeAuroraLabel.lift(
+    @Throws(FfiException::class)override fun `getLabels`(): List<RolleysLabel> {
+            return FfiConverterSequenceTypeRolleysLabel.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_labels(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_labels(
         it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `getLidForPn`(`pnJid`: kotlin.String): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_lid_for_pn(
+        it, FfiConverterString.lower(`pnJid`),_status)
 }
     }
     )
@@ -3704,7 +4277,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterOptionalString.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_me_jid(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_me_jid(
         it, _status)
 }
     }
@@ -3717,7 +4290,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_message_labels(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_message_labels(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`messageId`),_status)
 }
     }
@@ -3729,11 +4302,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Returns historical messages for a chat from SQLite.
      */
-    @Throws(FfiException::class)override fun `getMessages`(`chatJid`: kotlin.String, `limit`: kotlin.UInt, `beforeTimestamp`: kotlin.ULong?): List<AuroraMessage> {
-            return FfiConverterSequenceTypeAuroraMessage.lift(
+    @Throws(FfiException::class)override fun `getMessages`(`chatJid`: kotlin.String, `limit`: kotlin.UInt, `beforeTimestamp`: kotlin.ULong?): List<RolleysMessage> {
+            return FfiConverterSequenceTypeRolleysMessage.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_messages(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_messages(
         it, FfiConverterString.lower(`chatJid`),FfiConverterUInt.lower(`limit`),FfiConverterOptionalULong.lower(`beforeTimestamp`),_status)
 }
     }
@@ -3746,7 +4319,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_messages_by_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_messages_by_label(
         it, FfiConverterString.lower(`labelId`),_status)
 }
     }
@@ -3755,12 +4328,25 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getPairedDevices`(): List<AuroraDeviceRecord> {
-            return FfiConverterSequenceTypeAuroraDeviceRecord.lift(
+    @Throws(FfiException::class)override fun `getPairedDevices`(): List<RolleysDeviceRecord> {
+            return FfiConverterSequenceTypeRolleysDeviceRecord.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_paired_devices(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_paired_devices(
         it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `getPnForLid`(`lidJid`: kotlin.String): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_pn_for_lid(
+        it, FfiConverterString.lower(`lidJid`),_status)
 }
     }
     )
@@ -3771,11 +4357,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches the aggregated vote tally for a poll from the local SQLite database.
      */
-    @Throws(FfiException::class)override fun `getPollTally`(`pollId`: kotlin.String): AuroraPollTally? {
-            return FfiConverterOptionalTypeAuroraPollTally.lift(
+    @Throws(FfiException::class)override fun `getPollTally`(`pollId`: kotlin.String): RolleysPollTally? {
+            return FfiConverterOptionalTypeRolleysPollTally.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_poll_tally(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_poll_tally(
         it, FfiConverterString.lower(`pollId`),_status)
 }
     }
@@ -3784,11 +4370,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
-    @Throws(FfiException::class)override fun `getProduct`(`bizJid`: kotlin.String, `productId`: kotlin.String): AuroraCatalogProduct {
-            return FfiConverterTypeAuroraCatalogProduct.lift(
+    @Throws(FfiException::class)override fun `getProduct`(`bizJid`: kotlin.String, `productId`: kotlin.String): RolleysCatalogProduct {
+            return FfiConverterTypeRolleysCatalogProduct.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_product(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_product(
         it, FfiConverterString.lower(`bizJid`),FfiConverterString.lower(`productId`),_status)
 }
     }
@@ -3800,11 +4386,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches recent status stories from SQLite cache.
      */
-    @Throws(FfiException::class)override fun `getRecentStories`(`limit`: kotlin.UInt, `unviewedOnly`: kotlin.Boolean): List<AuroraStoredStory> {
-            return FfiConverterSequenceTypeAuroraStoredStory.lift(
+    @Throws(FfiException::class)override fun `getRecentStories`(`limit`: kotlin.UInt, `unviewedOnly`: kotlin.Boolean): List<RolleysStoredStory> {
+            return FfiConverterSequenceTypeRolleysStoredStory.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_recent_stories(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_recent_stories(
         it, FfiConverterUInt.lower(`limit`),FfiConverterBoolean.lower(`unviewedOnly`),_status)
 }
     }
@@ -3816,12 +4402,27 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches all active status stories posted by a specific contact.
      */
-    @Throws(FfiException::class)override fun `getStoriesByAuthor`(`authorJid`: kotlin.String): List<AuroraStoredStory> {
-            return FfiConverterSequenceTypeAuroraStoredStory.lift(
+    @Throws(FfiException::class)override fun `getStoriesByAuthor`(`authorJid`: kotlin.String): List<RolleysStoredStory> {
+            return FfiConverterSequenceTypeRolleysStoredStory.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_stories_by_author(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_stories_by_author(
         it, FfiConverterString.lower(`authorJid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Returns current health telemetry snapshot (message throughput, ping latency, Signal hit rate).
+     */override fun `getTelemetrySnapshot`(): RolleysTelemetrySnapshot {
+            return FfiConverterTypeRolleysTelemetrySnapshot.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_telemetry_snapshot(
+        it, _status)
 }
     }
     )
@@ -3833,8 +4434,21 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterSequenceUInt.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_get_user_devices(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_user_devices(
         it, FfiConverterString.lower(`userJid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `getUserStatus`(`jid`: kotlin.String): RolleysUserStatus? {
+            return FfiConverterOptionalTypeRolleysUserStatus.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_user_status(
+        it, FfiConverterString.lower(`jid`),_status)
 }
     }
     )
@@ -3849,7 +4463,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_accept_invite(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_accept_invite(
         it, FfiConverterString.lower(`code`),_status)
 }
     }
@@ -3865,7 +4479,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_accept_invite_v4(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_accept_invite_v4(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`inviteCode`),FfiConverterLong.lower(`inviteExpiration`),FfiConverterString.lower(`adminJid`),_status)
 }
     }
@@ -3881,7 +4495,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_create(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_create(
         it, FfiConverterString.lower(`subject`),FfiConverterSequenceString.lower(`participants`),_status)
 }
     }
@@ -3893,11 +4507,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches all participating groups for the authenticated account and caches them locally.
      */
-    @Throws(FfiException::class)override fun `groupFetchAllParticipating`(): List<AuroraGroupMetadata> {
-            return FfiConverterSequenceTypeAuroraGroupMetadata.lift(
+    @Throws(FfiException::class)override fun `groupFetchAllParticipating`(): List<RolleysGroupMetadata> {
+            return FfiConverterSequenceTypeRolleysGroupMetadata.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_fetch_all_participating(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_fetch_all_participating(
         it, _status)
 }
     }
@@ -3909,11 +4523,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches comprehensive group metadata including participants, roles, and configuration.
      */
-    @Throws(FfiException::class)override fun `groupFetchMetadata`(`groupJid`: kotlin.String): AuroraGroupMetadata {
-            return FfiConverterTypeAuroraGroupMetadata.lift(
+    @Throws(FfiException::class)override fun `groupFetchMetadata`(`groupJid`: kotlin.String): RolleysGroupMetadata {
+            return FfiConverterTypeRolleysGroupMetadata.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_fetch_metadata(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_fetch_metadata(
         it, FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -3929,7 +4543,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_get_invite_code(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_code(
         it, FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -3945,7 +4559,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_join_approval_mode(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_join_approval_mode(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`mode`),_status)
 }
     }
@@ -3960,7 +4574,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_leave(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_leave(
         it, FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -3975,7 +4589,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_member_add_mode(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_member_add_mode(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`mode`),_status)
 }
     }
@@ -3986,11 +4600,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Updates participants in a group ("add", "remove", "promote", "demote").
      */
-    @Throws(FfiException::class)override fun `groupParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<AuroraParticipantUpdateResult> {
-            return FfiConverterSequenceTypeAuroraParticipantUpdateResult.lift(
+    @Throws(FfiException::class)override fun `groupParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<RolleysParticipantUpdateResult> {
+            return FfiConverterSequenceTypeRolleysParticipantUpdateResult.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_participants_update(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_participants_update(
         it, FfiConverterString.lower(`groupJid`),FfiConverterSequenceString.lower(`participants`),FfiConverterString.lower(`action`),_status)
 }
     }
@@ -4002,11 +4616,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches pending membership join requests for a group.
      */
-    @Throws(FfiException::class)override fun `groupRequestParticipantsList`(`groupJid`: kotlin.String): List<AuroraGroupJoinRequest> {
-            return FfiConverterSequenceTypeAuroraGroupJoinRequest.lift(
+    @Throws(FfiException::class)override fun `groupRequestParticipantsList`(`groupJid`: kotlin.String): List<RolleysGroupJoinRequest> {
+            return FfiConverterSequenceTypeRolleysGroupJoinRequest.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_request_participants_list(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_request_participants_list(
         it, FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -4018,11 +4632,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Approves or rejects pending participant join requests ("approve" or "reject").
      */
-    @Throws(FfiException::class)override fun `groupRequestParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<AuroraParticipantUpdateResult> {
-            return FfiConverterSequenceTypeAuroraParticipantUpdateResult.lift(
+    @Throws(FfiException::class)override fun `groupRequestParticipantsUpdate`(`groupJid`: kotlin.String, `participants`: List<kotlin.String>, `action`: kotlin.String): List<RolleysParticipantUpdateResult> {
+            return FfiConverterSequenceTypeRolleysParticipantUpdateResult.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_request_participants_update(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_request_participants_update(
         it, FfiConverterString.lower(`groupJid`),FfiConverterSequenceString.lower(`participants`),FfiConverterString.lower(`action`),_status)
 }
     }
@@ -4038,7 +4652,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_revoke_invite(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_revoke_invite(
         it, FfiConverterString.lower(`groupJid`),_status)
 }
     }
@@ -4054,7 +4668,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_revoke_invite_v4(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_revoke_invite_v4(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`invitedJid`),_status)
 }
     }
@@ -4069,7 +4683,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_setting_update(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_setting_update(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`setting`),_status)
 }
     }
@@ -4084,7 +4698,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_update_description(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_update_description(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`description`),_status)
 }
     }
@@ -4099,7 +4713,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_group_update_subject(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_update_subject(
         it, FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`subject`),_status)
 }
     }
@@ -4113,7 +4727,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterBoolean.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_is_auto_download(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_is_auto_download(
         it, _status)
 }
     }
@@ -4128,7 +4742,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterBoolean.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_is_connected(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_is_connected(
         it, _status)
 }
     }
@@ -4137,14 +4751,42 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `newsletterAdminCount`(`channelJid`: kotlin.String): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_admin_count(
+        it, FfiConverterString.lower(`channelJid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Transfers channel ownership to another admin.
+     */
+    @Throws(FfiException::class)override fun `newsletterChangeOwner`(`jid`: kotlin.String, `newOwnerJid`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_change_owner(
+        it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`newOwnerJid`),_status)
+}
+    }
+    
+    
+
+    
     /**
      * Creates a new WhatsApp Channel.
      */
-    @Throws(FfiException::class)override fun `newsletterCreate`(`name`: kotlin.String, `description`: kotlin.String?): AuroraNewsletter {
-            return FfiConverterTypeAuroraNewsletter.lift(
+    @Throws(FfiException::class)override fun `newsletterCreate`(`name`: kotlin.String, `description`: kotlin.String?): RolleysNewsletter {
+            return FfiConverterTypeRolleysNewsletter.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_create(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_create(
         it, FfiConverterString.lower(`name`),FfiConverterOptionalString.lower(`description`),_status)
 }
     }
@@ -4154,13 +4796,28 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
 
     
     /**
-     * Fetches message history from a WhatsApp Channel.
+     * Demotes a channel admin back to subscriber.
      */
-    @Throws(FfiException::class)override fun `newsletterFetchMessages`(`jid`: kotlin.String, `count`: kotlin.UInt, `before`: kotlin.ULong?): List<AuroraNewsletterMessage> {
-            return FfiConverterSequenceTypeAuroraNewsletterMessage.lift(
+    @Throws(FfiException::class)override fun `newsletterDemote`(`jid`: kotlin.String, `userJid`: kotlin.String)
+        = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_fetch_messages(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_demote(
+        it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`userJid`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Fetches message history from a WhatsApp Channel.
+     */
+    @Throws(FfiException::class)override fun `newsletterFetchMessages`(`jid`: kotlin.String, `count`: kotlin.UInt, `before`: kotlin.ULong?): List<RolleysNewsletterMessage> {
+            return FfiConverterSequenceTypeRolleysNewsletterMessage.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_fetch_messages(
         it, FfiConverterString.lower(`jid`),FfiConverterUInt.lower(`count`),FfiConverterOptionalULong.lower(`before`),_status)
 }
     }
@@ -4176,7 +4833,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_follow(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_follow(
         it, FfiConverterString.lower(`jid`),_status)
 }
     }
@@ -4187,11 +4844,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Fetches all WhatsApp Channels the user is subscribed to.
      */
-    @Throws(FfiException::class)override fun `newsletterGetSubscribed`(): List<AuroraNewsletter> {
-            return FfiConverterSequenceTypeAuroraNewsletter.lift(
+    @Throws(FfiException::class)override fun `newsletterGetSubscribed`(): List<RolleysNewsletter> {
+            return FfiConverterSequenceTypeRolleysNewsletter.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_get_subscribed(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_get_subscribed(
         it, _status)
 }
     }
@@ -4207,8 +4864,23 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_mute(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_mute(
         it, FfiConverterString.lower(`jid`),FfiConverterBoolean.lower(`mute`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Promotes a channel subscriber to admin role.
+     */
+    @Throws(FfiException::class)override fun `newsletterPromote`(`jid`: kotlin.String, `userJid`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_promote(
+        it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`userJid`),_status)
 }
     }
     
@@ -4218,11 +4890,11 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Queries metadata for a WhatsApp Channel by JID or invite link/code.
      */
-    @Throws(FfiException::class)override fun `newsletterQueryMetadata`(`jidOrInvite`: kotlin.String): AuroraNewsletter {
-            return FfiConverterTypeAuroraNewsletter.lift(
+    @Throws(FfiException::class)override fun `newsletterQueryMetadata`(`jidOrInvite`: kotlin.String): RolleysNewsletter {
+            return FfiConverterTypeRolleysNewsletter.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_query_metadata(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_query_metadata(
         it, FfiConverterString.lower(`jidOrInvite`),_status)
 }
     }
@@ -4238,7 +4910,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_react(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_react(
         it, FfiConverterString.lower(`jid`),FfiConverterULong.lower(`serverId`),FfiConverterString.lower(`reaction`),_status)
 }
     }
@@ -4253,7 +4925,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_send_post(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_post(
         it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`text`),_status)
 }
     }
@@ -4269,7 +4941,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_newsletter_unfollow(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_unfollow(
         it, FfiConverterString.lower(`jid`),_status)
 }
     }
@@ -4284,7 +4956,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterULong.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_ping(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_ping(
         it, _status)
 }
     }
@@ -4300,8 +4972,20 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_presence_subscribe(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_presence_subscribe(
         it, FfiConverterString.lower(`toJid`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `productDelete`(`productIds`: List<kotlin.String>)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_product_delete(
+        it, FfiConverterSequenceString.lower(`productIds`),_status)
 }
     }
     
@@ -4315,7 +4999,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterOptionalString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_profile_picture_url(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_profile_picture_url(
         it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`pictureType`),_status)
 }
     }
@@ -4331,7 +5015,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_reject_call(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_reject_call(
         it, FfiConverterString.lower(`callId`),FfiConverterString.lower(`callFrom`),_status)
 }
     }
@@ -4343,7 +5027,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_remove_chat_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_remove_chat_label(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`labelId`),_status)
 }
     }
@@ -4355,8 +5039,20 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_remove_companion_device(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_remove_companion_device(
         it, FfiConverterUInt.lower(`deviceId`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `removeCoverPhoto`(`photoId`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_remove_cover_photo(
+        it, FfiConverterString.lower(`photoId`),_status)
 }
     }
     
@@ -4367,7 +5063,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_remove_message_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_remove_message_label(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`messageId`),FfiConverterString.lower(`labelId`),_status)
 }
     }
@@ -4382,7 +5078,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_remove_profile_picture(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_remove_profile_picture(
         it, FfiConverterOptionalString.lower(`jidOpt`),_status)
 }
     }
@@ -4394,7 +5090,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_revoke_message(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_revoke_message(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`targetMessageId`),_status)
 }
     }
@@ -4410,7 +5106,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_audio(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_audio(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`audioBytes`),FfiConverterBoolean.lower(`ptt`),FfiConverterOptionalUInt.lower(`seconds`),_status)
 }
     }
@@ -4423,7 +5119,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_contact(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_contact(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`displayName`),FfiConverterString.lower(`phoneNumber`),_status)
 }
     }
@@ -4439,7 +5135,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_document(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_document(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`documentBytes`),FfiConverterString.lower(`fileName`),FfiConverterString.lower(`mimetype`),FfiConverterOptionalString.lower(`title`),_status)
 }
     }
@@ -4455,7 +5151,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_document_attachment(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_document_attachment(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`docBytes`),FfiConverterString.lower(`filename`),FfiConverterString.lower(`mimetype`),FfiConverterOptionalString.lower(`title`),FfiConverterOptionalUInt.lower(`pageCount`),FfiConverterOptionalString.lower(`caption`),_status)
 }
     }
@@ -4468,7 +5164,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_group_invite(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_group_invite(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`groupJid`),FfiConverterString.lower(`inviteCode`),FfiConverterLong.lower(`inviteExpiration`),FfiConverterString.lower(`groupName`),FfiConverterOptionalString.lower(`caption`),_status)
 }
     }
@@ -4484,7 +5180,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_image(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_image(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`imageBytes`),FfiConverterOptionalString.lower(`caption`),_status)
 }
     }
@@ -4496,12 +5192,12 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Sends native flow interactive action buttons (quick reply, cta_url, etc.).
      */
-    @Throws(FfiException::class)override fun `sendInteractiveButtons`(`targetJid`: kotlin.String, `body`: kotlin.String, `buttons`: List<AuroraInteractiveButton>, `header`: kotlin.String?, `footer`: kotlin.String?): kotlin.String {
+    @Throws(FfiException::class)override fun `sendInteractiveButtons`(`targetJid`: kotlin.String, `body`: kotlin.String, `buttons`: List<RolleysInteractiveButton>, `header`: kotlin.String?, `footer`: kotlin.String?): kotlin.String {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_interactive_buttons(
-        it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`body`),FfiConverterSequenceTypeAuroraInteractiveButton.lower(`buttons`),FfiConverterOptionalString.lower(`header`),FfiConverterOptionalString.lower(`footer`),_status)
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_interactive_buttons(
+        it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`body`),FfiConverterSequenceTypeRolleysInteractiveButton.lower(`buttons`),FfiConverterOptionalString.lower(`header`),FfiConverterOptionalString.lower(`footer`),_status)
 }
     }
     )
@@ -4512,12 +5208,12 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Sends an interactive single-selection list message.
      */
-    @Throws(FfiException::class)override fun `sendListMessage`(`targetJid`: kotlin.String, `title`: kotlin.String, `description`: kotlin.String, `buttonText`: kotlin.String, `sections`: List<AuroraListSection>, `footer`: kotlin.String?): kotlin.String {
+    @Throws(FfiException::class)override fun `sendListMessage`(`targetJid`: kotlin.String, `title`: kotlin.String, `description`: kotlin.String, `buttonText`: kotlin.String, `sections`: List<RolleysListSection>, `footer`: kotlin.String?): kotlin.String {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_list_message(
-        it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`title`),FfiConverterString.lower(`description`),FfiConverterString.lower(`buttonText`),FfiConverterSequenceTypeAuroraListSection.lower(`sections`),FfiConverterOptionalString.lower(`footer`),_status)
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_list_message(
+        it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`title`),FfiConverterString.lower(`description`),FfiConverterString.lower(`buttonText`),FfiConverterSequenceTypeRolleysListSection.lower(`sections`),FfiConverterOptionalString.lower(`footer`),_status)
 }
     }
     )
@@ -4529,7 +5225,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_live_location(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_live_location(
         it, FfiConverterString.lower(`toJid`),FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterOptionalUInt.lower(`accuracyInMeters`),FfiConverterOptionalString.lower(`caption`),_status)
 }
     }
@@ -4542,8 +5238,25 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_location(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_location(
         it, FfiConverterString.lower(`toJid`),FfiConverterDouble.lower(`latitude`),FfiConverterDouble.lower(`longitude`),FfiConverterOptionalString.lower(`name`),FfiConverterOptionalString.lower(`address`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Sends a local media file using the streaming upload pipeline (zero-OOM spooling for >= 10MB)
+     * and emits real-time RolleysEvent::MediaProgress events.
+     */
+    @Throws(FfiException::class)override fun `sendMediaFile`(`chatJid`: kotlin.String, `filePath`: kotlin.String, `mediaType`: kotlin.String, `caption`: kotlin.String?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_media_file(
+        it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`filePath`),FfiConverterString.lower(`mediaType`),FfiConverterOptionalString.lower(`caption`),_status)
 }
     }
     )
@@ -4555,7 +5268,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_order_message(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_order_message(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`sellerJid`),FfiConverterString.lower(`orderId`),FfiConverterString.lower(`title`),FfiConverterInt.lower(`itemCount`),FfiConverterLong.lower(`totalAmount1000`),FfiConverterString.lower(`currency`),FfiConverterOptionalString.lower(`message`),_status)
 }
     }
@@ -4571,7 +5284,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_poll(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_poll(
         it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`question`),FfiConverterSequenceString.lower(`options`),FfiConverterUInt.lower(`selectableCount`),_status)
 }
     }
@@ -4587,7 +5300,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_poll_vote(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_poll_vote(
         it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`pollId`),FfiConverterSequenceString.lower(`selectedOptions`),_status)
 }
     }
@@ -4603,7 +5316,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_presence(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_presence(
         it, FfiConverterString.lower(`state`),FfiConverterOptionalString.lower(`toJid`),_status)
 }
     }
@@ -4615,7 +5328,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_product_message(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_product_message(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`bizOwnerJid`),FfiConverterString.lower(`productId`),FfiConverterString.lower(`title`),FfiConverterLong.lower(`priceAmount1000`),FfiConverterString.lower(`currency`),FfiConverterOptionalString.lower(`caption`),_status)
 }
     }
@@ -4631,7 +5344,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_reaction(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_reaction(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`targetMsgId`),FfiConverterString.lower(`emoji`),_status)
 }
     }
@@ -4647,7 +5360,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_read(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_read(
         it, FfiConverterString.lower(`remoteJid`),FfiConverterString.lower(`msgId`),FfiConverterOptionalString.lower(`participant`),_status)
 }
     }
@@ -4662,7 +5375,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_revoke(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_revoke(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`targetMsgId`),_status)
 }
     }
@@ -4678,7 +5391,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_status_read_receipt(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_status_read_receipt(
         it, FfiConverterString.lower(`msgId`),FfiConverterString.lower(`authorJid`),_status)
 }
     }
@@ -4693,7 +5406,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_sticker(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_sticker(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`stickerBytes`),FfiConverterBoolean.lower(`isAnimated`),_status)
 }
     }
@@ -4709,7 +5422,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_text(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_text(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`text`),_status)
 }
     }
@@ -4725,8 +5438,21 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_text_status(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_text_status(
         it, FfiConverterString.lower(`text`),FfiConverterOptionalString.lower(`backgroundColor`),FfiConverterOptionalInt.lower(`font`),FfiConverterOptionalSequenceString.lower(`audience`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendTextWithPreview`(`toJid`: kotlin.String, `text`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_preview(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`text`),_status)
 }
     }
     )
@@ -4741,7 +5467,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_text_with_quote(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_quote(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`text`),FfiConverterString.lower(`quotedId`),FfiConverterOptionalString.lower(`quotedParticipant`),FfiConverterOptionalString.lower(`quotedText`),_status)
 }
     }
@@ -4757,7 +5483,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_video(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_video(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`videoBytes`),FfiConverterOptionalString.lower(`caption`),FfiConverterOptionalUInt.lower(`seconds`),FfiConverterBoolean.lower(`gifPlayback`),_status)
 }
     }
@@ -4773,7 +5499,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_send_voice_note(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_voice_note(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`audioBytes`),FfiConverterUInt.lower(`seconds`),FfiConverterOptionalByteArray.lower(`waveform`),_status)
 }
     }
@@ -4788,7 +5514,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_set_auto_download(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_set_auto_download(
         it, FfiConverterBoolean.lower(`enabled`),_status)
 }
     }
@@ -4800,7 +5526,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_set_chat_ephemeral(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_set_chat_ephemeral(
         it, FfiConverterString.lower(`chatJid`),FfiConverterUInt.lower(`expirationSeconds`),_status)
 }
     }
@@ -4811,15 +5537,28 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
     /**
      * Starts the client connection and forwards real-time events to the native Kotlin listener.
      */
-    @Throws(FfiException::class)override fun `start`(`listener`: AuroraEventListener)
+    @Throws(FfiException::class)override fun `start`(`listener`: RolleysEventListener)
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_start(
-        it, FfiConverterTypeAuroraEventListener.lower(`listener`),_status)
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_start(
+        it, FfiConverterTypeRolleysEventListener.lower(`listener`),_status)
 }
     }
     
+    
+
+    
+    @Throws(FfiException::class)override fun `subscribeNewsletterUpdates`(`channelJid`: kotlin.String): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_subscribe_newsletter_updates(
+        it, FfiConverterString.lower(`channelJid`),_status)
+}
+    }
+    )
+    }
     
 
     
@@ -4830,8 +5569,44 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_update_block_status(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_block_status(
         it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`action`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `updateCoverPhoto`(`photoId`: kotlin.String, `token`: kotlin.String, `ts`: kotlin.ULong)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_cover_photo(
+        it, FfiConverterString.lower(`photoId`),FfiConverterString.lower(`token`),FfiConverterULong.lower(`ts`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `updateDisableLinkPreviewsPrivacy`(`isDisabled`: kotlin.Boolean)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_disable_link_previews_privacy(
+        it, FfiConverterBoolean.lower(`isDisabled`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `updateMediaMessage`(`messageId`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_media_message(
+        it, FfiConverterString.lower(`messageId`),_status)
 }
     }
     
@@ -4845,7 +5620,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_update_privacy_setting(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_privacy_setting(
         it, FfiConverterString.lower(`category`),FfiConverterString.lower(`value`),_status)
 }
     }
@@ -4860,7 +5635,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_update_profile_picture(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_picture(
         it, FfiConverterOptionalString.lower(`jidOpt`),FfiConverterByteArray.lower(`imageBytes`),_status)
 }
     }
@@ -4875,7 +5650,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_update_profile_status(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_status(
         it, FfiConverterString.lower(`status`),_status)
 }
     }
@@ -4887,7 +5662,7 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
-    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_auroraclient_upsert_label(
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_upsert_label(
         it, FfiConverterOptionalString.lower(`id`),FfiConverterString.lower(`name`),FfiConverterInt.lower(`color`),FfiConverterOptionalInt.lower(`predefinedId`),_status)
 }
     }
@@ -4906,25 +5681,25 @@ open class AuroraClient: Disposable, AutoCloseable, AuroraClientInterface {
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraClient: FfiConverter<AuroraClient, Pointer> {
+public object FfiConverterTypeRolleysClient: FfiConverter<RolleysClient, Pointer> {
 
-    override fun lower(value: AuroraClient): Pointer {
+    override fun lower(value: RolleysClient): Pointer {
         return value.uniffiClonePointer()
     }
 
-    override fun lift(value: Pointer): AuroraClient {
-        return AuroraClient(value)
+    override fun lift(value: Pointer): RolleysClient {
+        return RolleysClient(value)
     }
 
-    override fun read(buf: ByteBuffer): AuroraClient {
+    override fun read(buf: ByteBuffer): RolleysClient {
         // The Rust code always writes pointers as 8 bytes, and will
         // fail to compile if they don't fit.
         return lift(Pointer(buf.getLong()))
     }
 
-    override fun allocationSize(value: AuroraClient) = 8UL
+    override fun allocationSize(value: RolleysClient) = 8UL
 
-    override fun write(value: AuroraClient, buf: ByteBuffer) {
+    override fun write(value: RolleysClient, buf: ByteBuffer) {
         // The Rust code always expects pointers written as 8 bytes,
         // and will fail to compile if they don't fit.
         buf.putLong(Pointer.nativeValue(lower(value)))
@@ -4933,7 +5708,75 @@ public object FfiConverterTypeAuroraClient: FfiConverter<AuroraClient, Pointer> 
 
 
 
-data class AuroraBusinessProfile (
+data class RolleysAccountReachoutTimelock (
+    var `isActive`: kotlin.Boolean, 
+    var `enforcementType`: kotlin.String?, 
+    var `timeEnforcementEnds`: kotlin.ULong?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysAccountReachoutTimelock: FfiConverterRustBuffer<RolleysAccountReachoutTimelock> {
+    override fun read(buf: ByteBuffer): RolleysAccountReachoutTimelock {
+        return RolleysAccountReachoutTimelock(
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysAccountReachoutTimelock) = (
+            FfiConverterBoolean.allocationSize(value.`isActive`) +
+            FfiConverterOptionalString.allocationSize(value.`enforcementType`) +
+            FfiConverterOptionalULong.allocationSize(value.`timeEnforcementEnds`)
+    )
+
+    override fun write(value: RolleysAccountReachoutTimelock, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`isActive`, buf)
+            FfiConverterOptionalString.write(value.`enforcementType`, buf)
+            FfiConverterOptionalULong.write(value.`timeEnforcementEnds`, buf)
+    }
+}
+
+
+
+data class RolleysBotEntry (
+    var `jid`: kotlin.String, 
+    var `personaId`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysBotEntry: FfiConverterRustBuffer<RolleysBotEntry> {
+    override fun read(buf: ByteBuffer): RolleysBotEntry {
+        return RolleysBotEntry(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysBotEntry) = (
+            FfiConverterString.allocationSize(value.`jid`) +
+            FfiConverterString.allocationSize(value.`personaId`)
+    )
+
+    override fun write(value: RolleysBotEntry, buf: ByteBuffer) {
+            FfiConverterString.write(value.`jid`, buf)
+            FfiConverterString.write(value.`personaId`, buf)
+    }
+}
+
+
+
+data class RolleysBusinessProfile (
     var `jid`: kotlin.String, 
     var `address`: kotlin.String?, 
     var `description`: kotlin.String?, 
@@ -4948,9 +5791,9 @@ data class AuroraBusinessProfile (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer<AuroraBusinessProfile> {
-    override fun read(buf: ByteBuffer): AuroraBusinessProfile {
-        return AuroraBusinessProfile(
+public object FfiConverterTypeRolleysBusinessProfile: FfiConverterRustBuffer<RolleysBusinessProfile> {
+    override fun read(buf: ByteBuffer): RolleysBusinessProfile {
+        return RolleysBusinessProfile(
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -4960,7 +5803,7 @@ public object FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer<Auro
         )
     }
 
-    override fun allocationSize(value: AuroraBusinessProfile) = (
+    override fun allocationSize(value: RolleysBusinessProfile) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterOptionalString.allocationSize(value.`address`) +
             FfiConverterOptionalString.allocationSize(value.`description`) +
@@ -4969,7 +5812,7 @@ public object FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer<Auro
             FfiConverterOptionalString.allocationSize(value.`category`)
     )
 
-    override fun write(value: AuroraBusinessProfile, buf: ByteBuffer) {
+    override fun write(value: RolleysBusinessProfile, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterOptionalString.write(value.`address`, buf)
             FfiConverterOptionalString.write(value.`description`, buf)
@@ -4981,7 +5824,7 @@ public object FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer<Auro
 
 
 
-data class AuroraCallEvent (
+data class RolleysCallEvent (
     var `id`: kotlin.String, 
     var `chatJid`: kotlin.String, 
     var `from`: kotlin.String, 
@@ -5001,9 +5844,9 @@ data class AuroraCallEvent (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer<AuroraCallEvent> {
-    override fun read(buf: ByteBuffer): AuroraCallEvent {
-        return AuroraCallEvent(
+public object FfiConverterTypeRolleysCallEvent: FfiConverterRustBuffer<RolleysCallEvent> {
+    override fun read(buf: ByteBuffer): RolleysCallEvent {
+        return RolleysCallEvent(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -5018,7 +5861,7 @@ public object FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer<AuroraCall
         )
     }
 
-    override fun allocationSize(value: AuroraCallEvent) = (
+    override fun allocationSize(value: RolleysCallEvent) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`chatJid`) +
             FfiConverterString.allocationSize(value.`from`) +
@@ -5032,7 +5875,7 @@ public object FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer<AuroraCall
             FfiConverterOptionalUInt.allocationSize(value.`latencyMs`)
     )
 
-    override fun write(value: AuroraCallEvent, buf: ByteBuffer) {
+    override fun write(value: RolleysCallEvent, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`chatJid`, buf)
             FfiConverterString.write(value.`from`, buf)
@@ -5049,7 +5892,7 @@ public object FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer<AuroraCall
 
 
 
-data class AuroraCatalogCollection (
+data class RolleysCatalogCollection (
     var `id`: kotlin.String, 
     var `bizJid`: kotlin.String, 
     var `name`: kotlin.String, 
@@ -5063,9 +5906,9 @@ data class AuroraCatalogCollection (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer<AuroraCatalogCollection> {
-    override fun read(buf: ByteBuffer): AuroraCatalogCollection {
-        return AuroraCatalogCollection(
+public object FfiConverterTypeRolleysCatalogCollection: FfiConverterRustBuffer<RolleysCatalogCollection> {
+    override fun read(buf: ByteBuffer): RolleysCatalogCollection {
+        return RolleysCatalogCollection(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -5074,7 +5917,7 @@ public object FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer<Au
         )
     }
 
-    override fun allocationSize(value: AuroraCatalogCollection) = (
+    override fun allocationSize(value: RolleysCatalogCollection) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`bizJid`) +
             FfiConverterString.allocationSize(value.`name`) +
@@ -5082,7 +5925,7 @@ public object FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer<Au
             FfiConverterString.allocationSize(value.`status`)
     )
 
-    override fun write(value: AuroraCatalogCollection, buf: ByteBuffer) {
+    override fun write(value: RolleysCatalogCollection, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`bizJid`, buf)
             FfiConverterString.write(value.`name`, buf)
@@ -5093,7 +5936,7 @@ public object FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer<Au
 
 
 
-data class AuroraCatalogProduct (
+data class RolleysCatalogProduct (
     var `id`: kotlin.String, 
     var `bizJid`: kotlin.String, 
     var `title`: kotlin.String, 
@@ -5114,9 +5957,9 @@ data class AuroraCatalogProduct (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer<AuroraCatalogProduct> {
-    override fun read(buf: ByteBuffer): AuroraCatalogProduct {
-        return AuroraCatalogProduct(
+public object FfiConverterTypeRolleysCatalogProduct: FfiConverterRustBuffer<RolleysCatalogProduct> {
+    override fun read(buf: ByteBuffer): RolleysCatalogProduct {
+        return RolleysCatalogProduct(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -5132,7 +5975,7 @@ public object FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer<Auror
         )
     }
 
-    override fun allocationSize(value: AuroraCatalogProduct) = (
+    override fun allocationSize(value: RolleysCatalogProduct) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`bizJid`) +
             FfiConverterString.allocationSize(value.`title`) +
@@ -5147,7 +5990,7 @@ public object FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer<Auror
             FfiConverterString.allocationSize(value.`availability`)
     )
 
-    override fun write(value: AuroraCatalogProduct, buf: ByteBuffer) {
+    override fun write(value: RolleysCatalogProduct, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`bizJid`, buf)
             FfiConverterString.write(value.`title`, buf)
@@ -5165,8 +6008,8 @@ public object FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer<Auror
 
 
 
-data class AuroraCatalogResult (
-    var `products`: List<AuroraCatalogProduct>, 
+data class RolleysCatalogResult (
+    var `products`: List<RolleysCatalogProduct>, 
     var `cursor`: kotlin.String?
 ) {
     
@@ -5176,28 +6019,28 @@ data class AuroraCatalogResult (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCatalogResult: FfiConverterRustBuffer<AuroraCatalogResult> {
-    override fun read(buf: ByteBuffer): AuroraCatalogResult {
-        return AuroraCatalogResult(
-            FfiConverterSequenceTypeAuroraCatalogProduct.read(buf),
+public object FfiConverterTypeRolleysCatalogResult: FfiConverterRustBuffer<RolleysCatalogResult> {
+    override fun read(buf: ByteBuffer): RolleysCatalogResult {
+        return RolleysCatalogResult(
+            FfiConverterSequenceTypeRolleysCatalogProduct.read(buf),
             FfiConverterOptionalString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraCatalogResult) = (
-            FfiConverterSequenceTypeAuroraCatalogProduct.allocationSize(value.`products`) +
+    override fun allocationSize(value: RolleysCatalogResult) = (
+            FfiConverterSequenceTypeRolleysCatalogProduct.allocationSize(value.`products`) +
             FfiConverterOptionalString.allocationSize(value.`cursor`)
     )
 
-    override fun write(value: AuroraCatalogResult, buf: ByteBuffer) {
-            FfiConverterSequenceTypeAuroraCatalogProduct.write(value.`products`, buf)
+    override fun write(value: RolleysCatalogResult, buf: ByteBuffer) {
+            FfiConverterSequenceTypeRolleysCatalogProduct.write(value.`products`, buf)
             FfiConverterOptionalString.write(value.`cursor`, buf)
     }
 }
 
 
 
-data class AuroraChat (
+data class RolleysChat (
     var `jid`: kotlin.String, 
     var `name`: kotlin.String?, 
     var `unreadCount`: kotlin.UInt, 
@@ -5214,9 +6057,9 @@ data class AuroraChat (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraChat: FfiConverterRustBuffer<AuroraChat> {
-    override fun read(buf: ByteBuffer): AuroraChat {
-        return AuroraChat(
+public object FfiConverterTypeRolleysChat: FfiConverterRustBuffer<RolleysChat> {
+    override fun read(buf: ByteBuffer): RolleysChat {
+        return RolleysChat(
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterUInt.read(buf),
@@ -5228,7 +6071,7 @@ public object FfiConverterTypeAuroraChat: FfiConverterRustBuffer<AuroraChat> {
         )
     }
 
-    override fun allocationSize(value: AuroraChat) = (
+    override fun allocationSize(value: RolleysChat) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterOptionalString.allocationSize(value.`name`) +
             FfiConverterUInt.allocationSize(value.`unreadCount`) +
@@ -5239,7 +6082,7 @@ public object FfiConverterTypeAuroraChat: FfiConverterRustBuffer<AuroraChat> {
             FfiConverterOptionalULong.allocationSize(value.`muteUntil`)
     )
 
-    override fun write(value: AuroraChat, buf: ByteBuffer) {
+    override fun write(value: RolleysChat, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterOptionalString.write(value.`name`, buf)
             FfiConverterUInt.write(value.`unreadCount`, buf)
@@ -5253,7 +6096,7 @@ public object FfiConverterTypeAuroraChat: FfiConverterRustBuffer<AuroraChat> {
 
 
 
-data class AuroraClientConfig (
+data class RolleysClientConfig (
     var `databasePath`: kotlin.String, 
     var `browserName`: kotlin.String, 
     var `platform`: kotlin.String, 
@@ -5267,9 +6110,9 @@ data class AuroraClientConfig (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer<AuroraClientConfig> {
-    override fun read(buf: ByteBuffer): AuroraClientConfig {
-        return AuroraClientConfig(
+public object FfiConverterTypeRolleysClientConfig: FfiConverterRustBuffer<RolleysClientConfig> {
+    override fun read(buf: ByteBuffer): RolleysClientConfig {
+        return RolleysClientConfig(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -5278,7 +6121,7 @@ public object FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer<AuroraC
         )
     }
 
-    override fun allocationSize(value: AuroraClientConfig) = (
+    override fun allocationSize(value: RolleysClientConfig) = (
             FfiConverterString.allocationSize(value.`databasePath`) +
             FfiConverterString.allocationSize(value.`browserName`) +
             FfiConverterString.allocationSize(value.`platform`) +
@@ -5286,7 +6129,7 @@ public object FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer<AuroraC
             FfiConverterBoolean.allocationSize(value.`autoDownloadMedia`)
     )
 
-    override fun write(value: AuroraClientConfig, buf: ByteBuffer) {
+    override fun write(value: RolleysClientConfig, buf: ByteBuffer) {
             FfiConverterString.write(value.`databasePath`, buf)
             FfiConverterString.write(value.`browserName`, buf)
             FfiConverterString.write(value.`platform`, buf)
@@ -5297,8 +6140,8 @@ public object FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer<AuroraC
 
 
 
-data class AuroraCollectionsResult (
-    var `collections`: List<AuroraCatalogCollection>, 
+data class RolleysCollectionsResult (
+    var `collections`: List<RolleysCatalogCollection>, 
     var `cursor`: kotlin.String?
 ) {
     
@@ -5308,28 +6151,68 @@ data class AuroraCollectionsResult (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCollectionsResult: FfiConverterRustBuffer<AuroraCollectionsResult> {
-    override fun read(buf: ByteBuffer): AuroraCollectionsResult {
-        return AuroraCollectionsResult(
-            FfiConverterSequenceTypeAuroraCatalogCollection.read(buf),
+public object FfiConverterTypeRolleysCollectionsResult: FfiConverterRustBuffer<RolleysCollectionsResult> {
+    override fun read(buf: ByteBuffer): RolleysCollectionsResult {
+        return RolleysCollectionsResult(
+            FfiConverterSequenceTypeRolleysCatalogCollection.read(buf),
             FfiConverterOptionalString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraCollectionsResult) = (
-            FfiConverterSequenceTypeAuroraCatalogCollection.allocationSize(value.`collections`) +
+    override fun allocationSize(value: RolleysCollectionsResult) = (
+            FfiConverterSequenceTypeRolleysCatalogCollection.allocationSize(value.`collections`) +
             FfiConverterOptionalString.allocationSize(value.`cursor`)
     )
 
-    override fun write(value: AuroraCollectionsResult, buf: ByteBuffer) {
-            FfiConverterSequenceTypeAuroraCatalogCollection.write(value.`collections`, buf)
+    override fun write(value: RolleysCollectionsResult, buf: ByteBuffer) {
+            FfiConverterSequenceTypeRolleysCatalogCollection.write(value.`collections`, buf)
             FfiConverterOptionalString.write(value.`cursor`, buf)
     }
 }
 
 
 
-data class AuroraCommunityMetadata (
+data class RolleysCommunityInviteInfo (
+    var `jid`: kotlin.String, 
+    var `subject`: kotlin.String, 
+    var `creator`: kotlin.String?, 
+    var `size`: kotlin.UInt?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysCommunityInviteInfo: FfiConverterRustBuffer<RolleysCommunityInviteInfo> {
+    override fun read(buf: ByteBuffer): RolleysCommunityInviteInfo {
+        return RolleysCommunityInviteInfo(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysCommunityInviteInfo) = (
+            FfiConverterString.allocationSize(value.`jid`) +
+            FfiConverterString.allocationSize(value.`subject`) +
+            FfiConverterOptionalString.allocationSize(value.`creator`) +
+            FfiConverterOptionalUInt.allocationSize(value.`size`)
+    )
+
+    override fun write(value: RolleysCommunityInviteInfo, buf: ByteBuffer) {
+            FfiConverterString.write(value.`jid`, buf)
+            FfiConverterString.write(value.`subject`, buf)
+            FfiConverterOptionalString.write(value.`creator`, buf)
+            FfiConverterOptionalUInt.write(value.`size`, buf)
+    }
+}
+
+
+
+data class RolleysCommunityMetadata (
     var `id`: kotlin.String, 
     var `subject`: kotlin.String, 
     var `subjectOwner`: kotlin.String?, 
@@ -5344,7 +6227,7 @@ data class AuroraCommunityMetadata (
     var `isCommunityAnnounce`: kotlin.Boolean, 
     var `joinApprovalMode`: kotlin.Boolean, 
     var `memberAddMode`: kotlin.Boolean, 
-    var `participants`: List<AuroraCommunityParticipant>
+    var `participants`: List<RolleysCommunityParticipant>
 ) {
     
     companion object
@@ -5353,9 +6236,9 @@ data class AuroraCommunityMetadata (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer<AuroraCommunityMetadata> {
-    override fun read(buf: ByteBuffer): AuroraCommunityMetadata {
-        return AuroraCommunityMetadata(
+public object FfiConverterTypeRolleysCommunityMetadata: FfiConverterRustBuffer<RolleysCommunityMetadata> {
+    override fun read(buf: ByteBuffer): RolleysCommunityMetadata {
+        return RolleysCommunityMetadata(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -5370,11 +6253,11 @@ public object FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer<Au
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
-            FfiConverterSequenceTypeAuroraCommunityParticipant.read(buf),
+            FfiConverterSequenceTypeRolleysCommunityParticipant.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraCommunityMetadata) = (
+    override fun allocationSize(value: RolleysCommunityMetadata) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`subject`) +
             FfiConverterOptionalString.allocationSize(value.`subjectOwner`) +
@@ -5389,10 +6272,10 @@ public object FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer<Au
             FfiConverterBoolean.allocationSize(value.`isCommunityAnnounce`) +
             FfiConverterBoolean.allocationSize(value.`joinApprovalMode`) +
             FfiConverterBoolean.allocationSize(value.`memberAddMode`) +
-            FfiConverterSequenceTypeAuroraCommunityParticipant.allocationSize(value.`participants`)
+            FfiConverterSequenceTypeRolleysCommunityParticipant.allocationSize(value.`participants`)
     )
 
-    override fun write(value: AuroraCommunityMetadata, buf: ByteBuffer) {
+    override fun write(value: RolleysCommunityMetadata, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`subject`, buf)
             FfiConverterOptionalString.write(value.`subjectOwner`, buf)
@@ -5407,13 +6290,13 @@ public object FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer<Au
             FfiConverterBoolean.write(value.`isCommunityAnnounce`, buf)
             FfiConverterBoolean.write(value.`joinApprovalMode`, buf)
             FfiConverterBoolean.write(value.`memberAddMode`, buf)
-            FfiConverterSequenceTypeAuroraCommunityParticipant.write(value.`participants`, buf)
+            FfiConverterSequenceTypeRolleysCommunityParticipant.write(value.`participants`, buf)
     }
 }
 
 
 
-data class AuroraCommunityParticipant (
+data class RolleysCommunityParticipant (
     var `jid`: kotlin.String, 
     var `admin`: kotlin.String?
 ) {
@@ -5424,20 +6307,20 @@ data class AuroraCommunityParticipant (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCommunityParticipant: FfiConverterRustBuffer<AuroraCommunityParticipant> {
-    override fun read(buf: ByteBuffer): AuroraCommunityParticipant {
-        return AuroraCommunityParticipant(
+public object FfiConverterTypeRolleysCommunityParticipant: FfiConverterRustBuffer<RolleysCommunityParticipant> {
+    override fun read(buf: ByteBuffer): RolleysCommunityParticipant {
+        return RolleysCommunityParticipant(
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraCommunityParticipant) = (
+    override fun allocationSize(value: RolleysCommunityParticipant) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterOptionalString.allocationSize(value.`admin`)
     )
 
-    override fun write(value: AuroraCommunityParticipant, buf: ByteBuffer) {
+    override fun write(value: RolleysCommunityParticipant, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterOptionalString.write(value.`admin`, buf)
     }
@@ -5445,7 +6328,7 @@ public object FfiConverterTypeAuroraCommunityParticipant: FfiConverterRustBuffer
 
 
 
-data class AuroraCommunitySubgroup (
+data class RolleysCommunitySubgroup (
     var `id`: kotlin.String, 
     var `subject`: kotlin.String, 
     var `creation`: kotlin.ULong?, 
@@ -5459,9 +6342,9 @@ data class AuroraCommunitySubgroup (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer<AuroraCommunitySubgroup> {
-    override fun read(buf: ByteBuffer): AuroraCommunitySubgroup {
-        return AuroraCommunitySubgroup(
+public object FfiConverterTypeRolleysCommunitySubgroup: FfiConverterRustBuffer<RolleysCommunitySubgroup> {
+    override fun read(buf: ByteBuffer): RolleysCommunitySubgroup {
+        return RolleysCommunitySubgroup(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalULong.read(buf),
@@ -5470,7 +6353,7 @@ public object FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer<Au
         )
     }
 
-    override fun allocationSize(value: AuroraCommunitySubgroup) = (
+    override fun allocationSize(value: RolleysCommunitySubgroup) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`subject`) +
             FfiConverterOptionalULong.allocationSize(value.`creation`) +
@@ -5478,7 +6361,7 @@ public object FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer<Au
             FfiConverterOptionalUInt.allocationSize(value.`size`)
     )
 
-    override fun write(value: AuroraCommunitySubgroup, buf: ByteBuffer) {
+    override fun write(value: RolleysCommunitySubgroup, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`subject`, buf)
             FfiConverterOptionalULong.write(value.`creation`, buf)
@@ -5489,7 +6372,7 @@ public object FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer<Au
 
 
 
-data class AuroraContact (
+data class RolleysContact (
     var `jid`: kotlin.String, 
     var `name`: kotlin.String?, 
     var `pushName`: kotlin.String?, 
@@ -5502,9 +6385,9 @@ data class AuroraContact (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraContact: FfiConverterRustBuffer<AuroraContact> {
-    override fun read(buf: ByteBuffer): AuroraContact {
-        return AuroraContact(
+public object FfiConverterTypeRolleysContact: FfiConverterRustBuffer<RolleysContact> {
+    override fun read(buf: ByteBuffer): RolleysContact {
+        return RolleysContact(
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -5512,14 +6395,14 @@ public object FfiConverterTypeAuroraContact: FfiConverterRustBuffer<AuroraContac
         )
     }
 
-    override fun allocationSize(value: AuroraContact) = (
+    override fun allocationSize(value: RolleysContact) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterOptionalString.allocationSize(value.`name`) +
             FfiConverterOptionalString.allocationSize(value.`pushName`) +
             FfiConverterOptionalString.allocationSize(value.`lid`)
     )
 
-    override fun write(value: AuroraContact, buf: ByteBuffer) {
+    override fun write(value: RolleysContact, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterOptionalString.write(value.`name`, buf)
             FfiConverterOptionalString.write(value.`pushName`, buf)
@@ -5529,7 +6412,7 @@ public object FfiConverterTypeAuroraContact: FfiConverterRustBuffer<AuroraContac
 
 
 
-data class AuroraDeviceRecord (
+data class RolleysDeviceRecord (
     var `id`: kotlin.UInt, 
     var `keyIndex`: kotlin.UInt?
 ) {
@@ -5540,20 +6423,20 @@ data class AuroraDeviceRecord (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraDeviceRecord: FfiConverterRustBuffer<AuroraDeviceRecord> {
-    override fun read(buf: ByteBuffer): AuroraDeviceRecord {
-        return AuroraDeviceRecord(
+public object FfiConverterTypeRolleysDeviceRecord: FfiConverterRustBuffer<RolleysDeviceRecord> {
+    override fun read(buf: ByteBuffer): RolleysDeviceRecord {
+        return RolleysDeviceRecord(
             FfiConverterUInt.read(buf),
             FfiConverterOptionalUInt.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraDeviceRecord) = (
+    override fun allocationSize(value: RolleysDeviceRecord) = (
             FfiConverterUInt.allocationSize(value.`id`) +
             FfiConverterOptionalUInt.allocationSize(value.`keyIndex`)
     )
 
-    override fun write(value: AuroraDeviceRecord, buf: ByteBuffer) {
+    override fun write(value: RolleysDeviceRecord, buf: ByteBuffer) {
             FfiConverterUInt.write(value.`id`, buf)
             FfiConverterOptionalUInt.write(value.`keyIndex`, buf)
     }
@@ -5561,7 +6444,7 @@ public object FfiConverterTypeAuroraDeviceRecord: FfiConverterRustBuffer<AuroraD
 
 
 
-data class AuroraGroupInfo (
+data class RolleysGroupInfo (
     var `jid`: kotlin.String, 
     var `subject`: kotlin.String, 
     var `owner`: kotlin.String?, 
@@ -5575,9 +6458,9 @@ data class AuroraGroupInfo (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer<AuroraGroupInfo> {
-    override fun read(buf: ByteBuffer): AuroraGroupInfo {
-        return AuroraGroupInfo(
+public object FfiConverterTypeRolleysGroupInfo: FfiConverterRustBuffer<RolleysGroupInfo> {
+    override fun read(buf: ByteBuffer): RolleysGroupInfo {
+        return RolleysGroupInfo(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -5586,7 +6469,7 @@ public object FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer<AuroraGrou
         )
     }
 
-    override fun allocationSize(value: AuroraGroupInfo) = (
+    override fun allocationSize(value: RolleysGroupInfo) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterString.allocationSize(value.`subject`) +
             FfiConverterOptionalString.allocationSize(value.`owner`) +
@@ -5594,7 +6477,7 @@ public object FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer<AuroraGrou
             FfiConverterSequenceString.allocationSize(value.`participants`)
     )
 
-    override fun write(value: AuroraGroupInfo, buf: ByteBuffer) {
+    override fun write(value: RolleysGroupInfo, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterString.write(value.`subject`, buf)
             FfiConverterOptionalString.write(value.`owner`, buf)
@@ -5605,7 +6488,7 @@ public object FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer<AuroraGrou
 
 
 
-data class AuroraGroupJoinRequest (
+data class RolleysGroupJoinRequest (
     var `jid`: kotlin.String, 
     var `requestedTime`: kotlin.Long, 
     var `requestMethod`: kotlin.String?
@@ -5617,22 +6500,22 @@ data class AuroraGroupJoinRequest (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraGroupJoinRequest: FfiConverterRustBuffer<AuroraGroupJoinRequest> {
-    override fun read(buf: ByteBuffer): AuroraGroupJoinRequest {
-        return AuroraGroupJoinRequest(
+public object FfiConverterTypeRolleysGroupJoinRequest: FfiConverterRustBuffer<RolleysGroupJoinRequest> {
+    override fun read(buf: ByteBuffer): RolleysGroupJoinRequest {
+        return RolleysGroupJoinRequest(
             FfiConverterString.read(buf),
             FfiConverterLong.read(buf),
             FfiConverterOptionalString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraGroupJoinRequest) = (
+    override fun allocationSize(value: RolleysGroupJoinRequest) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterLong.allocationSize(value.`requestedTime`) +
             FfiConverterOptionalString.allocationSize(value.`requestMethod`)
     )
 
-    override fun write(value: AuroraGroupJoinRequest, buf: ByteBuffer) {
+    override fun write(value: RolleysGroupJoinRequest, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterLong.write(value.`requestedTime`, buf)
             FfiConverterOptionalString.write(value.`requestMethod`, buf)
@@ -5641,7 +6524,7 @@ public object FfiConverterTypeAuroraGroupJoinRequest: FfiConverterRustBuffer<Aur
 
 
 
-data class AuroraGroupMetadata (
+data class RolleysGroupMetadata (
     var `id`: kotlin.String, 
     var `subject`: kotlin.String, 
     var `subjectOwner`: kotlin.String?, 
@@ -5658,7 +6541,7 @@ data class AuroraGroupMetadata (
     var `joinApprovalMode`: kotlin.Boolean, 
     var `memberAddMode`: kotlin.String, 
     var `ephemeralDuration`: kotlin.UInt?, 
-    var `participants`: List<AuroraGroupParticipant>
+    var `participants`: List<RolleysGroupParticipant>
 ) {
     
     companion object
@@ -5667,9 +6550,9 @@ data class AuroraGroupMetadata (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer<AuroraGroupMetadata> {
-    override fun read(buf: ByteBuffer): AuroraGroupMetadata {
-        return AuroraGroupMetadata(
+public object FfiConverterTypeRolleysGroupMetadata: FfiConverterRustBuffer<RolleysGroupMetadata> {
+    override fun read(buf: ByteBuffer): RolleysGroupMetadata {
+        return RolleysGroupMetadata(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -5686,11 +6569,11 @@ public object FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer<Aurora
             FfiConverterBoolean.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalUInt.read(buf),
-            FfiConverterSequenceTypeAuroraGroupParticipant.read(buf),
+            FfiConverterSequenceTypeRolleysGroupParticipant.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraGroupMetadata) = (
+    override fun allocationSize(value: RolleysGroupMetadata) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`subject`) +
             FfiConverterOptionalString.allocationSize(value.`subjectOwner`) +
@@ -5707,10 +6590,10 @@ public object FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer<Aurora
             FfiConverterBoolean.allocationSize(value.`joinApprovalMode`) +
             FfiConverterString.allocationSize(value.`memberAddMode`) +
             FfiConverterOptionalUInt.allocationSize(value.`ephemeralDuration`) +
-            FfiConverterSequenceTypeAuroraGroupParticipant.allocationSize(value.`participants`)
+            FfiConverterSequenceTypeRolleysGroupParticipant.allocationSize(value.`participants`)
     )
 
-    override fun write(value: AuroraGroupMetadata, buf: ByteBuffer) {
+    override fun write(value: RolleysGroupMetadata, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`subject`, buf)
             FfiConverterOptionalString.write(value.`subjectOwner`, buf)
@@ -5727,13 +6610,13 @@ public object FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer<Aurora
             FfiConverterBoolean.write(value.`joinApprovalMode`, buf)
             FfiConverterString.write(value.`memberAddMode`, buf)
             FfiConverterOptionalUInt.write(value.`ephemeralDuration`, buf)
-            FfiConverterSequenceTypeAuroraGroupParticipant.write(value.`participants`, buf)
+            FfiConverterSequenceTypeRolleysGroupParticipant.write(value.`participants`, buf)
     }
 }
 
 
 
-data class AuroraGroupParticipant (
+data class RolleysGroupParticipant (
     var `jid`: kotlin.String, 
     var `phoneNumber`: kotlin.String?, 
     var `lid`: kotlin.String?, 
@@ -5746,9 +6629,9 @@ data class AuroraGroupParticipant (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraGroupParticipant: FfiConverterRustBuffer<AuroraGroupParticipant> {
-    override fun read(buf: ByteBuffer): AuroraGroupParticipant {
-        return AuroraGroupParticipant(
+public object FfiConverterTypeRolleysGroupParticipant: FfiConverterRustBuffer<RolleysGroupParticipant> {
+    override fun read(buf: ByteBuffer): RolleysGroupParticipant {
+        return RolleysGroupParticipant(
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -5756,14 +6639,14 @@ public object FfiConverterTypeAuroraGroupParticipant: FfiConverterRustBuffer<Aur
         )
     }
 
-    override fun allocationSize(value: AuroraGroupParticipant) = (
+    override fun allocationSize(value: RolleysGroupParticipant) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterOptionalString.allocationSize(value.`phoneNumber`) +
             FfiConverterOptionalString.allocationSize(value.`lid`) +
             FfiConverterOptionalString.allocationSize(value.`admin`)
     )
 
-    override fun write(value: AuroraGroupParticipant, buf: ByteBuffer) {
+    override fun write(value: RolleysGroupParticipant, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterOptionalString.write(value.`phoneNumber`, buf)
             FfiConverterOptionalString.write(value.`lid`, buf)
@@ -5773,7 +6656,7 @@ public object FfiConverterTypeAuroraGroupParticipant: FfiConverterRustBuffer<Aur
 
 
 
-data class AuroraInteractiveButton (
+data class RolleysInteractiveButton (
     var `name`: kotlin.String, 
     var `buttonParamsJson`: kotlin.String
 ) {
@@ -5784,20 +6667,20 @@ data class AuroraInteractiveButton (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraInteractiveButton: FfiConverterRustBuffer<AuroraInteractiveButton> {
-    override fun read(buf: ByteBuffer): AuroraInteractiveButton {
-        return AuroraInteractiveButton(
+public object FfiConverterTypeRolleysInteractiveButton: FfiConverterRustBuffer<RolleysInteractiveButton> {
+    override fun read(buf: ByteBuffer): RolleysInteractiveButton {
+        return RolleysInteractiveButton(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraInteractiveButton) = (
+    override fun allocationSize(value: RolleysInteractiveButton) = (
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterString.allocationSize(value.`buttonParamsJson`)
     )
 
-    override fun write(value: AuroraInteractiveButton, buf: ByteBuffer) {
+    override fun write(value: RolleysInteractiveButton, buf: ByteBuffer) {
             FfiConverterString.write(value.`name`, buf)
             FfiConverterString.write(value.`buttonParamsJson`, buf)
     }
@@ -5805,7 +6688,7 @@ public object FfiConverterTypeAuroraInteractiveButton: FfiConverterRustBuffer<Au
 
 
 
-data class AuroraLabel (
+data class RolleysLabel (
     var `id`: kotlin.String, 
     var `name`: kotlin.String, 
     var `color`: kotlin.Int, 
@@ -5819,9 +6702,9 @@ data class AuroraLabel (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraLabel: FfiConverterRustBuffer<AuroraLabel> {
-    override fun read(buf: ByteBuffer): AuroraLabel {
-        return AuroraLabel(
+public object FfiConverterTypeRolleysLabel: FfiConverterRustBuffer<RolleysLabel> {
+    override fun read(buf: ByteBuffer): RolleysLabel {
+        return RolleysLabel(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterInt.read(buf),
@@ -5830,7 +6713,7 @@ public object FfiConverterTypeAuroraLabel: FfiConverterRustBuffer<AuroraLabel> {
         )
     }
 
-    override fun allocationSize(value: AuroraLabel) = (
+    override fun allocationSize(value: RolleysLabel) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterInt.allocationSize(value.`color`) +
@@ -5838,7 +6721,7 @@ public object FfiConverterTypeAuroraLabel: FfiConverterRustBuffer<AuroraLabel> {
             FfiConverterBoolean.allocationSize(value.`deleted`)
     )
 
-    override fun write(value: AuroraLabel, buf: ByteBuffer) {
+    override fun write(value: RolleysLabel, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterInt.write(value.`color`, buf)
@@ -5849,7 +6732,7 @@ public object FfiConverterTypeAuroraLabel: FfiConverterRustBuffer<AuroraLabel> {
 
 
 
-data class AuroraListRow (
+data class RolleysListRow (
     var `title`: kotlin.String, 
     var `description`: kotlin.String?, 
     var `rowId`: kotlin.String
@@ -5861,22 +6744,22 @@ data class AuroraListRow (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraListRow: FfiConverterRustBuffer<AuroraListRow> {
-    override fun read(buf: ByteBuffer): AuroraListRow {
-        return AuroraListRow(
+public object FfiConverterTypeRolleysListRow: FfiConverterRustBuffer<RolleysListRow> {
+    override fun read(buf: ByteBuffer): RolleysListRow {
+        return RolleysListRow(
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraListRow) = (
+    override fun allocationSize(value: RolleysListRow) = (
             FfiConverterString.allocationSize(value.`title`) +
             FfiConverterOptionalString.allocationSize(value.`description`) +
             FfiConverterString.allocationSize(value.`rowId`)
     )
 
-    override fun write(value: AuroraListRow, buf: ByteBuffer) {
+    override fun write(value: RolleysListRow, buf: ByteBuffer) {
             FfiConverterString.write(value.`title`, buf)
             FfiConverterOptionalString.write(value.`description`, buf)
             FfiConverterString.write(value.`rowId`, buf)
@@ -5885,9 +6768,9 @@ public object FfiConverterTypeAuroraListRow: FfiConverterRustBuffer<AuroraListRo
 
 
 
-data class AuroraListSection (
+data class RolleysListSection (
     var `title`: kotlin.String, 
-    var `rows`: List<AuroraListRow>
+    var `rows`: List<RolleysListRow>
 ) {
     
     companion object
@@ -5896,28 +6779,28 @@ data class AuroraListSection (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraListSection: FfiConverterRustBuffer<AuroraListSection> {
-    override fun read(buf: ByteBuffer): AuroraListSection {
-        return AuroraListSection(
+public object FfiConverterTypeRolleysListSection: FfiConverterRustBuffer<RolleysListSection> {
+    override fun read(buf: ByteBuffer): RolleysListSection {
+        return RolleysListSection(
             FfiConverterString.read(buf),
-            FfiConverterSequenceTypeAuroraListRow.read(buf),
+            FfiConverterSequenceTypeRolleysListRow.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraListSection) = (
+    override fun allocationSize(value: RolleysListSection) = (
             FfiConverterString.allocationSize(value.`title`) +
-            FfiConverterSequenceTypeAuroraListRow.allocationSize(value.`rows`)
+            FfiConverterSequenceTypeRolleysListRow.allocationSize(value.`rows`)
     )
 
-    override fun write(value: AuroraListSection, buf: ByteBuffer) {
+    override fun write(value: RolleysListSection, buf: ByteBuffer) {
             FfiConverterString.write(value.`title`, buf)
-            FfiConverterSequenceTypeAuroraListRow.write(value.`rows`, buf)
+            FfiConverterSequenceTypeRolleysListRow.write(value.`rows`, buf)
     }
 }
 
 
 
-data class AuroraMessage (
+data class RolleysMessage (
     var `id`: kotlin.String, 
     var `remoteJid`: kotlin.String, 
     var `participantJid`: kotlin.String?, 
@@ -5934,9 +6817,9 @@ data class AuroraMessage (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraMessage: FfiConverterRustBuffer<AuroraMessage> {
-    override fun read(buf: ByteBuffer): AuroraMessage {
-        return AuroraMessage(
+public object FfiConverterTypeRolleysMessage: FfiConverterRustBuffer<RolleysMessage> {
+    override fun read(buf: ByteBuffer): RolleysMessage {
+        return RolleysMessage(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -5948,7 +6831,7 @@ public object FfiConverterTypeAuroraMessage: FfiConverterRustBuffer<AuroraMessag
         )
     }
 
-    override fun allocationSize(value: AuroraMessage) = (
+    override fun allocationSize(value: RolleysMessage) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`remoteJid`) +
             FfiConverterOptionalString.allocationSize(value.`participantJid`) +
@@ -5959,7 +6842,7 @@ public object FfiConverterTypeAuroraMessage: FfiConverterRustBuffer<AuroraMessag
             FfiConverterBoolean.allocationSize(value.`isStarred`)
     )
 
-    override fun write(value: AuroraMessage, buf: ByteBuffer) {
+    override fun write(value: RolleysMessage, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`remoteJid`, buf)
             FfiConverterOptionalString.write(value.`participantJid`, buf)
@@ -5973,7 +6856,7 @@ public object FfiConverterTypeAuroraMessage: FfiConverterRustBuffer<AuroraMessag
 
 
 
-data class AuroraNewsletter (
+data class RolleysNewsletter (
     var `jid`: kotlin.String, 
     var `name`: kotlin.String, 
     var `description`: kotlin.String?, 
@@ -5991,9 +6874,9 @@ data class AuroraNewsletter (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer<AuroraNewsletter> {
-    override fun read(buf: ByteBuffer): AuroraNewsletter {
-        return AuroraNewsletter(
+public object FfiConverterTypeRolleysNewsletter: FfiConverterRustBuffer<RolleysNewsletter> {
+    override fun read(buf: ByteBuffer): RolleysNewsletter {
+        return RolleysNewsletter(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -6006,7 +6889,7 @@ public object FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer<AuroraNew
         )
     }
 
-    override fun allocationSize(value: AuroraNewsletter) = (
+    override fun allocationSize(value: RolleysNewsletter) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterOptionalString.allocationSize(value.`description`) +
@@ -6018,7 +6901,7 @@ public object FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer<AuroraNew
             FfiConverterBoolean.allocationSize(value.`verified`)
     )
 
-    override fun write(value: AuroraNewsletter, buf: ByteBuffer) {
+    override fun write(value: RolleysNewsletter, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterOptionalString.write(value.`description`, buf)
@@ -6033,7 +6916,7 @@ public object FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer<AuroraNew
 
 
 
-data class AuroraNewsletterMessage (
+data class RolleysNewsletterMessage (
     var `serverId`: kotlin.ULong, 
     var `viewsCount`: kotlin.ULong?, 
     var `timestamp`: kotlin.ULong, 
@@ -6047,9 +6930,9 @@ data class AuroraNewsletterMessage (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer<AuroraNewsletterMessage> {
-    override fun read(buf: ByteBuffer): AuroraNewsletterMessage {
-        return AuroraNewsletterMessage(
+public object FfiConverterTypeRolleysNewsletterMessage: FfiConverterRustBuffer<RolleysNewsletterMessage> {
+    override fun read(buf: ByteBuffer): RolleysNewsletterMessage {
+        return RolleysNewsletterMessage(
             FfiConverterULong.read(buf),
             FfiConverterOptionalULong.read(buf),
             FfiConverterULong.read(buf),
@@ -6058,7 +6941,7 @@ public object FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer<Au
         )
     }
 
-    override fun allocationSize(value: AuroraNewsletterMessage) = (
+    override fun allocationSize(value: RolleysNewsletterMessage) = (
             FfiConverterULong.allocationSize(value.`serverId`) +
             FfiConverterOptionalULong.allocationSize(value.`viewsCount`) +
             FfiConverterULong.allocationSize(value.`timestamp`) +
@@ -6066,7 +6949,7 @@ public object FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer<Au
             FfiConverterBoolean.allocationSize(value.`hasMedia`)
     )
 
-    override fun write(value: AuroraNewsletterMessage, buf: ByteBuffer) {
+    override fun write(value: RolleysNewsletterMessage, buf: ByteBuffer) {
             FfiConverterULong.write(value.`serverId`, buf)
             FfiConverterOptionalULong.write(value.`viewsCount`, buf)
             FfiConverterULong.write(value.`timestamp`, buf)
@@ -6077,7 +6960,7 @@ public object FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer<Au
 
 
 
-data class AuroraOnWhatsAppResult (
+data class RolleysOnWhatsAppResult (
     var `jid`: kotlin.String, 
     var `exists`: kotlin.Boolean, 
     var `phoneNumber`: kotlin.String
@@ -6089,22 +6972,22 @@ data class AuroraOnWhatsAppResult (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraOnWhatsAppResult: FfiConverterRustBuffer<AuroraOnWhatsAppResult> {
-    override fun read(buf: ByteBuffer): AuroraOnWhatsAppResult {
-        return AuroraOnWhatsAppResult(
+public object FfiConverterTypeRolleysOnWhatsAppResult: FfiConverterRustBuffer<RolleysOnWhatsAppResult> {
+    override fun read(buf: ByteBuffer): RolleysOnWhatsAppResult {
+        return RolleysOnWhatsAppResult(
             FfiConverterString.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraOnWhatsAppResult) = (
+    override fun allocationSize(value: RolleysOnWhatsAppResult) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterBoolean.allocationSize(value.`exists`) +
             FfiConverterString.allocationSize(value.`phoneNumber`)
     )
 
-    override fun write(value: AuroraOnWhatsAppResult, buf: ByteBuffer) {
+    override fun write(value: RolleysOnWhatsAppResult, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterBoolean.write(value.`exists`, buf)
             FfiConverterString.write(value.`phoneNumber`, buf)
@@ -6113,7 +6996,7 @@ public object FfiConverterTypeAuroraOnWhatsAppResult: FfiConverterRustBuffer<Aur
 
 
 
-data class AuroraOrder (
+data class RolleysOrder (
     var `orderId`: kotlin.String, 
     var `chatJid`: kotlin.String, 
     var `sellerJid`: kotlin.String, 
@@ -6134,9 +7017,9 @@ data class AuroraOrder (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraOrder: FfiConverterRustBuffer<AuroraOrder> {
-    override fun read(buf: ByteBuffer): AuroraOrder {
-        return AuroraOrder(
+public object FfiConverterTypeRolleysOrder: FfiConverterRustBuffer<RolleysOrder> {
+    override fun read(buf: ByteBuffer): RolleysOrder {
+        return RolleysOrder(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -6152,7 +7035,7 @@ public object FfiConverterTypeAuroraOrder: FfiConverterRustBuffer<AuroraOrder> {
         )
     }
 
-    override fun allocationSize(value: AuroraOrder) = (
+    override fun allocationSize(value: RolleysOrder) = (
             FfiConverterString.allocationSize(value.`orderId`) +
             FfiConverterString.allocationSize(value.`chatJid`) +
             FfiConverterString.allocationSize(value.`sellerJid`) +
@@ -6167,7 +7050,7 @@ public object FfiConverterTypeAuroraOrder: FfiConverterRustBuffer<AuroraOrder> {
             FfiConverterULong.allocationSize(value.`createdAt`)
     )
 
-    override fun write(value: AuroraOrder, buf: ByteBuffer) {
+    override fun write(value: RolleysOrder, buf: ByteBuffer) {
             FfiConverterString.write(value.`orderId`, buf)
             FfiConverterString.write(value.`chatJid`, buf)
             FfiConverterString.write(value.`sellerJid`, buf)
@@ -6185,7 +7068,7 @@ public object FfiConverterTypeAuroraOrder: FfiConverterRustBuffer<AuroraOrder> {
 
 
 
-data class AuroraParticipantUpdateResult (
+data class RolleysParticipantUpdateResult (
     var `jid`: kotlin.String, 
     var `status`: kotlin.String
 ) {
@@ -6196,20 +7079,20 @@ data class AuroraParticipantUpdateResult (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraParticipantUpdateResult: FfiConverterRustBuffer<AuroraParticipantUpdateResult> {
-    override fun read(buf: ByteBuffer): AuroraParticipantUpdateResult {
-        return AuroraParticipantUpdateResult(
+public object FfiConverterTypeRolleysParticipantUpdateResult: FfiConverterRustBuffer<RolleysParticipantUpdateResult> {
+    override fun read(buf: ByteBuffer): RolleysParticipantUpdateResult {
+        return RolleysParticipantUpdateResult(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraParticipantUpdateResult) = (
+    override fun allocationSize(value: RolleysParticipantUpdateResult) = (
             FfiConverterString.allocationSize(value.`jid`) +
             FfiConverterString.allocationSize(value.`status`)
     )
 
-    override fun write(value: AuroraParticipantUpdateResult, buf: ByteBuffer) {
+    override fun write(value: RolleysParticipantUpdateResult, buf: ByteBuffer) {
             FfiConverterString.write(value.`jid`, buf)
             FfiConverterString.write(value.`status`, buf)
     }
@@ -6217,7 +7100,7 @@ public object FfiConverterTypeAuroraParticipantUpdateResult: FfiConverterRustBuf
 
 
 
-data class AuroraPoll (
+data class RolleysPoll (
     var `id`: kotlin.String, 
     var `chatJid`: kotlin.String, 
     var `senderJid`: kotlin.String, 
@@ -6233,9 +7116,9 @@ data class AuroraPoll (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraPoll: FfiConverterRustBuffer<AuroraPoll> {
-    override fun read(buf: ByteBuffer): AuroraPoll {
-        return AuroraPoll(
+public object FfiConverterTypeRolleysPoll: FfiConverterRustBuffer<RolleysPoll> {
+    override fun read(buf: ByteBuffer): RolleysPoll {
+        return RolleysPoll(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -6246,7 +7129,7 @@ public object FfiConverterTypeAuroraPoll: FfiConverterRustBuffer<AuroraPoll> {
         )
     }
 
-    override fun allocationSize(value: AuroraPoll) = (
+    override fun allocationSize(value: RolleysPoll) = (
             FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`chatJid`) +
             FfiConverterString.allocationSize(value.`senderJid`) +
@@ -6256,7 +7139,7 @@ public object FfiConverterTypeAuroraPoll: FfiConverterRustBuffer<AuroraPoll> {
             FfiConverterULong.allocationSize(value.`createdAt`)
     )
 
-    override fun write(value: AuroraPoll, buf: ByteBuffer) {
+    override fun write(value: RolleysPoll, buf: ByteBuffer) {
             FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`chatJid`, buf)
             FfiConverterString.write(value.`senderJid`, buf)
@@ -6269,7 +7152,7 @@ public object FfiConverterTypeAuroraPoll: FfiConverterRustBuffer<AuroraPoll> {
 
 
 
-data class AuroraPollTally (
+data class RolleysPollTally (
     var `pollId`: kotlin.String, 
     var `question`: kotlin.String, 
     var `totalVoters`: kotlin.UInt, 
@@ -6282,9 +7165,9 @@ data class AuroraPollTally (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraPollTally: FfiConverterRustBuffer<AuroraPollTally> {
-    override fun read(buf: ByteBuffer): AuroraPollTally {
-        return AuroraPollTally(
+public object FfiConverterTypeRolleysPollTally: FfiConverterRustBuffer<RolleysPollTally> {
+    override fun read(buf: ByteBuffer): RolleysPollTally {
+        return RolleysPollTally(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterUInt.read(buf),
@@ -6292,14 +7175,14 @@ public object FfiConverterTypeAuroraPollTally: FfiConverterRustBuffer<AuroraPoll
         )
     }
 
-    override fun allocationSize(value: AuroraPollTally) = (
+    override fun allocationSize(value: RolleysPollTally) = (
             FfiConverterString.allocationSize(value.`pollId`) +
             FfiConverterString.allocationSize(value.`question`) +
             FfiConverterUInt.allocationSize(value.`totalVoters`) +
             FfiConverterMapStringUInt.allocationSize(value.`optionVotes`)
     )
 
-    override fun write(value: AuroraPollTally, buf: ByteBuffer) {
+    override fun write(value: RolleysPollTally, buf: ByteBuffer) {
             FfiConverterString.write(value.`pollId`, buf)
             FfiConverterString.write(value.`question`, buf)
             FfiConverterUInt.write(value.`totalVoters`, buf)
@@ -6309,7 +7192,7 @@ public object FfiConverterTypeAuroraPollTally: FfiConverterRustBuffer<AuroraPoll
 
 
 
-data class AuroraPrivacySettings (
+data class RolleysPrivacySettings (
     var `readreceipts`: kotlin.String?, 
     var `profile`: kotlin.String?, 
     var `status`: kotlin.String?, 
@@ -6326,9 +7209,9 @@ data class AuroraPrivacySettings (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer<AuroraPrivacySettings> {
-    override fun read(buf: ByteBuffer): AuroraPrivacySettings {
-        return AuroraPrivacySettings(
+public object FfiConverterTypeRolleysPrivacySettings: FfiConverterRustBuffer<RolleysPrivacySettings> {
+    override fun read(buf: ByteBuffer): RolleysPrivacySettings {
+        return RolleysPrivacySettings(
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -6340,7 +7223,7 @@ public object FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer<Auro
         )
     }
 
-    override fun allocationSize(value: AuroraPrivacySettings) = (
+    override fun allocationSize(value: RolleysPrivacySettings) = (
             FfiConverterOptionalString.allocationSize(value.`readreceipts`) +
             FfiConverterOptionalString.allocationSize(value.`profile`) +
             FfiConverterOptionalString.allocationSize(value.`status`) +
@@ -6351,7 +7234,7 @@ public object FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer<Auro
             FfiConverterMapStringString.allocationSize(value.`raw`)
     )
 
-    override fun write(value: AuroraPrivacySettings, buf: ByteBuffer) {
+    override fun write(value: RolleysPrivacySettings, buf: ByteBuffer) {
             FfiConverterOptionalString.write(value.`readreceipts`, buf)
             FfiConverterOptionalString.write(value.`profile`, buf)
             FfiConverterOptionalString.write(value.`status`, buf)
@@ -6365,7 +7248,7 @@ public object FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer<Auro
 
 
 
-data class AuroraProfileStatus (
+data class RolleysProfileStatus (
     var `status`: kotlin.String, 
     var `setAt`: kotlin.ULong?
 ) {
@@ -6376,20 +7259,20 @@ data class AuroraProfileStatus (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraProfileStatus: FfiConverterRustBuffer<AuroraProfileStatus> {
-    override fun read(buf: ByteBuffer): AuroraProfileStatus {
-        return AuroraProfileStatus(
+public object FfiConverterTypeRolleysProfileStatus: FfiConverterRustBuffer<RolleysProfileStatus> {
+    override fun read(buf: ByteBuffer): RolleysProfileStatus {
+        return RolleysProfileStatus(
             FfiConverterString.read(buf),
             FfiConverterOptionalULong.read(buf),
         )
     }
 
-    override fun allocationSize(value: AuroraProfileStatus) = (
+    override fun allocationSize(value: RolleysProfileStatus) = (
             FfiConverterString.allocationSize(value.`status`) +
             FfiConverterOptionalULong.allocationSize(value.`setAt`)
     )
 
-    override fun write(value: AuroraProfileStatus, buf: ByteBuffer) {
+    override fun write(value: RolleysProfileStatus, buf: ByteBuffer) {
             FfiConverterString.write(value.`status`, buf)
             FfiConverterOptionalULong.write(value.`setAt`, buf)
     }
@@ -6397,7 +7280,7 @@ public object FfiConverterTypeAuroraProfileStatus: FfiConverterRustBuffer<Aurora
 
 
 
-data class AuroraStoredCall (
+data class RolleysStoredCall (
     var `callId`: kotlin.String, 
     var `chatJid`: kotlin.String, 
     var `callerJid`: kotlin.String, 
@@ -6415,9 +7298,9 @@ data class AuroraStoredCall (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer<AuroraStoredCall> {
-    override fun read(buf: ByteBuffer): AuroraStoredCall {
-        return AuroraStoredCall(
+public object FfiConverterTypeRolleysStoredCall: FfiConverterRustBuffer<RolleysStoredCall> {
+    override fun read(buf: ByteBuffer): RolleysStoredCall {
+        return RolleysStoredCall(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -6430,7 +7313,7 @@ public object FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer<AuroraSto
         )
     }
 
-    override fun allocationSize(value: AuroraStoredCall) = (
+    override fun allocationSize(value: RolleysStoredCall) = (
             FfiConverterString.allocationSize(value.`callId`) +
             FfiConverterString.allocationSize(value.`chatJid`) +
             FfiConverterString.allocationSize(value.`callerJid`) +
@@ -6442,7 +7325,7 @@ public object FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer<AuroraSto
             FfiConverterOptionalUInt.allocationSize(value.`duration`)
     )
 
-    override fun write(value: AuroraStoredCall, buf: ByteBuffer) {
+    override fun write(value: RolleysStoredCall, buf: ByteBuffer) {
             FfiConverterString.write(value.`callId`, buf)
             FfiConverterString.write(value.`chatJid`, buf)
             FfiConverterString.write(value.`callerJid`, buf)
@@ -6457,7 +7340,7 @@ public object FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer<AuroraSto
 
 
 
-data class AuroraStoredStory (
+data class RolleysStoredStory (
     var `msgId`: kotlin.String, 
     var `authorJid`: kotlin.String, 
     var `authorName`: kotlin.String?, 
@@ -6475,9 +7358,9 @@ data class AuroraStoredStory (
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer<AuroraStoredStory> {
-    override fun read(buf: ByteBuffer): AuroraStoredStory {
-        return AuroraStoredStory(
+public object FfiConverterTypeRolleysStoredStory: FfiConverterRustBuffer<RolleysStoredStory> {
+    override fun read(buf: ByteBuffer): RolleysStoredStory {
+        return RolleysStoredStory(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -6490,7 +7373,7 @@ public object FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer<AuroraSt
         )
     }
 
-    override fun allocationSize(value: AuroraStoredStory) = (
+    override fun allocationSize(value: RolleysStoredStory) = (
             FfiConverterString.allocationSize(value.`msgId`) +
             FfiConverterString.allocationSize(value.`authorJid`) +
             FfiConverterOptionalString.allocationSize(value.`authorName`) +
@@ -6502,7 +7385,7 @@ public object FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer<AuroraSt
             FfiConverterBoolean.allocationSize(value.`viewed`)
     )
 
-    override fun write(value: AuroraStoredStory, buf: ByteBuffer) {
+    override fun write(value: RolleysStoredStory, buf: ByteBuffer) {
             FfiConverterString.write(value.`msgId`, buf)
             FfiConverterString.write(value.`authorJid`, buf)
             FfiConverterOptionalString.write(value.`authorName`, buf)
@@ -6517,170 +7400,13 @@ public object FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer<AuroraSt
 
 
 
-sealed class AuroraEvent {
-    
-    object Connecting : AuroraEvent()
-    
-    
-    data class Connected(
-        val `meJid`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class Disconnected(
-        val `reason`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class QrCode(
-        val `code`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class PairingCode(
-        val `code`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class MessageReceived(
-        val `message`: AuroraMessage) : AuroraEvent() {
-        companion object
-    }
-    
-    data class ReceiptUpdate(
-        val `id`: kotlin.String, 
-        val `remoteJid`: kotlin.String, 
-        val `status`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class PresenceUpdate(
-        val `jid`: kotlin.String, 
-        val `state`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class HistorySync(
-        val `syncType`: kotlin.Int, 
-        val `progress`: kotlin.UInt, 
-        val `conversationCount`: kotlin.UInt) : AuroraEvent() {
-        companion object
-    }
-    
-    data class PollVoteReceived(
-        val `pollId`: kotlin.String, 
-        val `voterJid`: kotlin.String, 
-        val `selectedOptions`: List<kotlin.String>, 
-        val `tally`: AuroraPollTally) : AuroraEvent() {
-        companion object
-    }
-    
-    data class CallReceived(
-        val `call`: AuroraCallEvent) : AuroraEvent() {
-        companion object
-    }
-    
-    data class StoryReceived(
-        val `story`: AuroraStoredStory) : AuroraEvent() {
-        companion object
-    }
-    
-    data class BlocklistUpdate(
-        val `added`: List<kotlin.String>, 
-        val `removed`: List<kotlin.String>) : AuroraEvent() {
-        companion object
-    }
-    
-    data class MessageEdited(
-        val `chatJid`: kotlin.String, 
-        val `messageId`: kotlin.String, 
-        val `newText`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class MessageRevoked(
-        val `chatJid`: kotlin.String, 
-        val `messageId`: kotlin.String, 
-        val `participant`: kotlin.String?) : AuroraEvent() {
-        companion object
-    }
-    
-    data class ChatEphemeralUpdate(
-        val `chatJid`: kotlin.String, 
-        val `ephemeralExpiration`: kotlin.UInt) : AuroraEvent() {
-        companion object
-    }
-    
-    data class LabelEdit(
-        val `label`: AuroraLabel) : AuroraEvent() {
-        companion object
-    }
-    
-    data class ChatLabelUpdate(
-        val `chatJid`: kotlin.String, 
-        val `labelId`: kotlin.String, 
-        val `labeled`: kotlin.Boolean) : AuroraEvent() {
-        companion object
-    }
-    
-    data class MessageLabelUpdate(
-        val `chatJid`: kotlin.String, 
-        val `messageId`: kotlin.String, 
-        val `labelId`: kotlin.String, 
-        val `labeled`: kotlin.Boolean) : AuroraEvent() {
-        companion object
-    }
-    
-    data class DeviceUpdate(
-        val `userJid`: kotlin.String, 
-        val `devices`: List<kotlin.UInt>) : AuroraEvent() {
-        companion object
-    }
-    
-    data class IdentityChanged(
-        val `jid`: kotlin.String, 
-        val `timestamp`: kotlin.ULong) : AuroraEvent() {
-        companion object
-    }
-    
-    data class MediaUpdated(
-        val `messageId`: kotlin.String, 
-        val `directPath`: kotlin.String) : AuroraEvent() {
-        companion object
-    }
-    
-    data class ChatUpdate(
-        val `jid`: kotlin.String, 
-        val `pinned`: kotlin.Boolean?, 
-        val `archived`: kotlin.Boolean?, 
-        val `muteUntil`: kotlin.ULong?, 
-        val `unreadCount`: kotlin.UInt?) : AuroraEvent() {
-        companion object
-    }
-    
-    data class ContactUpdate(
-        val `jid`: kotlin.String, 
-        val `name`: kotlin.String?, 
-        val `pushName`: kotlin.String?) : AuroraEvent() {
-        companion object
-    }
-    
-    data class AppStateSynced(
-        val `collectionsSynced`: kotlin.UInt, 
-        val `mutationsApplied`: kotlin.UInt) : AuroraEvent() {
-        companion object
-    }
-    
-    data class MediaProgress(
-        val `taskId`: kotlin.String, 
-        val `direction`: kotlin.String, 
-        val `bytesTransferred`: kotlin.ULong, 
-        val `totalBytes`: kotlin.ULong, 
-        val `percentage`: kotlin.Float) : AuroraEvent() {
-        companion object
-    }
-    
-
+data class RolleysTelemetrySnapshot (
+    var `messagesIn`: kotlin.ULong, 
+    var `messagesOut`: kotlin.ULong, 
+    var `lastPingLatencyMs`: kotlin.ULong, 
+    var `signalCacheHitRatePct`: kotlin.Double, 
+    var `reconnectCount`: kotlin.ULong
+) {
     
     companion object
 }
@@ -6688,502 +7414,113 @@ sealed class AuroraEvent {
 /**
  * @suppress
  */
-public object FfiConverterTypeAuroraEvent : FfiConverterRustBuffer<AuroraEvent>{
-    override fun read(buf: ByteBuffer): AuroraEvent {
-        return when(buf.getInt()) {
-            1 -> AuroraEvent.Connecting
-            2 -> AuroraEvent.Connected(
-                FfiConverterString.read(buf),
-                )
-            3 -> AuroraEvent.Disconnected(
-                FfiConverterString.read(buf),
-                )
-            4 -> AuroraEvent.QrCode(
-                FfiConverterString.read(buf),
-                )
-            5 -> AuroraEvent.PairingCode(
-                FfiConverterString.read(buf),
-                )
-            6 -> AuroraEvent.MessageReceived(
-                FfiConverterTypeAuroraMessage.read(buf),
-                )
-            7 -> AuroraEvent.ReceiptUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                )
-            8 -> AuroraEvent.PresenceUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                )
-            9 -> AuroraEvent.HistorySync(
-                FfiConverterInt.read(buf),
-                FfiConverterUInt.read(buf),
-                FfiConverterUInt.read(buf),
-                )
-            10 -> AuroraEvent.PollVoteReceived(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterSequenceString.read(buf),
-                FfiConverterTypeAuroraPollTally.read(buf),
-                )
-            11 -> AuroraEvent.CallReceived(
-                FfiConverterTypeAuroraCallEvent.read(buf),
-                )
-            12 -> AuroraEvent.StoryReceived(
-                FfiConverterTypeAuroraStoredStory.read(buf),
-                )
-            13 -> AuroraEvent.BlocklistUpdate(
-                FfiConverterSequenceString.read(buf),
-                FfiConverterSequenceString.read(buf),
-                )
-            14 -> AuroraEvent.MessageEdited(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                )
-            15 -> AuroraEvent.MessageRevoked(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterOptionalString.read(buf),
-                )
-            16 -> AuroraEvent.ChatEphemeralUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterUInt.read(buf),
-                )
-            17 -> AuroraEvent.LabelEdit(
-                FfiConverterTypeAuroraLabel.read(buf),
-                )
-            18 -> AuroraEvent.ChatLabelUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterBoolean.read(buf),
-                )
-            19 -> AuroraEvent.MessageLabelUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterBoolean.read(buf),
-                )
-            20 -> AuroraEvent.DeviceUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterSequenceUInt.read(buf),
-                )
-            21 -> AuroraEvent.IdentityChanged(
-                FfiConverterString.read(buf),
-                FfiConverterULong.read(buf),
-                )
-            22 -> AuroraEvent.MediaUpdated(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                )
-            23 -> AuroraEvent.ChatUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterOptionalBoolean.read(buf),
-                FfiConverterOptionalBoolean.read(buf),
-                FfiConverterOptionalULong.read(buf),
-                FfiConverterOptionalUInt.read(buf),
-                )
-            24 -> AuroraEvent.ContactUpdate(
-                FfiConverterString.read(buf),
-                FfiConverterOptionalString.read(buf),
-                FfiConverterOptionalString.read(buf),
-                )
-            25 -> AuroraEvent.AppStateSynced(
-                FfiConverterUInt.read(buf),
-                FfiConverterUInt.read(buf),
-                )
-            26 -> AuroraEvent.MediaProgress(
-                FfiConverterString.read(buf),
-                FfiConverterString.read(buf),
-                FfiConverterULong.read(buf),
-                FfiConverterULong.read(buf),
-                FfiConverterFloat.read(buf),
-                )
-            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
-        }
+public object FfiConverterTypeRolleysTelemetrySnapshot: FfiConverterRustBuffer<RolleysTelemetrySnapshot> {
+    override fun read(buf: ByteBuffer): RolleysTelemetrySnapshot {
+        return RolleysTelemetrySnapshot(
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterDouble.read(buf),
+            FfiConverterULong.read(buf),
+        )
     }
 
-    override fun allocationSize(value: AuroraEvent) = when(value) {
-        is AuroraEvent.Connecting -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-            )
-        }
-        is AuroraEvent.Connected -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`meJid`)
-            )
-        }
-        is AuroraEvent.Disconnected -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`reason`)
-            )
-        }
-        is AuroraEvent.QrCode -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`code`)
-            )
-        }
-        is AuroraEvent.PairingCode -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`code`)
-            )
-        }
-        is AuroraEvent.MessageReceived -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterTypeAuroraMessage.allocationSize(value.`message`)
-            )
-        }
-        is AuroraEvent.ReceiptUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`id`)
-                + FfiConverterString.allocationSize(value.`remoteJid`)
-                + FfiConverterString.allocationSize(value.`status`)
-            )
-        }
-        is AuroraEvent.PresenceUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`jid`)
-                + FfiConverterString.allocationSize(value.`state`)
-            )
-        }
-        is AuroraEvent.HistorySync -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterInt.allocationSize(value.`syncType`)
-                + FfiConverterUInt.allocationSize(value.`progress`)
-                + FfiConverterUInt.allocationSize(value.`conversationCount`)
-            )
-        }
-        is AuroraEvent.PollVoteReceived -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`pollId`)
-                + FfiConverterString.allocationSize(value.`voterJid`)
-                + FfiConverterSequenceString.allocationSize(value.`selectedOptions`)
-                + FfiConverterTypeAuroraPollTally.allocationSize(value.`tally`)
-            )
-        }
-        is AuroraEvent.CallReceived -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterTypeAuroraCallEvent.allocationSize(value.`call`)
-            )
-        }
-        is AuroraEvent.StoryReceived -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterTypeAuroraStoredStory.allocationSize(value.`story`)
-            )
-        }
-        is AuroraEvent.BlocklistUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterSequenceString.allocationSize(value.`added`)
-                + FfiConverterSequenceString.allocationSize(value.`removed`)
-            )
-        }
-        is AuroraEvent.MessageEdited -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`chatJid`)
-                + FfiConverterString.allocationSize(value.`messageId`)
-                + FfiConverterString.allocationSize(value.`newText`)
-            )
-        }
-        is AuroraEvent.MessageRevoked -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`chatJid`)
-                + FfiConverterString.allocationSize(value.`messageId`)
-                + FfiConverterOptionalString.allocationSize(value.`participant`)
-            )
-        }
-        is AuroraEvent.ChatEphemeralUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`chatJid`)
-                + FfiConverterUInt.allocationSize(value.`ephemeralExpiration`)
-            )
-        }
-        is AuroraEvent.LabelEdit -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterTypeAuroraLabel.allocationSize(value.`label`)
-            )
-        }
-        is AuroraEvent.ChatLabelUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`chatJid`)
-                + FfiConverterString.allocationSize(value.`labelId`)
-                + FfiConverterBoolean.allocationSize(value.`labeled`)
-            )
-        }
-        is AuroraEvent.MessageLabelUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`chatJid`)
-                + FfiConverterString.allocationSize(value.`messageId`)
-                + FfiConverterString.allocationSize(value.`labelId`)
-                + FfiConverterBoolean.allocationSize(value.`labeled`)
-            )
-        }
-        is AuroraEvent.DeviceUpdate -> {
-            // Add the size for the Int that specifies the variant plus the size needed for all fields
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`userJid`)
-                + FfiConverterSequenceUInt.allocationSize(value.`devices`)
-            )
-        }
-        is AuroraEvent.IdentityChanged -> {
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`jid`)
-                + FfiConverterULong.allocationSize(value.`timestamp`)
-            )
-        }
-        is AuroraEvent.MediaUpdated -> {
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`messageId`)
-                + FfiConverterString.allocationSize(value.`directPath`)
-            )
-        }
-        is AuroraEvent.ChatUpdate -> {
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`jid`)
-                + FfiConverterOptionalBoolean.allocationSize(value.`pinned`)
-                + FfiConverterOptionalBoolean.allocationSize(value.`archived`)
-                + FfiConverterOptionalULong.allocationSize(value.`muteUntil`)
-                + FfiConverterOptionalUInt.allocationSize(value.`unreadCount`)
-            )
-        }
-        is AuroraEvent.ContactUpdate -> {
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`jid`)
-                + FfiConverterOptionalString.allocationSize(value.`name`)
-                + FfiConverterOptionalString.allocationSize(value.`pushName`)
-            )
-        }
-        is AuroraEvent.AppStateSynced -> {
-            (
-                4UL
-                + FfiConverterUInt.allocationSize(value.`collectionsSynced`)
-                + FfiConverterUInt.allocationSize(value.`mutationsApplied`)
-            )
-        }
-        is AuroraEvent.MediaProgress -> {
-            (
-                4UL
-                + FfiConverterString.allocationSize(value.`taskId`)
-                + FfiConverterString.allocationSize(value.`direction`)
-                + FfiConverterULong.allocationSize(value.`bytesTransferred`)
-                + FfiConverterULong.allocationSize(value.`totalBytes`)
-                + FfiConverterFloat.allocationSize(value.`percentage`)
-            )
-        }
-    }
+    override fun allocationSize(value: RolleysTelemetrySnapshot) = (
+            FfiConverterULong.allocationSize(value.`messagesIn`) +
+            FfiConverterULong.allocationSize(value.`messagesOut`) +
+            FfiConverterULong.allocationSize(value.`lastPingLatencyMs`) +
+            FfiConverterDouble.allocationSize(value.`signalCacheHitRatePct`) +
+            FfiConverterULong.allocationSize(value.`reconnectCount`)
+    )
 
-    override fun write(value: AuroraEvent, buf: ByteBuffer) {
-        when(value) {
-            is AuroraEvent.Connecting -> {
-                buf.putInt(1)
-                Unit
-            }
-            is AuroraEvent.Connected -> {
-                buf.putInt(2)
-                FfiConverterString.write(value.`meJid`, buf)
-                Unit
-            }
-            is AuroraEvent.Disconnected -> {
-                buf.putInt(3)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is AuroraEvent.QrCode -> {
-                buf.putInt(4)
-                FfiConverterString.write(value.`code`, buf)
-                Unit
-            }
-            is AuroraEvent.PairingCode -> {
-                buf.putInt(5)
-                FfiConverterString.write(value.`code`, buf)
-                Unit
-            }
-            is AuroraEvent.MessageReceived -> {
-                buf.putInt(6)
-                FfiConverterTypeAuroraMessage.write(value.`message`, buf)
-                Unit
-            }
-            is AuroraEvent.ReceiptUpdate -> {
-                buf.putInt(7)
-                FfiConverterString.write(value.`id`, buf)
-                FfiConverterString.write(value.`remoteJid`, buf)
-                FfiConverterString.write(value.`status`, buf)
-                Unit
-            }
-            is AuroraEvent.PresenceUpdate -> {
-                buf.putInt(8)
-                FfiConverterString.write(value.`jid`, buf)
-                FfiConverterString.write(value.`state`, buf)
-                Unit
-            }
-            is AuroraEvent.HistorySync -> {
-                buf.putInt(9)
-                FfiConverterInt.write(value.`syncType`, buf)
-                FfiConverterUInt.write(value.`progress`, buf)
-                FfiConverterUInt.write(value.`conversationCount`, buf)
-                Unit
-            }
-            is AuroraEvent.PollVoteReceived -> {
-                buf.putInt(10)
-                FfiConverterString.write(value.`pollId`, buf)
-                FfiConverterString.write(value.`voterJid`, buf)
-                FfiConverterSequenceString.write(value.`selectedOptions`, buf)
-                FfiConverterTypeAuroraPollTally.write(value.`tally`, buf)
-                Unit
-            }
-            is AuroraEvent.CallReceived -> {
-                buf.putInt(11)
-                FfiConverterTypeAuroraCallEvent.write(value.`call`, buf)
-                Unit
-            }
-            is AuroraEvent.StoryReceived -> {
-                buf.putInt(12)
-                FfiConverterTypeAuroraStoredStory.write(value.`story`, buf)
-                Unit
-            }
-            is AuroraEvent.BlocklistUpdate -> {
-                buf.putInt(13)
-                FfiConverterSequenceString.write(value.`added`, buf)
-                FfiConverterSequenceString.write(value.`removed`, buf)
-                Unit
-            }
-            is AuroraEvent.MessageEdited -> {
-                buf.putInt(14)
-                FfiConverterString.write(value.`chatJid`, buf)
-                FfiConverterString.write(value.`messageId`, buf)
-                FfiConverterString.write(value.`newText`, buf)
-                Unit
-            }
-            is AuroraEvent.MessageRevoked -> {
-                buf.putInt(15)
-                FfiConverterString.write(value.`chatJid`, buf)
-                FfiConverterString.write(value.`messageId`, buf)
-                FfiConverterOptionalString.write(value.`participant`, buf)
-                Unit
-            }
-            is AuroraEvent.ChatEphemeralUpdate -> {
-                buf.putInt(16)
-                FfiConverterString.write(value.`chatJid`, buf)
-                FfiConverterUInt.write(value.`ephemeralExpiration`, buf)
-                Unit
-            }
-            is AuroraEvent.LabelEdit -> {
-                buf.putInt(17)
-                FfiConverterTypeAuroraLabel.write(value.`label`, buf)
-                Unit
-            }
-            is AuroraEvent.ChatLabelUpdate -> {
-                buf.putInt(18)
-                FfiConverterString.write(value.`chatJid`, buf)
-                FfiConverterString.write(value.`labelId`, buf)
-                FfiConverterBoolean.write(value.`labeled`, buf)
-                Unit
-            }
-            is AuroraEvent.MessageLabelUpdate -> {
-                buf.putInt(19)
-                FfiConverterString.write(value.`chatJid`, buf)
-                FfiConverterString.write(value.`messageId`, buf)
-                FfiConverterString.write(value.`labelId`, buf)
-                FfiConverterBoolean.write(value.`labeled`, buf)
-                Unit
-            }
-            is AuroraEvent.DeviceUpdate -> {
-                buf.putInt(20)
-                FfiConverterString.write(value.`userJid`, buf)
-                FfiConverterSequenceUInt.write(value.`devices`, buf)
-                Unit
-            }
-            is AuroraEvent.IdentityChanged -> {
-                buf.putInt(21)
-                FfiConverterString.write(value.`jid`, buf)
-                FfiConverterULong.write(value.`timestamp`, buf)
-                Unit
-            }
-            is AuroraEvent.MediaUpdated -> {
-                buf.putInt(22)
-                FfiConverterString.write(value.`messageId`, buf)
-                FfiConverterString.write(value.`directPath`, buf)
-                Unit
-            }
-            is AuroraEvent.ChatUpdate -> {
-                buf.putInt(23)
-                FfiConverterString.write(value.`jid`, buf)
-                FfiConverterOptionalBoolean.write(value.`pinned`, buf)
-                FfiConverterOptionalBoolean.write(value.`archived`, buf)
-                FfiConverterOptionalULong.write(value.`muteUntil`, buf)
-                FfiConverterOptionalUInt.write(value.`unreadCount`, buf)
-                Unit
-            }
-            is AuroraEvent.ContactUpdate -> {
-                buf.putInt(24)
-                FfiConverterString.write(value.`jid`, buf)
-                FfiConverterOptionalString.write(value.`name`, buf)
-                FfiConverterOptionalString.write(value.`pushName`, buf)
-                Unit
-            }
-            is AuroraEvent.AppStateSynced -> {
-                buf.putInt(25)
-                FfiConverterUInt.write(value.`collectionsSynced`, buf)
-                FfiConverterUInt.write(value.`mutationsApplied`, buf)
-                Unit
-            }
-            is AuroraEvent.MediaProgress -> {
-                buf.putInt(26)
-                FfiConverterString.write(value.`taskId`, buf)
-                FfiConverterString.write(value.`direction`, buf)
-                FfiConverterULong.write(value.`bytesTransferred`, buf)
-                FfiConverterULong.write(value.`totalBytes`, buf)
-                FfiConverterFloat.write(value.`percentage`, buf)
-                Unit
-            }
-        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    override fun write(value: RolleysTelemetrySnapshot, buf: ByteBuffer) {
+            FfiConverterULong.write(value.`messagesIn`, buf)
+            FfiConverterULong.write(value.`messagesOut`, buf)
+            FfiConverterULong.write(value.`lastPingLatencyMs`, buf)
+            FfiConverterDouble.write(value.`signalCacheHitRatePct`, buf)
+            FfiConverterULong.write(value.`reconnectCount`, buf)
     }
 }
 
 
+
+data class RolleysUrlPreview (
+    var `matchedText`: kotlin.String, 
+    var `canonicalUrl`: kotlin.String, 
+    var `title`: kotlin.String?, 
+    var `description`: kotlin.String?, 
+    var `jpegThumbnail`: kotlin.ByteArray?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysUrlPreview: FfiConverterRustBuffer<RolleysUrlPreview> {
+    override fun read(buf: ByteBuffer): RolleysUrlPreview {
+        return RolleysUrlPreview(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalByteArray.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysUrlPreview) = (
+            FfiConverterString.allocationSize(value.`matchedText`) +
+            FfiConverterString.allocationSize(value.`canonicalUrl`) +
+            FfiConverterOptionalString.allocationSize(value.`title`) +
+            FfiConverterOptionalString.allocationSize(value.`description`) +
+            FfiConverterOptionalByteArray.allocationSize(value.`jpegThumbnail`)
+    )
+
+    override fun write(value: RolleysUrlPreview, buf: ByteBuffer) {
+            FfiConverterString.write(value.`matchedText`, buf)
+            FfiConverterString.write(value.`canonicalUrl`, buf)
+            FfiConverterOptionalString.write(value.`title`, buf)
+            FfiConverterOptionalString.write(value.`description`, buf)
+            FfiConverterOptionalByteArray.write(value.`jpegThumbnail`, buf)
+    }
+}
+
+
+
+data class RolleysUserStatus (
+    var `jid`: kotlin.String, 
+    var `status`: kotlin.String, 
+    var `timestamp`: kotlin.ULong
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysUserStatus: FfiConverterRustBuffer<RolleysUserStatus> {
+    override fun read(buf: ByteBuffer): RolleysUserStatus {
+        return RolleysUserStatus(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysUserStatus) = (
+            FfiConverterString.allocationSize(value.`jid`) +
+            FfiConverterString.allocationSize(value.`status`) +
+            FfiConverterULong.allocationSize(value.`timestamp`)
+    )
+
+    override fun write(value: RolleysUserStatus, buf: ByteBuffer) {
+            FfiConverterString.write(value.`jid`, buf)
+            FfiConverterString.write(value.`status`, buf)
+            FfiConverterULong.write(value.`timestamp`, buf)
+    }
+}
 
 
 
@@ -7267,11 +7604,687 @@ public object FfiConverterTypeFfiError : FfiConverterRustBuffer<FfiException> {
 
 
 
-
-
-public interface AuroraEventListener {
+sealed class RolleysEvent {
     
-    fun `onEvent`(`event`: AuroraEvent)
+    object Connecting : RolleysEvent()
+    
+    
+    data class Connected(
+        val `meJid`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class Disconnected(
+        val `reason`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class QrCode(
+        val `code`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class PairingCode(
+        val `code`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class MessageReceived(
+        val `message`: RolleysMessage) : RolleysEvent() {
+        companion object
+    }
+    
+    data class ReceiptUpdate(
+        val `id`: kotlin.String, 
+        val `remoteJid`: kotlin.String, 
+        val `status`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class PresenceUpdate(
+        val `jid`: kotlin.String, 
+        val `state`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class HistorySync(
+        val `syncType`: kotlin.Int, 
+        val `progress`: kotlin.UInt, 
+        val `conversationCount`: kotlin.UInt) : RolleysEvent() {
+        companion object
+    }
+    
+    data class PollVoteReceived(
+        val `pollId`: kotlin.String, 
+        val `voterJid`: kotlin.String, 
+        val `selectedOptions`: List<kotlin.String>, 
+        val `tally`: RolleysPollTally) : RolleysEvent() {
+        companion object
+    }
+    
+    data class CallReceived(
+        val `call`: RolleysCallEvent) : RolleysEvent() {
+        companion object
+    }
+    
+    data class StoryReceived(
+        val `story`: RolleysStoredStory) : RolleysEvent() {
+        companion object
+    }
+    
+    data class BlocklistUpdate(
+        val `added`: List<kotlin.String>, 
+        val `removed`: List<kotlin.String>) : RolleysEvent() {
+        companion object
+    }
+    
+    data class MessageEdited(
+        val `chatJid`: kotlin.String, 
+        val `messageId`: kotlin.String, 
+        val `newText`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class MessageRevoked(
+        val `chatJid`: kotlin.String, 
+        val `messageId`: kotlin.String, 
+        val `participant`: kotlin.String?) : RolleysEvent() {
+        companion object
+    }
+    
+    data class ChatEphemeralUpdate(
+        val `chatJid`: kotlin.String, 
+        val `ephemeralExpiration`: kotlin.UInt) : RolleysEvent() {
+        companion object
+    }
+    
+    data class LabelEdit(
+        val `label`: RolleysLabel) : RolleysEvent() {
+        companion object
+    }
+    
+    data class ChatLabelUpdate(
+        val `chatJid`: kotlin.String, 
+        val `labelId`: kotlin.String, 
+        val `labeled`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    data class MessageLabelUpdate(
+        val `chatJid`: kotlin.String, 
+        val `messageId`: kotlin.String, 
+        val `labelId`: kotlin.String, 
+        val `labeled`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    data class DeviceUpdate(
+        val `userJid`: kotlin.String, 
+        val `devices`: List<kotlin.UInt>) : RolleysEvent() {
+        companion object
+    }
+    
+    data class IdentityChanged(
+        val `jid`: kotlin.String, 
+        val `timestamp`: kotlin.ULong) : RolleysEvent() {
+        companion object
+    }
+    
+    data class MediaUpdated(
+        val `messageId`: kotlin.String, 
+        val `directPath`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    data class ChatUpdate(
+        val `jid`: kotlin.String, 
+        val `pinned`: kotlin.Boolean?, 
+        val `archived`: kotlin.Boolean?, 
+        val `muteUntil`: kotlin.ULong?, 
+        val `unreadCount`: kotlin.UInt?) : RolleysEvent() {
+        companion object
+    }
+    
+    data class ContactUpdate(
+        val `jid`: kotlin.String, 
+        val `name`: kotlin.String?, 
+        val `pushName`: kotlin.String?) : RolleysEvent() {
+        companion object
+    }
+    
+    data class AppStateSynced(
+        val `collectionsSynced`: kotlin.UInt, 
+        val `mutationsApplied`: kotlin.UInt) : RolleysEvent() {
+        companion object
+    }
+    
+    data class MediaProgress(
+        val `taskId`: kotlin.String, 
+        val `direction`: kotlin.String, 
+        val `bytesTransferred`: kotlin.ULong, 
+        val `totalBytes`: kotlin.ULong, 
+        val `percentage`: kotlin.Float) : RolleysEvent() {
+        companion object
+    }
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysEvent : FfiConverterRustBuffer<RolleysEvent>{
+    override fun read(buf: ByteBuffer): RolleysEvent {
+        return when(buf.getInt()) {
+            1 -> RolleysEvent.Connecting
+            2 -> RolleysEvent.Connected(
+                FfiConverterString.read(buf),
+                )
+            3 -> RolleysEvent.Disconnected(
+                FfiConverterString.read(buf),
+                )
+            4 -> RolleysEvent.QrCode(
+                FfiConverterString.read(buf),
+                )
+            5 -> RolleysEvent.PairingCode(
+                FfiConverterString.read(buf),
+                )
+            6 -> RolleysEvent.MessageReceived(
+                FfiConverterTypeRolleysMessage.read(buf),
+                )
+            7 -> RolleysEvent.ReceiptUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            8 -> RolleysEvent.PresenceUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            9 -> RolleysEvent.HistorySync(
+                FfiConverterInt.read(buf),
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            10 -> RolleysEvent.PollVoteReceived(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterSequenceString.read(buf),
+                FfiConverterTypeRolleysPollTally.read(buf),
+                )
+            11 -> RolleysEvent.CallReceived(
+                FfiConverterTypeRolleysCallEvent.read(buf),
+                )
+            12 -> RolleysEvent.StoryReceived(
+                FfiConverterTypeRolleysStoredStory.read(buf),
+                )
+            13 -> RolleysEvent.BlocklistUpdate(
+                FfiConverterSequenceString.read(buf),
+                FfiConverterSequenceString.read(buf),
+                )
+            14 -> RolleysEvent.MessageEdited(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            15 -> RolleysEvent.MessageRevoked(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                )
+            16 -> RolleysEvent.ChatEphemeralUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            17 -> RolleysEvent.LabelEdit(
+                FfiConverterTypeRolleysLabel.read(buf),
+                )
+            18 -> RolleysEvent.ChatLabelUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            19 -> RolleysEvent.MessageLabelUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            20 -> RolleysEvent.DeviceUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterSequenceUInt.read(buf),
+                )
+            21 -> RolleysEvent.IdentityChanged(
+                FfiConverterString.read(buf),
+                FfiConverterULong.read(buf),
+                )
+            22 -> RolleysEvent.MediaUpdated(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            23 -> RolleysEvent.ChatUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalBoolean.read(buf),
+                FfiConverterOptionalBoolean.read(buf),
+                FfiConverterOptionalULong.read(buf),
+                FfiConverterOptionalUInt.read(buf),
+                )
+            24 -> RolleysEvent.ContactUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                )
+            25 -> RolleysEvent.AppStateSynced(
+                FfiConverterUInt.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            26 -> RolleysEvent.MediaProgress(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterFloat.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: RolleysEvent) = when(value) {
+        is RolleysEvent.Connecting -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is RolleysEvent.Connected -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`meJid`)
+            )
+        }
+        is RolleysEvent.Disconnected -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`reason`)
+            )
+        }
+        is RolleysEvent.QrCode -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`code`)
+            )
+        }
+        is RolleysEvent.PairingCode -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`code`)
+            )
+        }
+        is RolleysEvent.MessageReceived -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysMessage.allocationSize(value.`message`)
+            )
+        }
+        is RolleysEvent.ReceiptUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`id`)
+                + FfiConverterString.allocationSize(value.`remoteJid`)
+                + FfiConverterString.allocationSize(value.`status`)
+            )
+        }
+        is RolleysEvent.PresenceUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterString.allocationSize(value.`state`)
+            )
+        }
+        is RolleysEvent.HistorySync -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterInt.allocationSize(value.`syncType`)
+                + FfiConverterUInt.allocationSize(value.`progress`)
+                + FfiConverterUInt.allocationSize(value.`conversationCount`)
+            )
+        }
+        is RolleysEvent.PollVoteReceived -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`pollId`)
+                + FfiConverterString.allocationSize(value.`voterJid`)
+                + FfiConverterSequenceString.allocationSize(value.`selectedOptions`)
+                + FfiConverterTypeRolleysPollTally.allocationSize(value.`tally`)
+            )
+        }
+        is RolleysEvent.CallReceived -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysCallEvent.allocationSize(value.`call`)
+            )
+        }
+        is RolleysEvent.StoryReceived -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysStoredStory.allocationSize(value.`story`)
+            )
+        }
+        is RolleysEvent.BlocklistUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterSequenceString.allocationSize(value.`added`)
+                + FfiConverterSequenceString.allocationSize(value.`removed`)
+            )
+        }
+        is RolleysEvent.MessageEdited -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterString.allocationSize(value.`newText`)
+            )
+        }
+        is RolleysEvent.MessageRevoked -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterOptionalString.allocationSize(value.`participant`)
+            )
+        }
+        is RolleysEvent.ChatEphemeralUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterUInt.allocationSize(value.`ephemeralExpiration`)
+            )
+        }
+        is RolleysEvent.LabelEdit -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysLabel.allocationSize(value.`label`)
+            )
+        }
+        is RolleysEvent.ChatLabelUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterString.allocationSize(value.`labelId`)
+                + FfiConverterBoolean.allocationSize(value.`labeled`)
+            )
+        }
+        is RolleysEvent.MessageLabelUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterString.allocationSize(value.`labelId`)
+                + FfiConverterBoolean.allocationSize(value.`labeled`)
+            )
+        }
+        is RolleysEvent.DeviceUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`userJid`)
+                + FfiConverterSequenceUInt.allocationSize(value.`devices`)
+            )
+        }
+        is RolleysEvent.IdentityChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterULong.allocationSize(value.`timestamp`)
+            )
+        }
+        is RolleysEvent.MediaUpdated -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterString.allocationSize(value.`directPath`)
+            )
+        }
+        is RolleysEvent.ChatUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterOptionalBoolean.allocationSize(value.`pinned`)
+                + FfiConverterOptionalBoolean.allocationSize(value.`archived`)
+                + FfiConverterOptionalULong.allocationSize(value.`muteUntil`)
+                + FfiConverterOptionalUInt.allocationSize(value.`unreadCount`)
+            )
+        }
+        is RolleysEvent.ContactUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterOptionalString.allocationSize(value.`name`)
+                + FfiConverterOptionalString.allocationSize(value.`pushName`)
+            )
+        }
+        is RolleysEvent.AppStateSynced -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.`collectionsSynced`)
+                + FfiConverterUInt.allocationSize(value.`mutationsApplied`)
+            )
+        }
+        is RolleysEvent.MediaProgress -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`taskId`)
+                + FfiConverterString.allocationSize(value.`direction`)
+                + FfiConverterULong.allocationSize(value.`bytesTransferred`)
+                + FfiConverterULong.allocationSize(value.`totalBytes`)
+                + FfiConverterFloat.allocationSize(value.`percentage`)
+            )
+        }
+    }
+
+    override fun write(value: RolleysEvent, buf: ByteBuffer) {
+        when(value) {
+            is RolleysEvent.Connecting -> {
+                buf.putInt(1)
+                Unit
+            }
+            is RolleysEvent.Connected -> {
+                buf.putInt(2)
+                FfiConverterString.write(value.`meJid`, buf)
+                Unit
+            }
+            is RolleysEvent.Disconnected -> {
+                buf.putInt(3)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is RolleysEvent.QrCode -> {
+                buf.putInt(4)
+                FfiConverterString.write(value.`code`, buf)
+                Unit
+            }
+            is RolleysEvent.PairingCode -> {
+                buf.putInt(5)
+                FfiConverterString.write(value.`code`, buf)
+                Unit
+            }
+            is RolleysEvent.MessageReceived -> {
+                buf.putInt(6)
+                FfiConverterTypeRolleysMessage.write(value.`message`, buf)
+                Unit
+            }
+            is RolleysEvent.ReceiptUpdate -> {
+                buf.putInt(7)
+                FfiConverterString.write(value.`id`, buf)
+                FfiConverterString.write(value.`remoteJid`, buf)
+                FfiConverterString.write(value.`status`, buf)
+                Unit
+            }
+            is RolleysEvent.PresenceUpdate -> {
+                buf.putInt(8)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterString.write(value.`state`, buf)
+                Unit
+            }
+            is RolleysEvent.HistorySync -> {
+                buf.putInt(9)
+                FfiConverterInt.write(value.`syncType`, buf)
+                FfiConverterUInt.write(value.`progress`, buf)
+                FfiConverterUInt.write(value.`conversationCount`, buf)
+                Unit
+            }
+            is RolleysEvent.PollVoteReceived -> {
+                buf.putInt(10)
+                FfiConverterString.write(value.`pollId`, buf)
+                FfiConverterString.write(value.`voterJid`, buf)
+                FfiConverterSequenceString.write(value.`selectedOptions`, buf)
+                FfiConverterTypeRolleysPollTally.write(value.`tally`, buf)
+                Unit
+            }
+            is RolleysEvent.CallReceived -> {
+                buf.putInt(11)
+                FfiConverterTypeRolleysCallEvent.write(value.`call`, buf)
+                Unit
+            }
+            is RolleysEvent.StoryReceived -> {
+                buf.putInt(12)
+                FfiConverterTypeRolleysStoredStory.write(value.`story`, buf)
+                Unit
+            }
+            is RolleysEvent.BlocklistUpdate -> {
+                buf.putInt(13)
+                FfiConverterSequenceString.write(value.`added`, buf)
+                FfiConverterSequenceString.write(value.`removed`, buf)
+                Unit
+            }
+            is RolleysEvent.MessageEdited -> {
+                buf.putInt(14)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterString.write(value.`newText`, buf)
+                Unit
+            }
+            is RolleysEvent.MessageRevoked -> {
+                buf.putInt(15)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterOptionalString.write(value.`participant`, buf)
+                Unit
+            }
+            is RolleysEvent.ChatEphemeralUpdate -> {
+                buf.putInt(16)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterUInt.write(value.`ephemeralExpiration`, buf)
+                Unit
+            }
+            is RolleysEvent.LabelEdit -> {
+                buf.putInt(17)
+                FfiConverterTypeRolleysLabel.write(value.`label`, buf)
+                Unit
+            }
+            is RolleysEvent.ChatLabelUpdate -> {
+                buf.putInt(18)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterString.write(value.`labelId`, buf)
+                FfiConverterBoolean.write(value.`labeled`, buf)
+                Unit
+            }
+            is RolleysEvent.MessageLabelUpdate -> {
+                buf.putInt(19)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterString.write(value.`labelId`, buf)
+                FfiConverterBoolean.write(value.`labeled`, buf)
+                Unit
+            }
+            is RolleysEvent.DeviceUpdate -> {
+                buf.putInt(20)
+                FfiConverterString.write(value.`userJid`, buf)
+                FfiConverterSequenceUInt.write(value.`devices`, buf)
+                Unit
+            }
+            is RolleysEvent.IdentityChanged -> {
+                buf.putInt(21)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterULong.write(value.`timestamp`, buf)
+                Unit
+            }
+            is RolleysEvent.MediaUpdated -> {
+                buf.putInt(22)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterString.write(value.`directPath`, buf)
+                Unit
+            }
+            is RolleysEvent.ChatUpdate -> {
+                buf.putInt(23)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterOptionalBoolean.write(value.`pinned`, buf)
+                FfiConverterOptionalBoolean.write(value.`archived`, buf)
+                FfiConverterOptionalULong.write(value.`muteUntil`, buf)
+                FfiConverterOptionalUInt.write(value.`unreadCount`, buf)
+                Unit
+            }
+            is RolleysEvent.ContactUpdate -> {
+                buf.putInt(24)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterOptionalString.write(value.`name`, buf)
+                FfiConverterOptionalString.write(value.`pushName`, buf)
+                Unit
+            }
+            is RolleysEvent.AppStateSynced -> {
+                buf.putInt(25)
+                FfiConverterUInt.write(value.`collectionsSynced`, buf)
+                FfiConverterUInt.write(value.`mutationsApplied`, buf)
+                Unit
+            }
+            is RolleysEvent.MediaProgress -> {
+                buf.putInt(26)
+                FfiConverterString.write(value.`taskId`, buf)
+                FfiConverterString.write(value.`direction`, buf)
+                FfiConverterULong.write(value.`bytesTransferred`, buf)
+                FfiConverterULong.write(value.`totalBytes`, buf)
+                FfiConverterFloat.write(value.`percentage`, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+
+
+public interface RolleysEventListener {
+    
+    fun `onEvent`(`event`: RolleysEvent)
     
     companion object
 }
@@ -7310,13 +8323,13 @@ public abstract class FfiConverterCallbackInterface<CallbackInterface: Any>: Ffi
 }
 
 // Put the implementation in an object so we don't pollute the top-level namespace
-internal object uniffiCallbackInterfaceAuroraEventListener {
-    internal object `onEvent`: UniffiCallbackInterfaceAuroraEventListenerMethod0 {
+internal object uniffiCallbackInterfaceRolleysEventListener {
+    internal object `onEvent`: UniffiCallbackInterfaceRolleysEventListenerMethod0 {
         override fun callback(`uniffiHandle`: Long,`event`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
-            val uniffiObj = FfiConverterTypeAuroraEventListener.handleMap.get(uniffiHandle)
+            val uniffiObj = FfiConverterTypeRolleysEventListener.handleMap.get(uniffiHandle)
             val makeCall = { ->
                 uniffiObj.`onEvent`(
-                    FfiConverterTypeAuroraEvent.lift(`event`),
+                    FfiConverterTypeRolleysEvent.lift(`event`),
                 )
             }
             val writeReturn = { _: Unit -> Unit }
@@ -7326,11 +8339,11 @@ internal object uniffiCallbackInterfaceAuroraEventListener {
 
     internal object uniffiFree: UniffiCallbackInterfaceFree {
         override fun callback(handle: Long) {
-            FfiConverterTypeAuroraEventListener.handleMap.remove(handle)
+            FfiConverterTypeRolleysEventListener.handleMap.remove(handle)
         }
     }
 
-    internal var vtable = UniffiVTableCallbackInterfaceAuroraEventListener.UniffiByValue(
+    internal var vtable = UniffiVTableCallbackInterfaceRolleysEventListener.UniffiByValue(
         `onEvent`,
         uniffiFree,
     )
@@ -7338,7 +8351,7 @@ internal object uniffiCallbackInterfaceAuroraEventListener {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_baileys_ffi_fn_init_callback_vtable_auroraeventlistener(vtable)
+        lib.uniffi_baileys_ffi_fn_init_callback_vtable_rolleyseventlistener(vtable)
     }
 }
 
@@ -7347,39 +8360,10 @@ internal object uniffiCallbackInterfaceAuroraEventListener {
  *
  * @suppress
  */
-public object FfiConverterTypeAuroraEventListener: FfiConverterCallbackInterface<AuroraEventListener>()
+public object FfiConverterTypeRolleysEventListener: FfiConverterCallbackInterface<RolleysEventListener>()
 
 
 
-
-/**
- * @suppress
- */
-public object FfiConverterOptionalBoolean: FfiConverterRustBuffer<kotlin.Boolean?> {
-    override fun read(buf: ByteBuffer): kotlin.Boolean? {
-        if (buf.get().toInt() == 0) {
-            return null
-        }
-        return FfiConverterBoolean.read(buf)
-    }
-
-    override fun allocationSize(value: kotlin.Boolean?): ULong {
-        if (value == null) {
-            return 1UL
-        } else {
-            return 1UL + FfiConverterBoolean.allocationSize(value)
-        }
-    }
-
-    override fun write(value: kotlin.Boolean?, buf: ByteBuffer) {
-        if (value == null) {
-            buf.put(0.toByte())
-        } else {
-            buf.put(1.toByte())
-            FfiConverterBoolean.write(value, buf)
-        }
-    }
-}
 
 /**
  * @suppress
@@ -7512,6 +8496,38 @@ public object FfiConverterOptionalLong: FfiConverterRustBuffer<kotlin.Long?> {
 /**
  * @suppress
  */
+public object FfiConverterOptionalBoolean: FfiConverterRustBuffer<kotlin.Boolean?> {
+    override fun read(buf: ByteBuffer): kotlin.Boolean? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterBoolean.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Boolean?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterBoolean.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Boolean?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterBoolean.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
     override fun read(buf: ByteBuffer): kotlin.String? {
         if (buf.get().toInt() == 0) {
@@ -7576,28 +8592,28 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
 /**
  * @suppress
  */
-public object FfiConverterOptionalTypeAuroraBusinessProfile: FfiConverterRustBuffer<AuroraBusinessProfile?> {
-    override fun read(buf: ByteBuffer): AuroraBusinessProfile? {
+public object FfiConverterOptionalTypeRolleysAccountReachoutTimelock: FfiConverterRustBuffer<RolleysAccountReachoutTimelock?> {
+    override fun read(buf: ByteBuffer): RolleysAccountReachoutTimelock? {
         if (buf.get().toInt() == 0) {
             return null
         }
-        return FfiConverterTypeAuroraBusinessProfile.read(buf)
+        return FfiConverterTypeRolleysAccountReachoutTimelock.read(buf)
     }
 
-    override fun allocationSize(value: AuroraBusinessProfile?): ULong {
+    override fun allocationSize(value: RolleysAccountReachoutTimelock?): ULong {
         if (value == null) {
             return 1UL
         } else {
-            return 1UL + FfiConverterTypeAuroraBusinessProfile.allocationSize(value)
+            return 1UL + FfiConverterTypeRolleysAccountReachoutTimelock.allocationSize(value)
         }
     }
 
-    override fun write(value: AuroraBusinessProfile?, buf: ByteBuffer) {
+    override fun write(value: RolleysAccountReachoutTimelock?, buf: ByteBuffer) {
         if (value == null) {
             buf.put(0)
         } else {
             buf.put(1)
-            FfiConverterTypeAuroraBusinessProfile.write(value, buf)
+            FfiConverterTypeRolleysAccountReachoutTimelock.write(value, buf)
         }
     }
 }
@@ -7608,28 +8624,28 @@ public object FfiConverterOptionalTypeAuroraBusinessProfile: FfiConverterRustBuf
 /**
  * @suppress
  */
-public object FfiConverterOptionalTypeAuroraContact: FfiConverterRustBuffer<AuroraContact?> {
-    override fun read(buf: ByteBuffer): AuroraContact? {
+public object FfiConverterOptionalTypeRolleysBusinessProfile: FfiConverterRustBuffer<RolleysBusinessProfile?> {
+    override fun read(buf: ByteBuffer): RolleysBusinessProfile? {
         if (buf.get().toInt() == 0) {
             return null
         }
-        return FfiConverterTypeAuroraContact.read(buf)
+        return FfiConverterTypeRolleysBusinessProfile.read(buf)
     }
 
-    override fun allocationSize(value: AuroraContact?): ULong {
+    override fun allocationSize(value: RolleysBusinessProfile?): ULong {
         if (value == null) {
             return 1UL
         } else {
-            return 1UL + FfiConverterTypeAuroraContact.allocationSize(value)
+            return 1UL + FfiConverterTypeRolleysBusinessProfile.allocationSize(value)
         }
     }
 
-    override fun write(value: AuroraContact?, buf: ByteBuffer) {
+    override fun write(value: RolleysBusinessProfile?, buf: ByteBuffer) {
         if (value == null) {
             buf.put(0)
         } else {
             buf.put(1)
-            FfiConverterTypeAuroraContact.write(value, buf)
+            FfiConverterTypeRolleysBusinessProfile.write(value, buf)
         }
     }
 }
@@ -7640,28 +8656,28 @@ public object FfiConverterOptionalTypeAuroraContact: FfiConverterRustBuffer<Auro
 /**
  * @suppress
  */
-public object FfiConverterOptionalTypeAuroraLabel: FfiConverterRustBuffer<AuroraLabel?> {
-    override fun read(buf: ByteBuffer): AuroraLabel? {
+public object FfiConverterOptionalTypeRolleysContact: FfiConverterRustBuffer<RolleysContact?> {
+    override fun read(buf: ByteBuffer): RolleysContact? {
         if (buf.get().toInt() == 0) {
             return null
         }
-        return FfiConverterTypeAuroraLabel.read(buf)
+        return FfiConverterTypeRolleysContact.read(buf)
     }
 
-    override fun allocationSize(value: AuroraLabel?): ULong {
+    override fun allocationSize(value: RolleysContact?): ULong {
         if (value == null) {
             return 1UL
         } else {
-            return 1UL + FfiConverterTypeAuroraLabel.allocationSize(value)
+            return 1UL + FfiConverterTypeRolleysContact.allocationSize(value)
         }
     }
 
-    override fun write(value: AuroraLabel?, buf: ByteBuffer) {
+    override fun write(value: RolleysContact?, buf: ByteBuffer) {
         if (value == null) {
             buf.put(0)
         } else {
             buf.put(1)
-            FfiConverterTypeAuroraLabel.write(value, buf)
+            FfiConverterTypeRolleysContact.write(value, buf)
         }
     }
 }
@@ -7672,28 +8688,28 @@ public object FfiConverterOptionalTypeAuroraLabel: FfiConverterRustBuffer<Aurora
 /**
  * @suppress
  */
-public object FfiConverterOptionalTypeAuroraPollTally: FfiConverterRustBuffer<AuroraPollTally?> {
-    override fun read(buf: ByteBuffer): AuroraPollTally? {
+public object FfiConverterOptionalTypeRolleysLabel: FfiConverterRustBuffer<RolleysLabel?> {
+    override fun read(buf: ByteBuffer): RolleysLabel? {
         if (buf.get().toInt() == 0) {
             return null
         }
-        return FfiConverterTypeAuroraPollTally.read(buf)
+        return FfiConverterTypeRolleysLabel.read(buf)
     }
 
-    override fun allocationSize(value: AuroraPollTally?): ULong {
+    override fun allocationSize(value: RolleysLabel?): ULong {
         if (value == null) {
             return 1UL
         } else {
-            return 1UL + FfiConverterTypeAuroraPollTally.allocationSize(value)
+            return 1UL + FfiConverterTypeRolleysLabel.allocationSize(value)
         }
     }
 
-    override fun write(value: AuroraPollTally?, buf: ByteBuffer) {
+    override fun write(value: RolleysLabel?, buf: ByteBuffer) {
         if (value == null) {
             buf.put(0)
         } else {
             buf.put(1)
-            FfiConverterTypeAuroraPollTally.write(value, buf)
+            FfiConverterTypeRolleysLabel.write(value, buf)
         }
     }
 }
@@ -7704,28 +8720,124 @@ public object FfiConverterOptionalTypeAuroraPollTally: FfiConverterRustBuffer<Au
 /**
  * @suppress
  */
-public object FfiConverterOptionalTypeAuroraProfileStatus: FfiConverterRustBuffer<AuroraProfileStatus?> {
-    override fun read(buf: ByteBuffer): AuroraProfileStatus? {
+public object FfiConverterOptionalTypeRolleysPollTally: FfiConverterRustBuffer<RolleysPollTally?> {
+    override fun read(buf: ByteBuffer): RolleysPollTally? {
         if (buf.get().toInt() == 0) {
             return null
         }
-        return FfiConverterTypeAuroraProfileStatus.read(buf)
+        return FfiConverterTypeRolleysPollTally.read(buf)
     }
 
-    override fun allocationSize(value: AuroraProfileStatus?): ULong {
+    override fun allocationSize(value: RolleysPollTally?): ULong {
         if (value == null) {
             return 1UL
         } else {
-            return 1UL + FfiConverterTypeAuroraProfileStatus.allocationSize(value)
+            return 1UL + FfiConverterTypeRolleysPollTally.allocationSize(value)
         }
     }
 
-    override fun write(value: AuroraProfileStatus?, buf: ByteBuffer) {
+    override fun write(value: RolleysPollTally?, buf: ByteBuffer) {
         if (value == null) {
             buf.put(0)
         } else {
             buf.put(1)
-            FfiConverterTypeAuroraProfileStatus.write(value, buf)
+            FfiConverterTypeRolleysPollTally.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeRolleysProfileStatus: FfiConverterRustBuffer<RolleysProfileStatus?> {
+    override fun read(buf: ByteBuffer): RolleysProfileStatus? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeRolleysProfileStatus.read(buf)
+    }
+
+    override fun allocationSize(value: RolleysProfileStatus?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeRolleysProfileStatus.allocationSize(value)
+        }
+    }
+
+    override fun write(value: RolleysProfileStatus?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeRolleysProfileStatus.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeRolleysUrlPreview: FfiConverterRustBuffer<RolleysUrlPreview?> {
+    override fun read(buf: ByteBuffer): RolleysUrlPreview? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeRolleysUrlPreview.read(buf)
+    }
+
+    override fun allocationSize(value: RolleysUrlPreview?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeRolleysUrlPreview.allocationSize(value)
+        }
+    }
+
+    override fun write(value: RolleysUrlPreview?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeRolleysUrlPreview.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeRolleysUserStatus: FfiConverterRustBuffer<RolleysUserStatus?> {
+    override fun read(buf: ByteBuffer): RolleysUserStatus? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeRolleysUserStatus.read(buf)
+    }
+
+    override fun allocationSize(value: RolleysUserStatus?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeRolleysUserStatus.allocationSize(value)
+        }
+    }
+
+    override fun write(value: RolleysUserStatus?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeRolleysUserStatus.write(value, buf)
         }
     }
 }
@@ -7824,24 +8936,24 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraCatalogCollection: FfiConverterRustBuffer<List<AuroraCatalogCollection>> {
-    override fun read(buf: ByteBuffer): List<AuroraCatalogCollection> {
+public object FfiConverterSequenceTypeRolleysBotEntry: FfiConverterRustBuffer<List<RolleysBotEntry>> {
+    override fun read(buf: ByteBuffer): List<RolleysBotEntry> {
         val len = buf.getInt()
-        return List<AuroraCatalogCollection>(len) {
-            FfiConverterTypeAuroraCatalogCollection.read(buf)
+        return List<RolleysBotEntry>(len) {
+            FfiConverterTypeRolleysBotEntry.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraCatalogCollection>): ULong {
+    override fun allocationSize(value: List<RolleysBotEntry>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraCatalogCollection.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysBotEntry.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraCatalogCollection>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysBotEntry>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraCatalogCollection.write(it, buf)
+            FfiConverterTypeRolleysBotEntry.write(it, buf)
         }
     }
 }
@@ -7852,24 +8964,24 @@ public object FfiConverterSequenceTypeAuroraCatalogCollection: FfiConverterRustB
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraCatalogProduct: FfiConverterRustBuffer<List<AuroraCatalogProduct>> {
-    override fun read(buf: ByteBuffer): List<AuroraCatalogProduct> {
+public object FfiConverterSequenceTypeRolleysCatalogCollection: FfiConverterRustBuffer<List<RolleysCatalogCollection>> {
+    override fun read(buf: ByteBuffer): List<RolleysCatalogCollection> {
         val len = buf.getInt()
-        return List<AuroraCatalogProduct>(len) {
-            FfiConverterTypeAuroraCatalogProduct.read(buf)
+        return List<RolleysCatalogCollection>(len) {
+            FfiConverterTypeRolleysCatalogCollection.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraCatalogProduct>): ULong {
+    override fun allocationSize(value: List<RolleysCatalogCollection>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraCatalogProduct.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysCatalogCollection.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraCatalogProduct>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysCatalogCollection>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraCatalogProduct.write(it, buf)
+            FfiConverterTypeRolleysCatalogCollection.write(it, buf)
         }
     }
 }
@@ -7880,24 +8992,24 @@ public object FfiConverterSequenceTypeAuroraCatalogProduct: FfiConverterRustBuff
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraChat: FfiConverterRustBuffer<List<AuroraChat>> {
-    override fun read(buf: ByteBuffer): List<AuroraChat> {
+public object FfiConverterSequenceTypeRolleysCatalogProduct: FfiConverterRustBuffer<List<RolleysCatalogProduct>> {
+    override fun read(buf: ByteBuffer): List<RolleysCatalogProduct> {
         val len = buf.getInt()
-        return List<AuroraChat>(len) {
-            FfiConverterTypeAuroraChat.read(buf)
+        return List<RolleysCatalogProduct>(len) {
+            FfiConverterTypeRolleysCatalogProduct.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraChat>): ULong {
+    override fun allocationSize(value: List<RolleysCatalogProduct>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraChat.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysCatalogProduct.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraChat>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysCatalogProduct>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraChat.write(it, buf)
+            FfiConverterTypeRolleysCatalogProduct.write(it, buf)
         }
     }
 }
@@ -7908,24 +9020,24 @@ public object FfiConverterSequenceTypeAuroraChat: FfiConverterRustBuffer<List<Au
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraCommunityParticipant: FfiConverterRustBuffer<List<AuroraCommunityParticipant>> {
-    override fun read(buf: ByteBuffer): List<AuroraCommunityParticipant> {
+public object FfiConverterSequenceTypeRolleysChat: FfiConverterRustBuffer<List<RolleysChat>> {
+    override fun read(buf: ByteBuffer): List<RolleysChat> {
         val len = buf.getInt()
-        return List<AuroraCommunityParticipant>(len) {
-            FfiConverterTypeAuroraCommunityParticipant.read(buf)
+        return List<RolleysChat>(len) {
+            FfiConverterTypeRolleysChat.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraCommunityParticipant>): ULong {
+    override fun allocationSize(value: List<RolleysChat>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraCommunityParticipant.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysChat.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraCommunityParticipant>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysChat>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraCommunityParticipant.write(it, buf)
+            FfiConverterTypeRolleysChat.write(it, buf)
         }
     }
 }
@@ -7936,24 +9048,24 @@ public object FfiConverterSequenceTypeAuroraCommunityParticipant: FfiConverterRu
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraCommunitySubgroup: FfiConverterRustBuffer<List<AuroraCommunitySubgroup>> {
-    override fun read(buf: ByteBuffer): List<AuroraCommunitySubgroup> {
+public object FfiConverterSequenceTypeRolleysCommunityParticipant: FfiConverterRustBuffer<List<RolleysCommunityParticipant>> {
+    override fun read(buf: ByteBuffer): List<RolleysCommunityParticipant> {
         val len = buf.getInt()
-        return List<AuroraCommunitySubgroup>(len) {
-            FfiConverterTypeAuroraCommunitySubgroup.read(buf)
+        return List<RolleysCommunityParticipant>(len) {
+            FfiConverterTypeRolleysCommunityParticipant.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraCommunitySubgroup>): ULong {
+    override fun allocationSize(value: List<RolleysCommunityParticipant>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraCommunitySubgroup.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysCommunityParticipant.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraCommunitySubgroup>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysCommunityParticipant>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraCommunitySubgroup.write(it, buf)
+            FfiConverterTypeRolleysCommunityParticipant.write(it, buf)
         }
     }
 }
@@ -7964,24 +9076,24 @@ public object FfiConverterSequenceTypeAuroraCommunitySubgroup: FfiConverterRustB
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraDeviceRecord: FfiConverterRustBuffer<List<AuroraDeviceRecord>> {
-    override fun read(buf: ByteBuffer): List<AuroraDeviceRecord> {
+public object FfiConverterSequenceTypeRolleysCommunitySubgroup: FfiConverterRustBuffer<List<RolleysCommunitySubgroup>> {
+    override fun read(buf: ByteBuffer): List<RolleysCommunitySubgroup> {
         val len = buf.getInt()
-        return List<AuroraDeviceRecord>(len) {
-            FfiConverterTypeAuroraDeviceRecord.read(buf)
+        return List<RolleysCommunitySubgroup>(len) {
+            FfiConverterTypeRolleysCommunitySubgroup.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraDeviceRecord>): ULong {
+    override fun allocationSize(value: List<RolleysCommunitySubgroup>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraDeviceRecord.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysCommunitySubgroup.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraDeviceRecord>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysCommunitySubgroup>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraDeviceRecord.write(it, buf)
+            FfiConverterTypeRolleysCommunitySubgroup.write(it, buf)
         }
     }
 }
@@ -7992,24 +9104,24 @@ public object FfiConverterSequenceTypeAuroraDeviceRecord: FfiConverterRustBuffer
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraGroupJoinRequest: FfiConverterRustBuffer<List<AuroraGroupJoinRequest>> {
-    override fun read(buf: ByteBuffer): List<AuroraGroupJoinRequest> {
+public object FfiConverterSequenceTypeRolleysDeviceRecord: FfiConverterRustBuffer<List<RolleysDeviceRecord>> {
+    override fun read(buf: ByteBuffer): List<RolleysDeviceRecord> {
         val len = buf.getInt()
-        return List<AuroraGroupJoinRequest>(len) {
-            FfiConverterTypeAuroraGroupJoinRequest.read(buf)
+        return List<RolleysDeviceRecord>(len) {
+            FfiConverterTypeRolleysDeviceRecord.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraGroupJoinRequest>): ULong {
+    override fun allocationSize(value: List<RolleysDeviceRecord>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraGroupJoinRequest.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysDeviceRecord.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraGroupJoinRequest>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysDeviceRecord>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraGroupJoinRequest.write(it, buf)
+            FfiConverterTypeRolleysDeviceRecord.write(it, buf)
         }
     }
 }
@@ -8020,24 +9132,24 @@ public object FfiConverterSequenceTypeAuroraGroupJoinRequest: FfiConverterRustBu
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraGroupMetadata: FfiConverterRustBuffer<List<AuroraGroupMetadata>> {
-    override fun read(buf: ByteBuffer): List<AuroraGroupMetadata> {
+public object FfiConverterSequenceTypeRolleysGroupJoinRequest: FfiConverterRustBuffer<List<RolleysGroupJoinRequest>> {
+    override fun read(buf: ByteBuffer): List<RolleysGroupJoinRequest> {
         val len = buf.getInt()
-        return List<AuroraGroupMetadata>(len) {
-            FfiConverterTypeAuroraGroupMetadata.read(buf)
+        return List<RolleysGroupJoinRequest>(len) {
+            FfiConverterTypeRolleysGroupJoinRequest.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraGroupMetadata>): ULong {
+    override fun allocationSize(value: List<RolleysGroupJoinRequest>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraGroupMetadata.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysGroupJoinRequest.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraGroupMetadata>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysGroupJoinRequest>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraGroupMetadata.write(it, buf)
+            FfiConverterTypeRolleysGroupJoinRequest.write(it, buf)
         }
     }
 }
@@ -8048,24 +9160,24 @@ public object FfiConverterSequenceTypeAuroraGroupMetadata: FfiConverterRustBuffe
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraGroupParticipant: FfiConverterRustBuffer<List<AuroraGroupParticipant>> {
-    override fun read(buf: ByteBuffer): List<AuroraGroupParticipant> {
+public object FfiConverterSequenceTypeRolleysGroupMetadata: FfiConverterRustBuffer<List<RolleysGroupMetadata>> {
+    override fun read(buf: ByteBuffer): List<RolleysGroupMetadata> {
         val len = buf.getInt()
-        return List<AuroraGroupParticipant>(len) {
-            FfiConverterTypeAuroraGroupParticipant.read(buf)
+        return List<RolleysGroupMetadata>(len) {
+            FfiConverterTypeRolleysGroupMetadata.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraGroupParticipant>): ULong {
+    override fun allocationSize(value: List<RolleysGroupMetadata>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraGroupParticipant.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysGroupMetadata.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraGroupParticipant>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysGroupMetadata>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraGroupParticipant.write(it, buf)
+            FfiConverterTypeRolleysGroupMetadata.write(it, buf)
         }
     }
 }
@@ -8076,24 +9188,24 @@ public object FfiConverterSequenceTypeAuroraGroupParticipant: FfiConverterRustBu
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraInteractiveButton: FfiConverterRustBuffer<List<AuroraInteractiveButton>> {
-    override fun read(buf: ByteBuffer): List<AuroraInteractiveButton> {
+public object FfiConverterSequenceTypeRolleysGroupParticipant: FfiConverterRustBuffer<List<RolleysGroupParticipant>> {
+    override fun read(buf: ByteBuffer): List<RolleysGroupParticipant> {
         val len = buf.getInt()
-        return List<AuroraInteractiveButton>(len) {
-            FfiConverterTypeAuroraInteractiveButton.read(buf)
+        return List<RolleysGroupParticipant>(len) {
+            FfiConverterTypeRolleysGroupParticipant.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraInteractiveButton>): ULong {
+    override fun allocationSize(value: List<RolleysGroupParticipant>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraInteractiveButton.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysGroupParticipant.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraInteractiveButton>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysGroupParticipant>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraInteractiveButton.write(it, buf)
+            FfiConverterTypeRolleysGroupParticipant.write(it, buf)
         }
     }
 }
@@ -8104,24 +9216,24 @@ public object FfiConverterSequenceTypeAuroraInteractiveButton: FfiConverterRustB
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraLabel: FfiConverterRustBuffer<List<AuroraLabel>> {
-    override fun read(buf: ByteBuffer): List<AuroraLabel> {
+public object FfiConverterSequenceTypeRolleysInteractiveButton: FfiConverterRustBuffer<List<RolleysInteractiveButton>> {
+    override fun read(buf: ByteBuffer): List<RolleysInteractiveButton> {
         val len = buf.getInt()
-        return List<AuroraLabel>(len) {
-            FfiConverterTypeAuroraLabel.read(buf)
+        return List<RolleysInteractiveButton>(len) {
+            FfiConverterTypeRolleysInteractiveButton.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraLabel>): ULong {
+    override fun allocationSize(value: List<RolleysInteractiveButton>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraLabel.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysInteractiveButton.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraLabel>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysInteractiveButton>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraLabel.write(it, buf)
+            FfiConverterTypeRolleysInteractiveButton.write(it, buf)
         }
     }
 }
@@ -8132,24 +9244,24 @@ public object FfiConverterSequenceTypeAuroraLabel: FfiConverterRustBuffer<List<A
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraListRow: FfiConverterRustBuffer<List<AuroraListRow>> {
-    override fun read(buf: ByteBuffer): List<AuroraListRow> {
+public object FfiConverterSequenceTypeRolleysLabel: FfiConverterRustBuffer<List<RolleysLabel>> {
+    override fun read(buf: ByteBuffer): List<RolleysLabel> {
         val len = buf.getInt()
-        return List<AuroraListRow>(len) {
-            FfiConverterTypeAuroraListRow.read(buf)
+        return List<RolleysLabel>(len) {
+            FfiConverterTypeRolleysLabel.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraListRow>): ULong {
+    override fun allocationSize(value: List<RolleysLabel>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraListRow.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysLabel.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraListRow>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysLabel>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraListRow.write(it, buf)
+            FfiConverterTypeRolleysLabel.write(it, buf)
         }
     }
 }
@@ -8160,24 +9272,24 @@ public object FfiConverterSequenceTypeAuroraListRow: FfiConverterRustBuffer<List
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraListSection: FfiConverterRustBuffer<List<AuroraListSection>> {
-    override fun read(buf: ByteBuffer): List<AuroraListSection> {
+public object FfiConverterSequenceTypeRolleysListRow: FfiConverterRustBuffer<List<RolleysListRow>> {
+    override fun read(buf: ByteBuffer): List<RolleysListRow> {
         val len = buf.getInt()
-        return List<AuroraListSection>(len) {
-            FfiConverterTypeAuroraListSection.read(buf)
+        return List<RolleysListRow>(len) {
+            FfiConverterTypeRolleysListRow.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraListSection>): ULong {
+    override fun allocationSize(value: List<RolleysListRow>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraListSection.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysListRow.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraListSection>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysListRow>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraListSection.write(it, buf)
+            FfiConverterTypeRolleysListRow.write(it, buf)
         }
     }
 }
@@ -8188,24 +9300,24 @@ public object FfiConverterSequenceTypeAuroraListSection: FfiConverterRustBuffer<
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraMessage: FfiConverterRustBuffer<List<AuroraMessage>> {
-    override fun read(buf: ByteBuffer): List<AuroraMessage> {
+public object FfiConverterSequenceTypeRolleysListSection: FfiConverterRustBuffer<List<RolleysListSection>> {
+    override fun read(buf: ByteBuffer): List<RolleysListSection> {
         val len = buf.getInt()
-        return List<AuroraMessage>(len) {
-            FfiConverterTypeAuroraMessage.read(buf)
+        return List<RolleysListSection>(len) {
+            FfiConverterTypeRolleysListSection.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraMessage>): ULong {
+    override fun allocationSize(value: List<RolleysListSection>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraMessage.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysListSection.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraMessage>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysListSection>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraMessage.write(it, buf)
+            FfiConverterTypeRolleysListSection.write(it, buf)
         }
     }
 }
@@ -8216,24 +9328,24 @@ public object FfiConverterSequenceTypeAuroraMessage: FfiConverterRustBuffer<List
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraNewsletter: FfiConverterRustBuffer<List<AuroraNewsletter>> {
-    override fun read(buf: ByteBuffer): List<AuroraNewsletter> {
+public object FfiConverterSequenceTypeRolleysMessage: FfiConverterRustBuffer<List<RolleysMessage>> {
+    override fun read(buf: ByteBuffer): List<RolleysMessage> {
         val len = buf.getInt()
-        return List<AuroraNewsletter>(len) {
-            FfiConverterTypeAuroraNewsletter.read(buf)
+        return List<RolleysMessage>(len) {
+            FfiConverterTypeRolleysMessage.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraNewsletter>): ULong {
+    override fun allocationSize(value: List<RolleysMessage>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraNewsletter.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysMessage.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraNewsletter>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysMessage>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraNewsletter.write(it, buf)
+            FfiConverterTypeRolleysMessage.write(it, buf)
         }
     }
 }
@@ -8244,24 +9356,24 @@ public object FfiConverterSequenceTypeAuroraNewsletter: FfiConverterRustBuffer<L
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraNewsletterMessage: FfiConverterRustBuffer<List<AuroraNewsletterMessage>> {
-    override fun read(buf: ByteBuffer): List<AuroraNewsletterMessage> {
+public object FfiConverterSequenceTypeRolleysNewsletter: FfiConverterRustBuffer<List<RolleysNewsletter>> {
+    override fun read(buf: ByteBuffer): List<RolleysNewsletter> {
         val len = buf.getInt()
-        return List<AuroraNewsletterMessage>(len) {
-            FfiConverterTypeAuroraNewsletterMessage.read(buf)
+        return List<RolleysNewsletter>(len) {
+            FfiConverterTypeRolleysNewsletter.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraNewsletterMessage>): ULong {
+    override fun allocationSize(value: List<RolleysNewsletter>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraNewsletterMessage.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysNewsletter.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraNewsletterMessage>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysNewsletter>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraNewsletterMessage.write(it, buf)
+            FfiConverterTypeRolleysNewsletter.write(it, buf)
         }
     }
 }
@@ -8272,24 +9384,24 @@ public object FfiConverterSequenceTypeAuroraNewsletterMessage: FfiConverterRustB
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraOnWhatsAppResult: FfiConverterRustBuffer<List<AuroraOnWhatsAppResult>> {
-    override fun read(buf: ByteBuffer): List<AuroraOnWhatsAppResult> {
+public object FfiConverterSequenceTypeRolleysNewsletterMessage: FfiConverterRustBuffer<List<RolleysNewsletterMessage>> {
+    override fun read(buf: ByteBuffer): List<RolleysNewsletterMessage> {
         val len = buf.getInt()
-        return List<AuroraOnWhatsAppResult>(len) {
-            FfiConverterTypeAuroraOnWhatsAppResult.read(buf)
+        return List<RolleysNewsletterMessage>(len) {
+            FfiConverterTypeRolleysNewsletterMessage.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraOnWhatsAppResult>): ULong {
+    override fun allocationSize(value: List<RolleysNewsletterMessage>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraOnWhatsAppResult.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysNewsletterMessage.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraOnWhatsAppResult>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysNewsletterMessage>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraOnWhatsAppResult.write(it, buf)
+            FfiConverterTypeRolleysNewsletterMessage.write(it, buf)
         }
     }
 }
@@ -8300,24 +9412,24 @@ public object FfiConverterSequenceTypeAuroraOnWhatsAppResult: FfiConverterRustBu
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraOrder: FfiConverterRustBuffer<List<AuroraOrder>> {
-    override fun read(buf: ByteBuffer): List<AuroraOrder> {
+public object FfiConverterSequenceTypeRolleysOnWhatsAppResult: FfiConverterRustBuffer<List<RolleysOnWhatsAppResult>> {
+    override fun read(buf: ByteBuffer): List<RolleysOnWhatsAppResult> {
         val len = buf.getInt()
-        return List<AuroraOrder>(len) {
-            FfiConverterTypeAuroraOrder.read(buf)
+        return List<RolleysOnWhatsAppResult>(len) {
+            FfiConverterTypeRolleysOnWhatsAppResult.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraOrder>): ULong {
+    override fun allocationSize(value: List<RolleysOnWhatsAppResult>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraOrder.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysOnWhatsAppResult.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraOrder>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysOnWhatsAppResult>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraOrder.write(it, buf)
+            FfiConverterTypeRolleysOnWhatsAppResult.write(it, buf)
         }
     }
 }
@@ -8328,24 +9440,24 @@ public object FfiConverterSequenceTypeAuroraOrder: FfiConverterRustBuffer<List<A
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraParticipantUpdateResult: FfiConverterRustBuffer<List<AuroraParticipantUpdateResult>> {
-    override fun read(buf: ByteBuffer): List<AuroraParticipantUpdateResult> {
+public object FfiConverterSequenceTypeRolleysOrder: FfiConverterRustBuffer<List<RolleysOrder>> {
+    override fun read(buf: ByteBuffer): List<RolleysOrder> {
         val len = buf.getInt()
-        return List<AuroraParticipantUpdateResult>(len) {
-            FfiConverterTypeAuroraParticipantUpdateResult.read(buf)
+        return List<RolleysOrder>(len) {
+            FfiConverterTypeRolleysOrder.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraParticipantUpdateResult>): ULong {
+    override fun allocationSize(value: List<RolleysOrder>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraParticipantUpdateResult.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysOrder.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraParticipantUpdateResult>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysOrder>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraParticipantUpdateResult.write(it, buf)
+            FfiConverterTypeRolleysOrder.write(it, buf)
         }
     }
 }
@@ -8356,24 +9468,24 @@ public object FfiConverterSequenceTypeAuroraParticipantUpdateResult: FfiConverte
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraStoredCall: FfiConverterRustBuffer<List<AuroraStoredCall>> {
-    override fun read(buf: ByteBuffer): List<AuroraStoredCall> {
+public object FfiConverterSequenceTypeRolleysParticipantUpdateResult: FfiConverterRustBuffer<List<RolleysParticipantUpdateResult>> {
+    override fun read(buf: ByteBuffer): List<RolleysParticipantUpdateResult> {
         val len = buf.getInt()
-        return List<AuroraStoredCall>(len) {
-            FfiConverterTypeAuroraStoredCall.read(buf)
+        return List<RolleysParticipantUpdateResult>(len) {
+            FfiConverterTypeRolleysParticipantUpdateResult.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraStoredCall>): ULong {
+    override fun allocationSize(value: List<RolleysParticipantUpdateResult>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraStoredCall.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysParticipantUpdateResult.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraStoredCall>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysParticipantUpdateResult>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraStoredCall.write(it, buf)
+            FfiConverterTypeRolleysParticipantUpdateResult.write(it, buf)
         }
     }
 }
@@ -8384,24 +9496,52 @@ public object FfiConverterSequenceTypeAuroraStoredCall: FfiConverterRustBuffer<L
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeAuroraStoredStory: FfiConverterRustBuffer<List<AuroraStoredStory>> {
-    override fun read(buf: ByteBuffer): List<AuroraStoredStory> {
+public object FfiConverterSequenceTypeRolleysStoredCall: FfiConverterRustBuffer<List<RolleysStoredCall>> {
+    override fun read(buf: ByteBuffer): List<RolleysStoredCall> {
         val len = buf.getInt()
-        return List<AuroraStoredStory>(len) {
-            FfiConverterTypeAuroraStoredStory.read(buf)
+        return List<RolleysStoredCall>(len) {
+            FfiConverterTypeRolleysStoredCall.read(buf)
         }
     }
 
-    override fun allocationSize(value: List<AuroraStoredStory>): ULong {
+    override fun allocationSize(value: List<RolleysStoredCall>): ULong {
         val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeAuroraStoredStory.allocationSize(it) }.sum()
+        val sizeForItems = value.map { FfiConverterTypeRolleysStoredCall.allocationSize(it) }.sum()
         return sizeForLength + sizeForItems
     }
 
-    override fun write(value: List<AuroraStoredStory>, buf: ByteBuffer) {
+    override fun write(value: List<RolleysStoredCall>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            FfiConverterTypeAuroraStoredStory.write(it, buf)
+            FfiConverterTypeRolleysStoredCall.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeRolleysStoredStory: FfiConverterRustBuffer<List<RolleysStoredStory>> {
+    override fun read(buf: ByteBuffer): List<RolleysStoredStory> {
+        val len = buf.getInt()
+        return List<RolleysStoredStory>(len) {
+            FfiConverterTypeRolleysStoredStory.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<RolleysStoredStory>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeRolleysStoredStory.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<RolleysStoredStory>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeRolleysStoredStory.write(it, buf)
         }
     }
 }

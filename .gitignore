@@ -23,7 +23,7 @@ crates/baileys-ffi/*.dll
 *.db-wal
 .sessions/
 live_status_session.db*
-aurora_session.db*
+rolleys_session.db*
 test_session.db*
 clean_test.db*
 

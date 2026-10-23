@@ -159,7 +159,7 @@ mod tests {
     async fn test_client_connect_and_events() {
         let store = Arc::new(MemoryStore::new());
         let config = BaileysConfigBuilder::new()
-            .with_browser("Aurora Chats", "Android", "1.0.0")
+            .with_browser("Chrome", "Mac OS", "14.4.1")
             .with_websocket_url("mock://wa")
             .build();
 

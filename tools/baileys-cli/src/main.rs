@@ -83,7 +83,7 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                 println!(
                     "  -p, --phone <NUMBER>       Pair via WhatsApp 8-digit code instead of QR"
                 );
-                println!("  -s, --db, --session <PATH> Path to SQLite session database (default: aurora_session.db)");
+                println!("  -s, --db, --session <PATH> Path to SQLite session database (default: rolleys_session.db)");
                 println!("      --auto-qr              Automatically display QR code matrix in terminal upon arrival");
                 println!(
                     "      --invert               Invert QR colors for light terminal backgrounds"
@@ -117,11 +117,11 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("============================================================");
     println!("   Rose-Baileys: Unified Multiplatform Rust WhatsApp Engine  ");
-    println!("   Targets: Android (Aurora Chats), macOS, Linux, Windows   ");
+    println!("   Targets: Android, macOS, Linux, Windows                  ");
     println!("============================================================");
 
     // Initialize embedded SQLite database for session persistence
-    let default_store = "aurora_session.db".to_string();
+    let default_store = "rolleys_session.db".to_string();
     let store_path = db_path_arg.as_deref().unwrap_or(&default_store);
     if clean_session {
         print_comfy_event(

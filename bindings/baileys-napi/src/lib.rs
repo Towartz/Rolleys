@@ -715,7 +715,7 @@ impl RoseBaileysClient {
 impl RoseBaileysClient {
     #[napi(constructor)]
     pub fn new(database_path: Option<String>, phone_number: Option<String>) -> Result<Self> {
-        let db_path = database_path.unwrap_or_else(|| "aurora_session.db".to_string());
+        let db_path = database_path.unwrap_or_else(|| "rolleys_session.db".to_string());
         let store =
             Arc::new(SqliteStore::open(&db_path).map_err(|e| Error::from_reason(e.to_string()))?);
 

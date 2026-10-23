@@ -463,6 +463,22 @@ fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterFloat: FfiConverterPrimitive {
+    typealias FfiType = Float
+    typealias SwiftType = Float
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Float {
+        return try lift(readFloat(&buf))
+    }
+
+    public static func write(_ value: Float, into buf: inout [UInt8]) {
+        writeFloat(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
     typealias FfiType = Double
     typealias SwiftType = Double
@@ -562,7 +578,7 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
 
 
 
-public protocol AuroraClientProtocol : AnyObject {
+public protocol RolleysClientProtocol : AnyObject {
     
     func addChatLabel(chatJid: String, labelId: String) throws 
     
@@ -603,7 +619,9 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func chatModifyStar(jid: String, msgId: String, fromMe: Bool, star: Bool) throws 
     
-    func checkOnWhatsapp(phoneNumbers: [String]) throws  -> [AuroraOnWhatsAppResult]
+    func checkOnWhatsapp(phoneNumbers: [String]) throws  -> [RolleysOnWhatsAppResult]
+    
+    func cleanDirtyBits(cleanType: String, timestamp: UInt64?) throws 
     
     /**
      * Accepts an invite code to join a WhatsApp Community.
@@ -613,27 +631,33 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Creates a new WhatsApp Community.
      */
-    func communityCreate(subject: String, description: String?) throws  -> AuroraCommunityMetadata
+    func communityCreate(subject: String, description: String?) throws  -> RolleysCommunityMetadata
     
     /**
      * Creates a new subgroup linked under an existing parent Community.
      */
     func communityCreateSubgroup(parentCommunityJid: String, subject: String, participants: [String]) throws  -> String
     
+    func communityFetchAllParticipating() throws  -> [String]
+    
     /**
      * Fetches all linked subgroups under a Community.
      */
-    func communityFetchSubgroups(communityJid: String) throws  -> [AuroraCommunitySubgroup]
+    func communityFetchSubgroups(communityJid: String) throws  -> [RolleysCommunitySubgroup]
     
     /**
      * Gets an invite code for a Community.
      */
     func communityGetInviteCode(communityJid: String) throws  -> String
     
+    func communityGetInviteInfo(code: String) throws  -> RolleysCommunityInviteInfo
+    
     /**
      * Queries interactive metadata for a Community.
      */
-    func communityGetMetadata(communityJid: String) throws  -> AuroraCommunityMetadata
+    func communityGetMetadata(communityJid: String) throws  -> RolleysCommunityMetadata
+    
+    func communityJoinApprovalMode(communityJid: String, mode: String) throws 
     
     /**
      * Leaves an existing WhatsApp Community.
@@ -645,10 +669,20 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func communityLinkSubgroup(parentCommunityJid: String, groupJid: String) throws 
     
+    func communityMemberAddMode(communityJid: String, mode: String) throws 
+    
+    func communityRevokeInvite(communityJid: String) throws  -> String
+    
+    func communitySettingUpdate(communityJid: String, setting: String) throws 
+    
+    func communityToggleEphemeral(communityJid: String, duration: UInt32) throws 
+    
     /**
      * Unlinks a subgroup from a parent Community.
      */
     func communityUnlinkSubgroup(parentCommunityJid: String, groupJid: String) throws 
+    
+    func createCallLink(isVideo: Bool) throws  -> String?
     
     func deleteLabel(id: String) throws 
     
@@ -662,7 +696,15 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func downloadMedia(msgId: String, destDir: String) throws  -> String
     
+    /**
+     * Downloads and decrypts media from a message ID using the streaming pipeline (~64KB RAM),
+     * saving it to dest_path (or a default path if not specified) and returning the resulting path.
+     */
+    func downloadMediaStreaming(msgId: String, destPath: String?) throws  -> String
+    
     func editMessage(chatJid: String, targetMessageId: String, newText: String) throws  -> String
+    
+    func fetchAccountReachoutTimelock() throws  -> RolleysAccountReachoutTimelock?
     
     /**
      * Fetches the full list of blocked contact JIDs from WhatsApp server and syncs to SQLite.
@@ -674,38 +716,44 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func fetchMessageHistory(chatJid: String, count: UInt32, oldestMsgId: String, oldestFromMe: Bool, oldestTimestamp: UInt64) throws  -> String
     
+    func fetchNewChatMessageCap() throws  -> String?
+    
     /**
      * Fetches the user's current privacy settings from WhatsApp gateway.
      */
-    func fetchPrivacySettings() throws  -> AuroraPrivacySettings
+    func fetchPrivacySettings() throws  -> RolleysPrivacySettings
     
     /**
      * Fetches the About / Bio status string of a user.
      */
-    func fetchStatus(jid: String) throws  -> AuroraProfileStatus?
+    func fetchStatus(jid: String) throws  -> RolleysProfileStatus?
+    
+    func fetchUrlPreview(text: String) throws  -> RolleysUrlPreview?
     
     /**
      * Reads all locally stored blocked contacts from SQLite.
      */
     func getBlockedContacts() throws  -> [String]
     
+    func getBotListV2() throws  -> [RolleysBotEntry]
+    
     /**
      * Queries business profile metadata for a WhatsApp Business account.
      */
-    func getBusinessProfile(jid: String) throws  -> AuroraBusinessProfile?
+    func getBusinessProfile(jid: String) throws  -> RolleysBusinessProfile?
     
-    func getCachedCatalog(bizJid: String) throws  -> [AuroraCatalogProduct]
+    func getCachedCatalog(bizJid: String) throws  -> [RolleysCatalogProduct]
     
-    func getCachedCollections(bizJid: String) throws  -> [AuroraCatalogCollection]
+    func getCachedCollections(bizJid: String) throws  -> [RolleysCatalogCollection]
     
-    func getCachedOrders(chatJid: String, limit: UInt32) throws  -> [AuroraOrder]
+    func getCachedOrders(chatJid: String, limit: UInt32) throws  -> [RolleysOrder]
     
     /**
      * Fetches VoIP call history from SQLite.
      */
-    func getCallHistory(limit: UInt32) throws  -> [AuroraStoredCall]
+    func getCallHistory(limit: UInt32) throws  -> [RolleysStoredCall]
     
-    func getCatalog(bizJid: String, limit: UInt32, cursor: String?) throws  -> AuroraCatalogResult
+    func getCatalog(bizJid: String, limit: UInt32, cursor: String?) throws  -> RolleysCatalogResult
     
     func getChatEphemeral(chatJid: String) throws  -> UInt32?
     
@@ -714,25 +762,32 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Returns all saved chats ordered by recent activity.
      */
-    func getChats() throws  -> [AuroraChat]
+    func getChats() throws  -> [RolleysChat]
     
     func getChatsByLabel(labelId: String) throws  -> [String]
     
-    func getCollections(bizJid: String, limit: UInt32, cursor: String?) throws  -> AuroraCollectionsResult
+    func getCollections(bizJid: String, limit: UInt32, cursor: String?) throws  -> RolleysCollectionsResult
+    
+    /**
+     * Returns the current formal connection state string.
+     */
+    func getConnectionState()  -> String
     
     /**
      * Queries contact info by JID from SQLite.
      */
-    func getContact(jid: String) throws  -> AuroraContact?
+    func getContact(jid: String) throws  -> RolleysContact?
     
     /**
      * Queries group info (subject, participants) from WhatsApp server.
      */
-    func getGroupInfo(groupJid: String) throws  -> AuroraGroupInfo
+    func getGroupInfo(groupJid: String) throws  -> RolleysGroupInfo
     
-    func getLabel(id: String) throws  -> AuroraLabel?
+    func getLabel(id: String) throws  -> RolleysLabel?
     
-    func getLabels() throws  -> [AuroraLabel]
+    func getLabels() throws  -> [RolleysLabel]
+    
+    func getLidForPn(pnJid: String) throws  -> String?
     
     /**
      * Returns the currently authenticated JID if paired/connected.
@@ -744,30 +799,39 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Returns historical messages for a chat from SQLite.
      */
-    func getMessages(chatJid: String, limit: UInt32, beforeTimestamp: UInt64?) throws  -> [AuroraMessage]
+    func getMessages(chatJid: String, limit: UInt32, beforeTimestamp: UInt64?) throws  -> [RolleysMessage]
     
     func getMessagesByLabel(labelId: String) throws  -> [String]
     
-    func getPairedDevices() throws  -> [AuroraDeviceRecord]
+    func getPairedDevices() throws  -> [RolleysDeviceRecord]
+    
+    func getPnForLid(lidJid: String) throws  -> String?
     
     /**
      * Fetches the aggregated vote tally for a poll from the local SQLite database.
      */
-    func getPollTally(pollId: String) throws  -> AuroraPollTally?
+    func getPollTally(pollId: String) throws  -> RolleysPollTally?
     
-    func getProduct(bizJid: String, productId: String) throws  -> AuroraCatalogProduct
+    func getProduct(bizJid: String, productId: String) throws  -> RolleysCatalogProduct
     
     /**
      * Fetches recent status stories from SQLite cache.
      */
-    func getRecentStories(limit: UInt32, unviewedOnly: Bool) throws  -> [AuroraStoredStory]
+    func getRecentStories(limit: UInt32, unviewedOnly: Bool) throws  -> [RolleysStoredStory]
     
     /**
      * Fetches all active status stories posted by a specific contact.
      */
-    func getStoriesByAuthor(authorJid: String) throws  -> [AuroraStoredStory]
+    func getStoriesByAuthor(authorJid: String) throws  -> [RolleysStoredStory]
+    
+    /**
+     * Returns current health telemetry snapshot (message throughput, ping latency, Signal hit rate).
+     */
+    func getTelemetrySnapshot()  -> RolleysTelemetrySnapshot
     
     func getUserDevices(userJid: String) throws  -> [UInt32]
+    
+    func getUserStatus(jid: String) throws  -> RolleysUserStatus?
     
     /**
      * Joins a group using an invite code.
@@ -787,12 +851,12 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Fetches all participating groups for the authenticated account and caches them locally.
      */
-    func groupFetchAllParticipating() throws  -> [AuroraGroupMetadata]
+    func groupFetchAllParticipating() throws  -> [RolleysGroupMetadata]
     
     /**
      * Fetches comprehensive group metadata including participants, roles, and configuration.
      */
-    func groupFetchMetadata(groupJid: String) throws  -> AuroraGroupMetadata
+    func groupFetchMetadata(groupJid: String) throws  -> RolleysGroupMetadata
     
     /**
      * Gets the invite code for a group.
@@ -817,17 +881,17 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Updates participants in a group ("add", "remove", "promote", "demote").
      */
-    func groupParticipantsUpdate(groupJid: String, participants: [String], action: String) throws  -> [AuroraParticipantUpdateResult]
+    func groupParticipantsUpdate(groupJid: String, participants: [String], action: String) throws  -> [RolleysParticipantUpdateResult]
     
     /**
      * Fetches pending membership join requests for a group.
      */
-    func groupRequestParticipantsList(groupJid: String) throws  -> [AuroraGroupJoinRequest]
+    func groupRequestParticipantsList(groupJid: String) throws  -> [RolleysGroupJoinRequest]
     
     /**
      * Approves or rejects pending participant join requests ("approve" or "reject").
      */
-    func groupRequestParticipantsUpdate(groupJid: String, participants: [String], action: String) throws  -> [AuroraParticipantUpdateResult]
+    func groupRequestParticipantsUpdate(groupJid: String, participants: [String], action: String) throws  -> [RolleysParticipantUpdateResult]
     
     /**
      * Revokes the current invite code of a group and generates a new one.
@@ -864,15 +928,27 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func isConnected()  -> Bool
     
+    func newsletterAdminCount(channelJid: String) throws  -> UInt32
+    
+    /**
+     * Transfers channel ownership to another admin.
+     */
+    func newsletterChangeOwner(jid: String, newOwnerJid: String) throws 
+    
     /**
      * Creates a new WhatsApp Channel.
      */
-    func newsletterCreate(name: String, description: String?) throws  -> AuroraNewsletter
+    func newsletterCreate(name: String, description: String?) throws  -> RolleysNewsletter
+    
+    /**
+     * Demotes a channel admin back to subscriber.
+     */
+    func newsletterDemote(jid: String, userJid: String) throws 
     
     /**
      * Fetches message history from a WhatsApp Channel.
      */
-    func newsletterFetchMessages(jid: String, count: UInt32, before: UInt64?) throws  -> [AuroraNewsletterMessage]
+    func newsletterFetchMessages(jid: String, count: UInt32, before: UInt64?) throws  -> [RolleysNewsletterMessage]
     
     /**
      * Follows a WhatsApp Channel.
@@ -882,7 +958,7 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Fetches all WhatsApp Channels the user is subscribed to.
      */
-    func newsletterGetSubscribed() throws  -> [AuroraNewsletter]
+    func newsletterGetSubscribed() throws  -> [RolleysNewsletter]
     
     /**
      * Toggles mute status for a WhatsApp Channel.
@@ -890,9 +966,14 @@ public protocol AuroraClientProtocol : AnyObject {
     func newsletterMute(jid: String, mute: Bool) throws 
     
     /**
+     * Promotes a channel subscriber to admin role.
+     */
+    func newsletterPromote(jid: String, userJid: String) throws 
+    
+    /**
      * Queries metadata for a WhatsApp Channel by JID or invite link/code.
      */
-    func newsletterQueryMetadata(jidOrInvite: String) throws  -> AuroraNewsletter
+    func newsletterQueryMetadata(jidOrInvite: String) throws  -> RolleysNewsletter
     
     /**
      * Sends an emoji reaction to a channel message post.
@@ -919,6 +1000,8 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func presenceSubscribe(toJid: String) throws 
     
+    func productDelete(productIds: [String]) throws 
+    
     /**
      * Fetches profile picture URL for a user or group.
      */
@@ -932,6 +1015,8 @@ public protocol AuroraClientProtocol : AnyObject {
     func removeChatLabel(chatJid: String, labelId: String) throws 
     
     func removeCompanionDevice(deviceId: UInt32) throws 
+    
+    func removeCoverPhoto(photoId: String) throws 
     
     func removeMessageLabel(chatJid: String, messageId: String, labelId: String) throws 
     
@@ -969,16 +1054,22 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Sends native flow interactive action buttons (quick reply, cta_url, etc.).
      */
-    func sendInteractiveButtons(targetJid: String, body: String, buttons: [AuroraInteractiveButton], header: String?, footer: String?) throws  -> String
+    func sendInteractiveButtons(targetJid: String, body: String, buttons: [RolleysInteractiveButton], header: String?, footer: String?) throws  -> String
     
     /**
      * Sends an interactive single-selection list message.
      */
-    func sendListMessage(targetJid: String, title: String, description: String, buttonText: String, sections: [AuroraListSection], footer: String?) throws  -> String
+    func sendListMessage(targetJid: String, title: String, description: String, buttonText: String, sections: [RolleysListSection], footer: String?) throws  -> String
     
     func sendLiveLocation(toJid: String, latitude: Double, longitude: Double, accuracyInMeters: UInt32?, caption: String?) throws  -> String
     
     func sendLocation(toJid: String, latitude: Double, longitude: Double, name: String?, address: String?) throws  -> String
+    
+    /**
+     * Sends a local media file using the streaming upload pipeline (zero-OOM spooling for >= 10MB)
+     * and emits real-time RolleysEvent::MediaProgress events.
+     */
+    func sendMediaFile(chatJid: String, filePath: String, mediaType: String, caption: String?) throws  -> String
     
     func sendOrderMessage(toJid: String, sellerJid: String, orderId: String, title: String, itemCount: Int32, totalAmount1000: Int64, currency: String, message: String?) throws  -> String
     
@@ -1034,6 +1125,8 @@ public protocol AuroraClientProtocol : AnyObject {
      */
     func sendTextStatus(text: String, backgroundColor: String?, font: Int32?, audience: [String]?) throws  -> String
     
+    func sendTextWithPreview(toJid: String, text: String) throws  -> String
+    
     /**
      * Sends a text message quoting/replying to a previous message.
      */
@@ -1059,12 +1152,20 @@ public protocol AuroraClientProtocol : AnyObject {
     /**
      * Starts the client connection and forwards real-time events to the native Kotlin listener.
      */
-    func start(listener: AuroraEventListener) throws 
+    func start(listener: RolleysEventListener) throws 
+    
+    func subscribeNewsletterUpdates(channelJid: String) throws  -> String?
     
     /**
      * Blocks or unblocks a contact ("block" or "unblock").
      */
     func updateBlockStatus(jid: String, action: String) throws 
+    
+    func updateCoverPhoto(photoId: String, token: String, ts: UInt64) throws 
+    
+    func updateDisableLinkPreviewsPrivacy(isDisabled: Bool) throws 
+    
+    func updateMediaMessage(messageId: String) throws 
     
     /**
      * Updates a privacy setting (e.g. category="last", value="all"|"contacts"|"none").
@@ -1085,8 +1186,8 @@ public protocol AuroraClientProtocol : AnyObject {
     
 }
 
-open class AuroraClient:
-    AuroraClientProtocol {
+open class RolleysClient:
+    RolleysClientProtocol {
     fileprivate let pointer: UnsafeMutableRawPointer!
 
     /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
@@ -1120,13 +1221,13 @@ open class AuroraClient:
     @_documentation(visibility: private)
 #endif
     public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_baileys_ffi_fn_clone_auroraclient(self.pointer, $0) }
+        return try! rustCall { uniffi_baileys_ffi_fn_clone_rolleysclient(self.pointer, $0) }
     }
-public convenience init(config: AuroraClientConfig)throws  {
+public convenience init(config: RolleysClientConfig)throws  {
     let pointer =
         try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_constructor_auroraclient_new(
-        FfiConverterTypeAuroraClientConfig.lower(config),$0
+    uniffi_baileys_ffi_fn_constructor_rolleysclient_new(
+        FfiConverterTypeRolleysClientConfig.lower(config),$0
     )
 }
     self.init(unsafeFromRawPointer: pointer)
@@ -1137,14 +1238,14 @@ public convenience init(config: AuroraClientConfig)throws  {
             return
         }
 
-        try! rustCall { uniffi_baileys_ffi_fn_free_auroraclient(pointer, $0) }
+        try! rustCall { uniffi_baileys_ffi_fn_free_rolleysclient(pointer, $0) }
     }
 
     
 
     
 open func addChatLabel(chatJid: String, labelId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_add_chat_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_add_chat_label(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(labelId),$0
     )
@@ -1152,7 +1253,7 @@ open func addChatLabel(chatJid: String, labelId: String)throws  {try rustCallWit
 }
     
 open func addMessageLabel(chatJid: String, messageId: String, labelId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_add_message_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_add_message_label(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(messageId),
         FfiConverterString.lower(labelId),$0
@@ -1164,7 +1265,7 @@ open func addMessageLabel(chatJid: String, messageId: String, labelId: String)th
      * Archives or unarchives a chat.
      */
 open func chatModifyArchive(jid: String, archive: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_archive(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_archive(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterBool.lower(archive),$0
     )
@@ -1175,7 +1276,7 @@ open func chatModifyArchive(jid: String, archive: Bool)throws  {try rustCallWith
      * Clears message history for a chat while optionally keeping starred messages.
      */
 open func chatModifyClear(chatJid: String, keepStarred: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_clear(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_clear(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterBool.lower(keepStarred),$0
     )
@@ -1186,7 +1287,7 @@ open func chatModifyClear(chatJid: String, keepStarred: Bool)throws  {try rustCa
      * Deletes a chat conversation thread from WhatsApp and local SQLite store.
      */
 open func chatModifyDelete(chatJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_delete(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_delete(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),$0
     )
 }
@@ -1196,7 +1297,7 @@ open func chatModifyDelete(chatJid: String)throws  {try rustCallWithError(FfiCon
      * Marks a chat as read or unread across devices.
      */
 open func chatModifyMarkUnread(chatJid: String, unread: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_mark_unread(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_mark_unread(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterBool.lower(unread),$0
     )
@@ -1207,7 +1308,7 @@ open func chatModifyMarkUnread(chatJid: String, unread: Bool)throws  {try rustCa
      * Modifies chat mute status (None = unmuted, Some(duration_seconds) = muted until now + duration, or Some(u64::MAX) for indefinite mute).
      */
 open func chatModifyMute(jid: String, durationSecs: UInt64?)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_mute(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_mute(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterOptionUInt64.lower(durationSecs),$0
     )
@@ -1218,7 +1319,7 @@ open func chatModifyMute(jid: String, durationSecs: UInt64?)throws  {try rustCal
      * Pins or unpins a chat.
      */
 open func chatModifyPin(jid: String, pin: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_pin(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_pin(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterBool.lower(pin),$0
     )
@@ -1229,7 +1330,7 @@ open func chatModifyPin(jid: String, pin: Bool)throws  {try rustCallWithError(Ff
      * Stars or unstars an individual message.
      */
 open func chatModifyStar(jid: String, msgId: String, fromMe: Bool, star: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_chat_modify_star(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_chat_modify_star(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterString.lower(msgId),
         FfiConverterBool.lower(fromMe),
@@ -1238,12 +1339,20 @@ open func chatModifyStar(jid: String, msgId: String, fromMe: Bool, star: Bool)th
 }
 }
     
-open func checkOnWhatsapp(phoneNumbers: [String])throws  -> [AuroraOnWhatsAppResult] {
-    return try  FfiConverterSequenceTypeAuroraOnWhatsAppResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_check_on_whatsapp(self.uniffiClonePointer(),
+open func checkOnWhatsapp(phoneNumbers: [String])throws  -> [RolleysOnWhatsAppResult] {
+    return try  FfiConverterSequenceTypeRolleysOnWhatsAppResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_check_on_whatsapp(self.uniffiClonePointer(),
         FfiConverterSequenceString.lower(phoneNumbers),$0
     )
 })
+}
+    
+open func cleanDirtyBits(cleanType: String, timestamp: UInt64?)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_clean_dirty_bits(self.uniffiClonePointer(),
+        FfiConverterString.lower(cleanType),
+        FfiConverterOptionUInt64.lower(timestamp),$0
+    )
+}
 }
     
     /**
@@ -1251,7 +1360,7 @@ open func checkOnWhatsapp(phoneNumbers: [String])throws  -> [AuroraOnWhatsAppRes
      */
 open func communityAcceptInvite(code: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_accept_invite(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_accept_invite(self.uniffiClonePointer(),
         FfiConverterString.lower(code),$0
     )
 })
@@ -1260,9 +1369,9 @@ open func communityAcceptInvite(code: String)throws  -> String {
     /**
      * Creates a new WhatsApp Community.
      */
-open func communityCreate(subject: String, description: String?)throws  -> AuroraCommunityMetadata {
-    return try  FfiConverterTypeAuroraCommunityMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_create(self.uniffiClonePointer(),
+open func communityCreate(subject: String, description: String?)throws  -> RolleysCommunityMetadata {
+    return try  FfiConverterTypeRolleysCommunityMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_create(self.uniffiClonePointer(),
         FfiConverterString.lower(subject),
         FfiConverterOptionString.lower(description),$0
     )
@@ -1274,7 +1383,7 @@ open func communityCreate(subject: String, description: String?)throws  -> Auror
      */
 open func communityCreateSubgroup(parentCommunityJid: String, subject: String, participants: [String])throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_create_subgroup(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_create_subgroup(self.uniffiClonePointer(),
         FfiConverterString.lower(parentCommunityJid),
         FfiConverterString.lower(subject),
         FfiConverterSequenceString.lower(participants),$0
@@ -1282,12 +1391,19 @@ open func communityCreateSubgroup(parentCommunityJid: String, subject: String, p
 })
 }
     
+open func communityFetchAllParticipating()throws  -> [String] {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_fetch_all_participating(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
     /**
      * Fetches all linked subgroups under a Community.
      */
-open func communityFetchSubgroups(communityJid: String)throws  -> [AuroraCommunitySubgroup] {
-    return try  FfiConverterSequenceTypeAuroraCommunitySubgroup.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_fetch_subgroups(self.uniffiClonePointer(),
+open func communityFetchSubgroups(communityJid: String)throws  -> [RolleysCommunitySubgroup] {
+    return try  FfiConverterSequenceTypeRolleysCommunitySubgroup.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_fetch_subgroups(self.uniffiClonePointer(),
         FfiConverterString.lower(communityJid),$0
     )
 })
@@ -1298,8 +1414,16 @@ open func communityFetchSubgroups(communityJid: String)throws  -> [AuroraCommuni
      */
 open func communityGetInviteCode(communityJid: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_get_invite_code(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_get_invite_code(self.uniffiClonePointer(),
         FfiConverterString.lower(communityJid),$0
+    )
+})
+}
+    
+open func communityGetInviteInfo(code: String)throws  -> RolleysCommunityInviteInfo {
+    return try  FfiConverterTypeRolleysCommunityInviteInfo.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_get_invite_info(self.uniffiClonePointer(),
+        FfiConverterString.lower(code),$0
     )
 })
 }
@@ -1307,19 +1431,27 @@ open func communityGetInviteCode(communityJid: String)throws  -> String {
     /**
      * Queries interactive metadata for a Community.
      */
-open func communityGetMetadata(communityJid: String)throws  -> AuroraCommunityMetadata {
-    return try  FfiConverterTypeAuroraCommunityMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_get_metadata(self.uniffiClonePointer(),
+open func communityGetMetadata(communityJid: String)throws  -> RolleysCommunityMetadata {
+    return try  FfiConverterTypeRolleysCommunityMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_get_metadata(self.uniffiClonePointer(),
         FfiConverterString.lower(communityJid),$0
     )
 })
+}
+    
+open func communityJoinApprovalMode(communityJid: String, mode: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_join_approval_mode(self.uniffiClonePointer(),
+        FfiConverterString.lower(communityJid),
+        FfiConverterString.lower(mode),$0
+    )
+}
 }
     
     /**
      * Leaves an existing WhatsApp Community.
      */
 open func communityLeave(communityJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_leave(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_leave(self.uniffiClonePointer(),
         FfiConverterString.lower(communityJid),$0
     )
 }
@@ -1329,9 +1461,41 @@ open func communityLeave(communityJid: String)throws  {try rustCallWithError(Ffi
      * Links an existing WhatsApp group into a parent Community.
      */
 open func communityLinkSubgroup(parentCommunityJid: String, groupJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_link_subgroup(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_link_subgroup(self.uniffiClonePointer(),
         FfiConverterString.lower(parentCommunityJid),
         FfiConverterString.lower(groupJid),$0
+    )
+}
+}
+    
+open func communityMemberAddMode(communityJid: String, mode: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_member_add_mode(self.uniffiClonePointer(),
+        FfiConverterString.lower(communityJid),
+        FfiConverterString.lower(mode),$0
+    )
+}
+}
+    
+open func communityRevokeInvite(communityJid: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_revoke_invite(self.uniffiClonePointer(),
+        FfiConverterString.lower(communityJid),$0
+    )
+})
+}
+    
+open func communitySettingUpdate(communityJid: String, setting: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_setting_update(self.uniffiClonePointer(),
+        FfiConverterString.lower(communityJid),
+        FfiConverterString.lower(setting),$0
+    )
+}
+}
+    
+open func communityToggleEphemeral(communityJid: String, duration: UInt32)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_toggle_ephemeral(self.uniffiClonePointer(),
+        FfiConverterString.lower(communityJid),
+        FfiConverterUInt32.lower(duration),$0
     )
 }
 }
@@ -1340,15 +1504,23 @@ open func communityLinkSubgroup(parentCommunityJid: String, groupJid: String)thr
      * Unlinks a subgroup from a parent Community.
      */
 open func communityUnlinkSubgroup(parentCommunityJid: String, groupJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_community_unlink_subgroup(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_community_unlink_subgroup(self.uniffiClonePointer(),
         FfiConverterString.lower(parentCommunityJid),
         FfiConverterString.lower(groupJid),$0
     )
 }
 }
     
+open func createCallLink(isVideo: Bool)throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_create_call_link(self.uniffiClonePointer(),
+        FfiConverterBool.lower(isVideo),$0
+    )
+})
+}
+    
 open func deleteLabel(id: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_delete_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_delete_label(self.uniffiClonePointer(),
         FfiConverterString.lower(id),$0
     )
 }
@@ -1358,7 +1530,7 @@ open func deleteLabel(id: String)throws  {try rustCallWithError(FfiConverterType
      * Disconnects the WhatsApp session.
      */
 open func disconnect() {try! rustCall() {
-    uniffi_baileys_ffi_fn_method_auroraclient_disconnect(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_disconnect(self.uniffiClonePointer(),$0
     )
 }
 }
@@ -1368,19 +1540,39 @@ open func disconnect() {try! rustCall() {
      */
 open func downloadMedia(msgId: String, destDir: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_download_media(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_download_media(self.uniffiClonePointer(),
         FfiConverterString.lower(msgId),
         FfiConverterString.lower(destDir),$0
     )
 })
 }
     
+    /**
+     * Downloads and decrypts media from a message ID using the streaming pipeline (~64KB RAM),
+     * saving it to dest_path (or a default path if not specified) and returning the resulting path.
+     */
+open func downloadMediaStreaming(msgId: String, destPath: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_download_media_streaming(self.uniffiClonePointer(),
+        FfiConverterString.lower(msgId),
+        FfiConverterOptionString.lower(destPath),$0
+    )
+})
+}
+    
 open func editMessage(chatJid: String, targetMessageId: String, newText: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_edit_message(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_edit_message(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(targetMessageId),
         FfiConverterString.lower(newText),$0
+    )
+})
+}
+    
+open func fetchAccountReachoutTimelock()throws  -> RolleysAccountReachoutTimelock? {
+    return try  FfiConverterOptionTypeRolleysAccountReachoutTimelock.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_account_reachout_timelock(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1390,7 +1582,7 @@ open func editMessage(chatJid: String, targetMessageId: String, newText: String)
      */
 open func fetchBlocklist()throws  -> [String] {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_fetch_blocklist(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_blocklist(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1400,7 +1592,7 @@ open func fetchBlocklist()throws  -> [String] {
      */
 open func fetchMessageHistory(chatJid: String, count: UInt32, oldestMsgId: String, oldestFromMe: Bool, oldestTimestamp: UInt64)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_fetch_message_history(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_message_history(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterUInt32.lower(count),
         FfiConverterString.lower(oldestMsgId),
@@ -1410,12 +1602,19 @@ open func fetchMessageHistory(chatJid: String, count: UInt32, oldestMsgId: Strin
 })
 }
     
+open func fetchNewChatMessageCap()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_new_chat_message_cap(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
     /**
      * Fetches the user's current privacy settings from WhatsApp gateway.
      */
-open func fetchPrivacySettings()throws  -> AuroraPrivacySettings {
-    return try  FfiConverterTypeAuroraPrivacySettings.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_fetch_privacy_settings(self.uniffiClonePointer(),$0
+open func fetchPrivacySettings()throws  -> RolleysPrivacySettings {
+    return try  FfiConverterTypeRolleysPrivacySettings.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_privacy_settings(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1423,10 +1622,18 @@ open func fetchPrivacySettings()throws  -> AuroraPrivacySettings {
     /**
      * Fetches the About / Bio status string of a user.
      */
-open func fetchStatus(jid: String)throws  -> AuroraProfileStatus? {
-    return try  FfiConverterOptionTypeAuroraProfileStatus.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_fetch_status(self.uniffiClonePointer(),
+open func fetchStatus(jid: String)throws  -> RolleysProfileStatus? {
+    return try  FfiConverterOptionTypeRolleysProfileStatus.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_status(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),$0
+    )
+})
+}
+    
+open func fetchUrlPreview(text: String)throws  -> RolleysUrlPreview? {
+    return try  FfiConverterOptionTypeRolleysUrlPreview.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_fetch_url_preview(self.uniffiClonePointer(),
+        FfiConverterString.lower(text),$0
     )
 })
 }
@@ -1436,7 +1643,14 @@ open func fetchStatus(jid: String)throws  -> AuroraProfileStatus? {
      */
 open func getBlockedContacts()throws  -> [String] {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_blocked_contacts(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_blocked_contacts(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getBotListV2()throws  -> [RolleysBotEntry] {
+    return try  FfiConverterSequenceTypeRolleysBotEntry.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_bot_list_v2(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1444,33 +1658,33 @@ open func getBlockedContacts()throws  -> [String] {
     /**
      * Queries business profile metadata for a WhatsApp Business account.
      */
-open func getBusinessProfile(jid: String)throws  -> AuroraBusinessProfile? {
-    return try  FfiConverterOptionTypeAuroraBusinessProfile.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_business_profile(self.uniffiClonePointer(),
+open func getBusinessProfile(jid: String)throws  -> RolleysBusinessProfile? {
+    return try  FfiConverterOptionTypeRolleysBusinessProfile.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_business_profile(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),$0
     )
 })
 }
     
-open func getCachedCatalog(bizJid: String)throws  -> [AuroraCatalogProduct] {
-    return try  FfiConverterSequenceTypeAuroraCatalogProduct.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_cached_catalog(self.uniffiClonePointer(),
+open func getCachedCatalog(bizJid: String)throws  -> [RolleysCatalogProduct] {
+    return try  FfiConverterSequenceTypeRolleysCatalogProduct.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_catalog(self.uniffiClonePointer(),
         FfiConverterString.lower(bizJid),$0
     )
 })
 }
     
-open func getCachedCollections(bizJid: String)throws  -> [AuroraCatalogCollection] {
-    return try  FfiConverterSequenceTypeAuroraCatalogCollection.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_cached_collections(self.uniffiClonePointer(),
+open func getCachedCollections(bizJid: String)throws  -> [RolleysCatalogCollection] {
+    return try  FfiConverterSequenceTypeRolleysCatalogCollection.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_collections(self.uniffiClonePointer(),
         FfiConverterString.lower(bizJid),$0
     )
 })
 }
     
-open func getCachedOrders(chatJid: String, limit: UInt32)throws  -> [AuroraOrder] {
-    return try  FfiConverterSequenceTypeAuroraOrder.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_cached_orders(self.uniffiClonePointer(),
+open func getCachedOrders(chatJid: String, limit: UInt32)throws  -> [RolleysOrder] {
+    return try  FfiConverterSequenceTypeRolleysOrder.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_cached_orders(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterUInt32.lower(limit),$0
     )
@@ -1480,17 +1694,17 @@ open func getCachedOrders(chatJid: String, limit: UInt32)throws  -> [AuroraOrder
     /**
      * Fetches VoIP call history from SQLite.
      */
-open func getCallHistory(limit: UInt32)throws  -> [AuroraStoredCall] {
-    return try  FfiConverterSequenceTypeAuroraStoredCall.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_call_history(self.uniffiClonePointer(),
+open func getCallHistory(limit: UInt32)throws  -> [RolleysStoredCall] {
+    return try  FfiConverterSequenceTypeRolleysStoredCall.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_call_history(self.uniffiClonePointer(),
         FfiConverterUInt32.lower(limit),$0
     )
 })
 }
     
-open func getCatalog(bizJid: String, limit: UInt32, cursor: String?)throws  -> AuroraCatalogResult {
-    return try  FfiConverterTypeAuroraCatalogResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_catalog(self.uniffiClonePointer(),
+open func getCatalog(bizJid: String, limit: UInt32, cursor: String?)throws  -> RolleysCatalogResult {
+    return try  FfiConverterTypeRolleysCatalogResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_catalog(self.uniffiClonePointer(),
         FfiConverterString.lower(bizJid),
         FfiConverterUInt32.lower(limit),
         FfiConverterOptionString.lower(cursor),$0
@@ -1500,7 +1714,7 @@ open func getCatalog(bizJid: String, limit: UInt32, cursor: String?)throws  -> A
     
 open func getChatEphemeral(chatJid: String)throws  -> UInt32? {
     return try  FfiConverterOptionUInt32.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_chat_ephemeral(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_chat_ephemeral(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),$0
     )
 })
@@ -1508,7 +1722,7 @@ open func getChatEphemeral(chatJid: String)throws  -> UInt32? {
     
 open func getChatLabels(chatJid: String)throws  -> [String] {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_chat_labels(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_chat_labels(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),$0
     )
 })
@@ -1517,24 +1731,24 @@ open func getChatLabels(chatJid: String)throws  -> [String] {
     /**
      * Returns all saved chats ordered by recent activity.
      */
-open func getChats()throws  -> [AuroraChat] {
-    return try  FfiConverterSequenceTypeAuroraChat.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_chats(self.uniffiClonePointer(),$0
+open func getChats()throws  -> [RolleysChat] {
+    return try  FfiConverterSequenceTypeRolleysChat.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_chats(self.uniffiClonePointer(),$0
     )
 })
 }
     
 open func getChatsByLabel(labelId: String)throws  -> [String] {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_chats_by_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_chats_by_label(self.uniffiClonePointer(),
         FfiConverterString.lower(labelId),$0
     )
 })
 }
     
-open func getCollections(bizJid: String, limit: UInt32, cursor: String?)throws  -> AuroraCollectionsResult {
-    return try  FfiConverterTypeAuroraCollectionsResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_collections(self.uniffiClonePointer(),
+open func getCollections(bizJid: String, limit: UInt32, cursor: String?)throws  -> RolleysCollectionsResult {
+    return try  FfiConverterTypeRolleysCollectionsResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_collections(self.uniffiClonePointer(),
         FfiConverterString.lower(bizJid),
         FfiConverterUInt32.lower(limit),
         FfiConverterOptionString.lower(cursor),$0
@@ -1543,11 +1757,21 @@ open func getCollections(bizJid: String, limit: UInt32, cursor: String?)throws  
 }
     
     /**
+     * Returns the current formal connection state string.
+     */
+open func getConnectionState() -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_connection_state(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
      * Queries contact info by JID from SQLite.
      */
-open func getContact(jid: String)throws  -> AuroraContact? {
-    return try  FfiConverterOptionTypeAuroraContact.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_contact(self.uniffiClonePointer(),
+open func getContact(jid: String)throws  -> RolleysContact? {
+    return try  FfiConverterOptionTypeRolleysContact.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_contact(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),$0
     )
 })
@@ -1556,25 +1780,33 @@ open func getContact(jid: String)throws  -> AuroraContact? {
     /**
      * Queries group info (subject, participants) from WhatsApp server.
      */
-open func getGroupInfo(groupJid: String)throws  -> AuroraGroupInfo {
-    return try  FfiConverterTypeAuroraGroupInfo.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_group_info(self.uniffiClonePointer(),
+open func getGroupInfo(groupJid: String)throws  -> RolleysGroupInfo {
+    return try  FfiConverterTypeRolleysGroupInfo.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_group_info(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),$0
     )
 })
 }
     
-open func getLabel(id: String)throws  -> AuroraLabel? {
-    return try  FfiConverterOptionTypeAuroraLabel.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_label(self.uniffiClonePointer(),
+open func getLabel(id: String)throws  -> RolleysLabel? {
+    return try  FfiConverterOptionTypeRolleysLabel.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_label(self.uniffiClonePointer(),
         FfiConverterString.lower(id),$0
     )
 })
 }
     
-open func getLabels()throws  -> [AuroraLabel] {
-    return try  FfiConverterSequenceTypeAuroraLabel.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_labels(self.uniffiClonePointer(),$0
+open func getLabels()throws  -> [RolleysLabel] {
+    return try  FfiConverterSequenceTypeRolleysLabel.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_labels(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getLidForPn(pnJid: String)throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_lid_for_pn(self.uniffiClonePointer(),
+        FfiConverterString.lower(pnJid),$0
     )
 })
 }
@@ -1584,14 +1816,14 @@ open func getLabels()throws  -> [AuroraLabel] {
      */
 open func getMeJid() -> String? {
     return try!  FfiConverterOptionString.lift(try! rustCall() {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_me_jid(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_me_jid(self.uniffiClonePointer(),$0
     )
 })
 }
     
 open func getMessageLabels(chatJid: String, messageId: String)throws  -> [String] {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_message_labels(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_message_labels(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(messageId),$0
     )
@@ -1601,9 +1833,9 @@ open func getMessageLabels(chatJid: String, messageId: String)throws  -> [String
     /**
      * Returns historical messages for a chat from SQLite.
      */
-open func getMessages(chatJid: String, limit: UInt32, beforeTimestamp: UInt64?)throws  -> [AuroraMessage] {
-    return try  FfiConverterSequenceTypeAuroraMessage.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_messages(self.uniffiClonePointer(),
+open func getMessages(chatJid: String, limit: UInt32, beforeTimestamp: UInt64?)throws  -> [RolleysMessage] {
+    return try  FfiConverterSequenceTypeRolleysMessage.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_messages(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterUInt32.lower(limit),
         FfiConverterOptionUInt64.lower(beforeTimestamp),$0
@@ -1613,15 +1845,23 @@ open func getMessages(chatJid: String, limit: UInt32, beforeTimestamp: UInt64?)t
     
 open func getMessagesByLabel(labelId: String)throws  -> [String] {
     return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_messages_by_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_messages_by_label(self.uniffiClonePointer(),
         FfiConverterString.lower(labelId),$0
     )
 })
 }
     
-open func getPairedDevices()throws  -> [AuroraDeviceRecord] {
-    return try  FfiConverterSequenceTypeAuroraDeviceRecord.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_paired_devices(self.uniffiClonePointer(),$0
+open func getPairedDevices()throws  -> [RolleysDeviceRecord] {
+    return try  FfiConverterSequenceTypeRolleysDeviceRecord.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_paired_devices(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getPnForLid(lidJid: String)throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_pn_for_lid(self.uniffiClonePointer(),
+        FfiConverterString.lower(lidJid),$0
     )
 })
 }
@@ -1629,17 +1869,17 @@ open func getPairedDevices()throws  -> [AuroraDeviceRecord] {
     /**
      * Fetches the aggregated vote tally for a poll from the local SQLite database.
      */
-open func getPollTally(pollId: String)throws  -> AuroraPollTally? {
-    return try  FfiConverterOptionTypeAuroraPollTally.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_poll_tally(self.uniffiClonePointer(),
+open func getPollTally(pollId: String)throws  -> RolleysPollTally? {
+    return try  FfiConverterOptionTypeRolleysPollTally.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_poll_tally(self.uniffiClonePointer(),
         FfiConverterString.lower(pollId),$0
     )
 })
 }
     
-open func getProduct(bizJid: String, productId: String)throws  -> AuroraCatalogProduct {
-    return try  FfiConverterTypeAuroraCatalogProduct.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_product(self.uniffiClonePointer(),
+open func getProduct(bizJid: String, productId: String)throws  -> RolleysCatalogProduct {
+    return try  FfiConverterTypeRolleysCatalogProduct.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_product(self.uniffiClonePointer(),
         FfiConverterString.lower(bizJid),
         FfiConverterString.lower(productId),$0
     )
@@ -1649,9 +1889,9 @@ open func getProduct(bizJid: String, productId: String)throws  -> AuroraCatalogP
     /**
      * Fetches recent status stories from SQLite cache.
      */
-open func getRecentStories(limit: UInt32, unviewedOnly: Bool)throws  -> [AuroraStoredStory] {
-    return try  FfiConverterSequenceTypeAuroraStoredStory.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_recent_stories(self.uniffiClonePointer(),
+open func getRecentStories(limit: UInt32, unviewedOnly: Bool)throws  -> [RolleysStoredStory] {
+    return try  FfiConverterSequenceTypeRolleysStoredStory.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_recent_stories(self.uniffiClonePointer(),
         FfiConverterUInt32.lower(limit),
         FfiConverterBool.lower(unviewedOnly),$0
     )
@@ -1661,18 +1901,36 @@ open func getRecentStories(limit: UInt32, unviewedOnly: Bool)throws  -> [AuroraS
     /**
      * Fetches all active status stories posted by a specific contact.
      */
-open func getStoriesByAuthor(authorJid: String)throws  -> [AuroraStoredStory] {
-    return try  FfiConverterSequenceTypeAuroraStoredStory.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_stories_by_author(self.uniffiClonePointer(),
+open func getStoriesByAuthor(authorJid: String)throws  -> [RolleysStoredStory] {
+    return try  FfiConverterSequenceTypeRolleysStoredStory.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_stories_by_author(self.uniffiClonePointer(),
         FfiConverterString.lower(authorJid),$0
+    )
+})
+}
+    
+    /**
+     * Returns current health telemetry snapshot (message throughput, ping latency, Signal hit rate).
+     */
+open func getTelemetrySnapshot() -> RolleysTelemetrySnapshot {
+    return try!  FfiConverterTypeRolleysTelemetrySnapshot.lift(try! rustCall() {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_telemetry_snapshot(self.uniffiClonePointer(),$0
     )
 })
 }
     
 open func getUserDevices(userJid: String)throws  -> [UInt32] {
     return try  FfiConverterSequenceUInt32.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_get_user_devices(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_user_devices(self.uniffiClonePointer(),
         FfiConverterString.lower(userJid),$0
+    )
+})
+}
+    
+open func getUserStatus(jid: String)throws  -> RolleysUserStatus? {
+    return try  FfiConverterOptionTypeRolleysUserStatus.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_user_status(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),$0
     )
 })
 }
@@ -1682,7 +1940,7 @@ open func getUserDevices(userJid: String)throws  -> [UInt32] {
      */
 open func groupAcceptInvite(code: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_accept_invite(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_accept_invite(self.uniffiClonePointer(),
         FfiConverterString.lower(code),$0
     )
 })
@@ -1693,7 +1951,7 @@ open func groupAcceptInvite(code: String)throws  -> String {
      */
 open func groupAcceptInviteV4(groupJid: String, inviteCode: String, inviteExpiration: Int64, adminJid: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_accept_invite_v4(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_accept_invite_v4(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(inviteCode),
         FfiConverterInt64.lower(inviteExpiration),
@@ -1707,7 +1965,7 @@ open func groupAcceptInviteV4(groupJid: String, inviteCode: String, inviteExpira
      */
 open func groupCreate(subject: String, participants: [String])throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_create(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_create(self.uniffiClonePointer(),
         FfiConverterString.lower(subject),
         FfiConverterSequenceString.lower(participants),$0
     )
@@ -1717,9 +1975,9 @@ open func groupCreate(subject: String, participants: [String])throws  -> String 
     /**
      * Fetches all participating groups for the authenticated account and caches them locally.
      */
-open func groupFetchAllParticipating()throws  -> [AuroraGroupMetadata] {
-    return try  FfiConverterSequenceTypeAuroraGroupMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_fetch_all_participating(self.uniffiClonePointer(),$0
+open func groupFetchAllParticipating()throws  -> [RolleysGroupMetadata] {
+    return try  FfiConverterSequenceTypeRolleysGroupMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_fetch_all_participating(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1727,9 +1985,9 @@ open func groupFetchAllParticipating()throws  -> [AuroraGroupMetadata] {
     /**
      * Fetches comprehensive group metadata including participants, roles, and configuration.
      */
-open func groupFetchMetadata(groupJid: String)throws  -> AuroraGroupMetadata {
-    return try  FfiConverterTypeAuroraGroupMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_fetch_metadata(self.uniffiClonePointer(),
+open func groupFetchMetadata(groupJid: String)throws  -> RolleysGroupMetadata {
+    return try  FfiConverterTypeRolleysGroupMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_fetch_metadata(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),$0
     )
 })
@@ -1740,7 +1998,7 @@ open func groupFetchMetadata(groupJid: String)throws  -> AuroraGroupMetadata {
      */
 open func groupGetInviteCode(groupJid: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_get_invite_code(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_code(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),$0
     )
 })
@@ -1750,7 +2008,7 @@ open func groupGetInviteCode(groupJid: String)throws  -> String {
      * Configures membership approval mode for a group ("on" or "off").
      */
 open func groupJoinApprovalMode(groupJid: String, mode: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_join_approval_mode(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_join_approval_mode(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(mode),$0
     )
@@ -1761,7 +2019,7 @@ open func groupJoinApprovalMode(groupJid: String, mode: String)throws  {try rust
      * Leaves a WhatsApp group.
      */
 open func groupLeave(groupJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_leave(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_leave(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),$0
     )
 }
@@ -1771,7 +2029,7 @@ open func groupLeave(groupJid: String)throws  {try rustCallWithError(FfiConverte
      * Configures member add mode for a group ("admin_add" or "all_member_add").
      */
 open func groupMemberAddMode(groupJid: String, mode: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_member_add_mode(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_member_add_mode(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(mode),$0
     )
@@ -1781,9 +2039,9 @@ open func groupMemberAddMode(groupJid: String, mode: String)throws  {try rustCal
     /**
      * Updates participants in a group ("add", "remove", "promote", "demote").
      */
-open func groupParticipantsUpdate(groupJid: String, participants: [String], action: String)throws  -> [AuroraParticipantUpdateResult] {
-    return try  FfiConverterSequenceTypeAuroraParticipantUpdateResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_participants_update(self.uniffiClonePointer(),
+open func groupParticipantsUpdate(groupJid: String, participants: [String], action: String)throws  -> [RolleysParticipantUpdateResult] {
+    return try  FfiConverterSequenceTypeRolleysParticipantUpdateResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_participants_update(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterSequenceString.lower(participants),
         FfiConverterString.lower(action),$0
@@ -1794,9 +2052,9 @@ open func groupParticipantsUpdate(groupJid: String, participants: [String], acti
     /**
      * Fetches pending membership join requests for a group.
      */
-open func groupRequestParticipantsList(groupJid: String)throws  -> [AuroraGroupJoinRequest] {
-    return try  FfiConverterSequenceTypeAuroraGroupJoinRequest.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_request_participants_list(self.uniffiClonePointer(),
+open func groupRequestParticipantsList(groupJid: String)throws  -> [RolleysGroupJoinRequest] {
+    return try  FfiConverterSequenceTypeRolleysGroupJoinRequest.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_request_participants_list(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),$0
     )
 })
@@ -1805,9 +2063,9 @@ open func groupRequestParticipantsList(groupJid: String)throws  -> [AuroraGroupJ
     /**
      * Approves or rejects pending participant join requests ("approve" or "reject").
      */
-open func groupRequestParticipantsUpdate(groupJid: String, participants: [String], action: String)throws  -> [AuroraParticipantUpdateResult] {
-    return try  FfiConverterSequenceTypeAuroraParticipantUpdateResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_request_participants_update(self.uniffiClonePointer(),
+open func groupRequestParticipantsUpdate(groupJid: String, participants: [String], action: String)throws  -> [RolleysParticipantUpdateResult] {
+    return try  FfiConverterSequenceTypeRolleysParticipantUpdateResult.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_request_participants_update(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterSequenceString.lower(participants),
         FfiConverterString.lower(action),$0
@@ -1820,7 +2078,7 @@ open func groupRequestParticipantsUpdate(groupJid: String, participants: [String
      */
 open func groupRevokeInvite(groupJid: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_revoke_invite(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_revoke_invite(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),$0
     )
 })
@@ -1830,7 +2088,7 @@ open func groupRevokeInvite(groupJid: String)throws  -> String {
      * Revokes a participant's v4 group invite.
      */
 open func groupRevokeInviteV4(groupJid: String, invitedJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_revoke_invite_v4(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_revoke_invite_v4(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(invitedJid),$0
     )
@@ -1841,7 +2099,7 @@ open func groupRevokeInviteV4(groupJid: String, invitedJid: String)throws  {try 
      * Updates group settings ("announcement", "not_announcement", "locked", "unlocked").
      */
 open func groupSettingUpdate(groupJid: String, setting: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_setting_update(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_setting_update(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(setting),$0
     )
@@ -1852,7 +2110,7 @@ open func groupSettingUpdate(groupJid: String, setting: String)throws  {try rust
      * Updates the description of a group.
      */
 open func groupUpdateDescription(groupJid: String, description: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_update_description(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_update_description(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(description),$0
     )
@@ -1863,7 +2121,7 @@ open func groupUpdateDescription(groupJid: String, description: String)throws  {
      * Updates the subject/title of a group.
      */
 open func groupUpdateSubject(groupJid: String, subject: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_group_update_subject(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_update_subject(self.uniffiClonePointer(),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(subject),$0
     )
@@ -1875,7 +2133,7 @@ open func groupUpdateSubject(groupJid: String, subject: String)throws  {try rust
      */
 open func isAutoDownload() -> Bool {
     return try!  FfiConverterBool.lift(try! rustCall() {
-    uniffi_baileys_ffi_fn_method_auroraclient_is_auto_download(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_is_auto_download(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1885,17 +2143,36 @@ open func isAutoDownload() -> Bool {
      */
 open func isConnected() -> Bool {
     return try!  FfiConverterBool.lift(try! rustCall() {
-    uniffi_baileys_ffi_fn_method_auroraclient_is_connected(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_is_connected(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func newsletterAdminCount(channelJid: String)throws  -> UInt32 {
+    return try  FfiConverterUInt32.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_admin_count(self.uniffiClonePointer(),
+        FfiConverterString.lower(channelJid),$0
     )
 })
 }
     
     /**
+     * Transfers channel ownership to another admin.
+     */
+open func newsletterChangeOwner(jid: String, newOwnerJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_change_owner(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),
+        FfiConverterString.lower(newOwnerJid),$0
+    )
+}
+}
+    
+    /**
      * Creates a new WhatsApp Channel.
      */
-open func newsletterCreate(name: String, description: String?)throws  -> AuroraNewsletter {
-    return try  FfiConverterTypeAuroraNewsletter.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_create(self.uniffiClonePointer(),
+open func newsletterCreate(name: String, description: String?)throws  -> RolleysNewsletter {
+    return try  FfiConverterTypeRolleysNewsletter.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_create(self.uniffiClonePointer(),
         FfiConverterString.lower(name),
         FfiConverterOptionString.lower(description),$0
     )
@@ -1903,11 +2180,22 @@ open func newsletterCreate(name: String, description: String?)throws  -> AuroraN
 }
     
     /**
+     * Demotes a channel admin back to subscriber.
+     */
+open func newsletterDemote(jid: String, userJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_demote(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),
+        FfiConverterString.lower(userJid),$0
+    )
+}
+}
+    
+    /**
      * Fetches message history from a WhatsApp Channel.
      */
-open func newsletterFetchMessages(jid: String, count: UInt32, before: UInt64?)throws  -> [AuroraNewsletterMessage] {
-    return try  FfiConverterSequenceTypeAuroraNewsletterMessage.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_fetch_messages(self.uniffiClonePointer(),
+open func newsletterFetchMessages(jid: String, count: UInt32, before: UInt64?)throws  -> [RolleysNewsletterMessage] {
+    return try  FfiConverterSequenceTypeRolleysNewsletterMessage.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_fetch_messages(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterUInt32.lower(count),
         FfiConverterOptionUInt64.lower(before),$0
@@ -1919,7 +2207,7 @@ open func newsletterFetchMessages(jid: String, count: UInt32, before: UInt64?)th
      * Follows a WhatsApp Channel.
      */
 open func newsletterFollow(jid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_follow(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_follow(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),$0
     )
 }
@@ -1928,9 +2216,9 @@ open func newsletterFollow(jid: String)throws  {try rustCallWithError(FfiConvert
     /**
      * Fetches all WhatsApp Channels the user is subscribed to.
      */
-open func newsletterGetSubscribed()throws  -> [AuroraNewsletter] {
-    return try  FfiConverterSequenceTypeAuroraNewsletter.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_get_subscribed(self.uniffiClonePointer(),$0
+open func newsletterGetSubscribed()throws  -> [RolleysNewsletter] {
+    return try  FfiConverterSequenceTypeRolleysNewsletter.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_get_subscribed(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1939,7 +2227,7 @@ open func newsletterGetSubscribed()throws  -> [AuroraNewsletter] {
      * Toggles mute status for a WhatsApp Channel.
      */
 open func newsletterMute(jid: String, mute: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_mute(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_mute(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterBool.lower(mute),$0
     )
@@ -1947,11 +2235,22 @@ open func newsletterMute(jid: String, mute: Bool)throws  {try rustCallWithError(
 }
     
     /**
+     * Promotes a channel subscriber to admin role.
+     */
+open func newsletterPromote(jid: String, userJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_promote(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),
+        FfiConverterString.lower(userJid),$0
+    )
+}
+}
+    
+    /**
      * Queries metadata for a WhatsApp Channel by JID or invite link/code.
      */
-open func newsletterQueryMetadata(jidOrInvite: String)throws  -> AuroraNewsletter {
-    return try  FfiConverterTypeAuroraNewsletter.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_query_metadata(self.uniffiClonePointer(),
+open func newsletterQueryMetadata(jidOrInvite: String)throws  -> RolleysNewsletter {
+    return try  FfiConverterTypeRolleysNewsletter.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_query_metadata(self.uniffiClonePointer(),
         FfiConverterString.lower(jidOrInvite),$0
     )
 })
@@ -1961,7 +2260,7 @@ open func newsletterQueryMetadata(jidOrInvite: String)throws  -> AuroraNewslette
      * Sends an emoji reaction to a channel message post.
      */
 open func newsletterReact(jid: String, serverId: UInt64, reaction: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_react(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_react(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterUInt64.lower(serverId),
         FfiConverterString.lower(reaction),$0
@@ -1974,7 +2273,7 @@ open func newsletterReact(jid: String, serverId: UInt64, reaction: String)throws
      */
 open func newsletterSendPost(jid: String, text: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_send_post(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_post(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterString.lower(text),$0
     )
@@ -1985,7 +2284,7 @@ open func newsletterSendPost(jid: String, text: String)throws  -> String {
      * Unfollows a WhatsApp Channel.
      */
 open func newsletterUnfollow(jid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_newsletter_unfollow(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_unfollow(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),$0
     )
 }
@@ -1996,7 +2295,7 @@ open func newsletterUnfollow(jid: String)throws  {try rustCallWithError(FfiConve
      */
 open func ping()throws  -> UInt64 {
     return try  FfiConverterUInt64.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_ping(self.uniffiClonePointer(),$0
+    uniffi_baileys_ffi_fn_method_rolleysclient_ping(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -2005,8 +2304,15 @@ open func ping()throws  -> UInt64 {
      * Subscribes to presence updates for a contact or group.
      */
 open func presenceSubscribe(toJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_presence_subscribe(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_presence_subscribe(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),$0
+    )
+}
+}
+    
+open func productDelete(productIds: [String])throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_product_delete(self.uniffiClonePointer(),
+        FfiConverterSequenceString.lower(productIds),$0
     )
 }
 }
@@ -2016,7 +2322,7 @@ open func presenceSubscribe(toJid: String)throws  {try rustCallWithError(FfiConv
      */
 open func profilePictureUrl(jid: String, pictureType: String)throws  -> String? {
     return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_profile_picture_url(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_profile_picture_url(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterString.lower(pictureType),$0
     )
@@ -2027,7 +2333,7 @@ open func profilePictureUrl(jid: String, pictureType: String)throws  -> String? 
      * Rejects an incoming WhatsApp voice or video call.
      */
 open func rejectCall(callId: String, callFrom: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_reject_call(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_reject_call(self.uniffiClonePointer(),
         FfiConverterString.lower(callId),
         FfiConverterString.lower(callFrom),$0
     )
@@ -2035,7 +2341,7 @@ open func rejectCall(callId: String, callFrom: String)throws  {try rustCallWithE
 }
     
 open func removeChatLabel(chatJid: String, labelId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_remove_chat_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_remove_chat_label(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(labelId),$0
     )
@@ -2043,14 +2349,21 @@ open func removeChatLabel(chatJid: String, labelId: String)throws  {try rustCall
 }
     
 open func removeCompanionDevice(deviceId: UInt32)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_remove_companion_device(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_remove_companion_device(self.uniffiClonePointer(),
         FfiConverterUInt32.lower(deviceId),$0
     )
 }
 }
     
+open func removeCoverPhoto(photoId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_remove_cover_photo(self.uniffiClonePointer(),
+        FfiConverterString.lower(photoId),$0
+    )
+}
+}
+    
 open func removeMessageLabel(chatJid: String, messageId: String, labelId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_remove_message_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_remove_message_label(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(messageId),
         FfiConverterString.lower(labelId),$0
@@ -2062,7 +2375,7 @@ open func removeMessageLabel(chatJid: String, messageId: String, labelId: String
      * Removes profile picture for self or a group.
      */
 open func removeProfilePicture(jidOpt: String?)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_remove_profile_picture(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_remove_profile_picture(self.uniffiClonePointer(),
         FfiConverterOptionString.lower(jidOpt),$0
     )
 }
@@ -2070,7 +2383,7 @@ open func removeProfilePicture(jidOpt: String?)throws  {try rustCallWithError(Ff
     
 open func revokeMessage(chatJid: String, targetMessageId: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_revoke_message(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_revoke_message(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(targetMessageId),$0
     )
@@ -2082,7 +2395,7 @@ open func revokeMessage(chatJid: String, targetMessageId: String)throws  -> Stri
      */
 open func sendAudio(toJid: String, audioBytes: Data, ptt: Bool, seconds: UInt32?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_audio(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_audio(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(audioBytes),
         FfiConverterBool.lower(ptt),
@@ -2093,7 +2406,7 @@ open func sendAudio(toJid: String, audioBytes: Data, ptt: Bool, seconds: UInt32?
     
 open func sendContact(toJid: String, displayName: String, phoneNumber: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_contact(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_contact(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(displayName),
         FfiConverterString.lower(phoneNumber),$0
@@ -2106,7 +2419,7 @@ open func sendContact(toJid: String, displayName: String, phoneNumber: String)th
      */
 open func sendDocument(toJid: String, documentBytes: Data, fileName: String, mimetype: String, title: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_document(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_document(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(documentBytes),
         FfiConverterString.lower(fileName),
@@ -2121,7 +2434,7 @@ open func sendDocument(toJid: String, documentBytes: Data, fileName: String, mim
      */
 open func sendDocumentAttachment(toJid: String, docBytes: Data, filename: String, mimetype: String, title: String?, pageCount: UInt32?, caption: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_document_attachment(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_document_attachment(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(docBytes),
         FfiConverterString.lower(filename),
@@ -2135,7 +2448,7 @@ open func sendDocumentAttachment(toJid: String, docBytes: Data, filename: String
     
 open func sendGroupInvite(toJid: String, groupJid: String, inviteCode: String, inviteExpiration: Int64, groupName: String, caption: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_group_invite(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_group_invite(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(groupJid),
         FfiConverterString.lower(inviteCode),
@@ -2151,7 +2464,7 @@ open func sendGroupInvite(toJid: String, groupJid: String, inviteCode: String, i
      */
 open func sendImage(toJid: String, imageBytes: Data, caption: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_image(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_image(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(imageBytes),
         FfiConverterOptionString.lower(caption),$0
@@ -2162,12 +2475,12 @@ open func sendImage(toJid: String, imageBytes: Data, caption: String?)throws  ->
     /**
      * Sends native flow interactive action buttons (quick reply, cta_url, etc.).
      */
-open func sendInteractiveButtons(targetJid: String, body: String, buttons: [AuroraInteractiveButton], header: String?, footer: String?)throws  -> String {
+open func sendInteractiveButtons(targetJid: String, body: String, buttons: [RolleysInteractiveButton], header: String?, footer: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_interactive_buttons(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_interactive_buttons(self.uniffiClonePointer(),
         FfiConverterString.lower(targetJid),
         FfiConverterString.lower(body),
-        FfiConverterSequenceTypeAuroraInteractiveButton.lower(buttons),
+        FfiConverterSequenceTypeRolleysInteractiveButton.lower(buttons),
         FfiConverterOptionString.lower(header),
         FfiConverterOptionString.lower(footer),$0
     )
@@ -2177,14 +2490,14 @@ open func sendInteractiveButtons(targetJid: String, body: String, buttons: [Auro
     /**
      * Sends an interactive single-selection list message.
      */
-open func sendListMessage(targetJid: String, title: String, description: String, buttonText: String, sections: [AuroraListSection], footer: String?)throws  -> String {
+open func sendListMessage(targetJid: String, title: String, description: String, buttonText: String, sections: [RolleysListSection], footer: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_list_message(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_list_message(self.uniffiClonePointer(),
         FfiConverterString.lower(targetJid),
         FfiConverterString.lower(title),
         FfiConverterString.lower(description),
         FfiConverterString.lower(buttonText),
-        FfiConverterSequenceTypeAuroraListSection.lower(sections),
+        FfiConverterSequenceTypeRolleysListSection.lower(sections),
         FfiConverterOptionString.lower(footer),$0
     )
 })
@@ -2192,7 +2505,7 @@ open func sendListMessage(targetJid: String, title: String, description: String,
     
 open func sendLiveLocation(toJid: String, latitude: Double, longitude: Double, accuracyInMeters: UInt32?, caption: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_live_location(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_live_location(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterDouble.lower(latitude),
         FfiConverterDouble.lower(longitude),
@@ -2204,7 +2517,7 @@ open func sendLiveLocation(toJid: String, latitude: Double, longitude: Double, a
     
 open func sendLocation(toJid: String, latitude: Double, longitude: Double, name: String?, address: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_location(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_location(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterDouble.lower(latitude),
         FfiConverterDouble.lower(longitude),
@@ -2214,9 +2527,24 @@ open func sendLocation(toJid: String, latitude: Double, longitude: Double, name:
 })
 }
     
+    /**
+     * Sends a local media file using the streaming upload pipeline (zero-OOM spooling for >= 10MB)
+     * and emits real-time RolleysEvent::MediaProgress events.
+     */
+open func sendMediaFile(chatJid: String, filePath: String, mediaType: String, caption: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_media_file(self.uniffiClonePointer(),
+        FfiConverterString.lower(chatJid),
+        FfiConverterString.lower(filePath),
+        FfiConverterString.lower(mediaType),
+        FfiConverterOptionString.lower(caption),$0
+    )
+})
+}
+    
 open func sendOrderMessage(toJid: String, sellerJid: String, orderId: String, title: String, itemCount: Int32, totalAmount1000: Int64, currency: String, message: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_order_message(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_order_message(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(sellerJid),
         FfiConverterString.lower(orderId),
@@ -2234,7 +2562,7 @@ open func sendOrderMessage(toJid: String, sellerJid: String, orderId: String, ti
      */
 open func sendPoll(targetJid: String, question: String, options: [String], selectableCount: UInt32)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_poll(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_poll(self.uniffiClonePointer(),
         FfiConverterString.lower(targetJid),
         FfiConverterString.lower(question),
         FfiConverterSequenceString.lower(options),
@@ -2248,7 +2576,7 @@ open func sendPoll(targetJid: String, question: String, options: [String], selec
      */
 open func sendPollVote(targetJid: String, pollId: String, selectedOptions: [String])throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_poll_vote(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_poll_vote(self.uniffiClonePointer(),
         FfiConverterString.lower(targetJid),
         FfiConverterString.lower(pollId),
         FfiConverterSequenceString.lower(selectedOptions),$0
@@ -2260,7 +2588,7 @@ open func sendPollVote(targetJid: String, pollId: String, selectedOptions: [Stri
      * Updates client presence status (e.g. "available", "unavailable", "composing", "paused").
      */
 open func sendPresence(state: String, toJid: String?)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_presence(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_presence(self.uniffiClonePointer(),
         FfiConverterString.lower(state),
         FfiConverterOptionString.lower(toJid),$0
     )
@@ -2269,7 +2597,7 @@ open func sendPresence(state: String, toJid: String?)throws  {try rustCallWithEr
     
 open func sendProductMessage(toJid: String, bizOwnerJid: String, productId: String, title: String, priceAmount1000: Int64, currency: String, caption: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_product_message(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_product_message(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(bizOwnerJid),
         FfiConverterString.lower(productId),
@@ -2286,7 +2614,7 @@ open func sendProductMessage(toJid: String, bizOwnerJid: String, productId: Stri
      */
 open func sendReaction(toJid: String, targetMsgId: String, emoji: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_reaction(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_reaction(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(targetMsgId),
         FfiConverterString.lower(emoji),$0
@@ -2298,7 +2626,7 @@ open func sendReaction(toJid: String, targetMsgId: String, emoji: String)throws 
      * Sends a read receipt for a message.
      */
 open func sendRead(remoteJid: String, msgId: String, participant: String?)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_read(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_read(self.uniffiClonePointer(),
         FfiConverterString.lower(remoteJid),
         FfiConverterString.lower(msgId),
         FfiConverterOptionString.lower(participant),$0
@@ -2311,7 +2639,7 @@ open func sendRead(remoteJid: String, msgId: String, participant: String?)throws
      */
 open func sendRevoke(toJid: String, targetMsgId: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_revoke(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_revoke(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(targetMsgId),$0
     )
@@ -2322,7 +2650,7 @@ open func sendRevoke(toJid: String, targetMsgId: String)throws  -> String {
      * Sends a status read receipt to mark a story as viewed.
      */
 open func sendStatusReadReceipt(msgId: String, authorJid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_status_read_receipt(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_status_read_receipt(self.uniffiClonePointer(),
         FfiConverterString.lower(msgId),
         FfiConverterString.lower(authorJid),$0
     )
@@ -2334,7 +2662,7 @@ open func sendStatusReadReceipt(msgId: String, authorJid: String)throws  {try ru
      */
 open func sendSticker(toJid: String, stickerBytes: Data, isAnimated: Bool)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_sticker(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_sticker(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(stickerBytes),
         FfiConverterBool.lower(isAnimated),$0
@@ -2347,7 +2675,7 @@ open func sendSticker(toJid: String, stickerBytes: Data, isAnimated: Bool)throws
      */
 open func sendText(toJid: String, text: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_text(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_text(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(text),$0
     )
@@ -2359,11 +2687,20 @@ open func sendText(toJid: String, text: String)throws  -> String {
      */
 open func sendTextStatus(text: String, backgroundColor: String?, font: Int32?, audience: [String]?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_text_status(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_text_status(self.uniffiClonePointer(),
         FfiConverterString.lower(text),
         FfiConverterOptionString.lower(backgroundColor),
         FfiConverterOptionInt32.lower(font),
         FfiConverterOptionSequenceString.lower(audience),$0
+    )
+})
+}
+    
+open func sendTextWithPreview(toJid: String, text: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_preview(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(text),$0
     )
 })
 }
@@ -2373,7 +2710,7 @@ open func sendTextStatus(text: String, backgroundColor: String?, font: Int32?, a
      */
 open func sendTextWithQuote(toJid: String, text: String, quotedId: String, quotedParticipant: String?, quotedText: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_text_with_quote(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_quote(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(text),
         FfiConverterString.lower(quotedId),
@@ -2388,7 +2725,7 @@ open func sendTextWithQuote(toJid: String, text: String, quotedId: String, quote
      */
 open func sendVideo(toJid: String, videoBytes: Data, caption: String?, seconds: UInt32?, gifPlayback: Bool)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_video(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_video(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(videoBytes),
         FfiConverterOptionString.lower(caption),
@@ -2403,7 +2740,7 @@ open func sendVideo(toJid: String, videoBytes: Data, caption: String?, seconds: 
      */
 open func sendVoiceNote(toJid: String, audioBytes: Data, seconds: UInt32, waveform: Data?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_send_voice_note(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_voice_note(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterData.lower(audioBytes),
         FfiConverterUInt32.lower(seconds),
@@ -2416,14 +2753,14 @@ open func sendVoiceNote(toJid: String, audioBytes: Data, seconds: UInt32, wavefo
      * Toggles auto-downloading of incoming media.
      */
 open func setAutoDownload(enabled: Bool) {try! rustCall() {
-    uniffi_baileys_ffi_fn_method_auroraclient_set_auto_download(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_set_auto_download(self.uniffiClonePointer(),
         FfiConverterBool.lower(enabled),$0
     )
 }
 }
     
 open func setChatEphemeral(chatJid: String, expirationSeconds: UInt32)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_set_chat_ephemeral(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_set_chat_ephemeral(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterUInt32.lower(expirationSeconds),$0
     )
@@ -2433,20 +2770,51 @@ open func setChatEphemeral(chatJid: String, expirationSeconds: UInt32)throws  {t
     /**
      * Starts the client connection and forwards real-time events to the native Kotlin listener.
      */
-open func start(listener: AuroraEventListener)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_start(self.uniffiClonePointer(),
-        FfiConverterCallbackInterfaceAuroraEventListener.lower(listener),$0
+open func start(listener: RolleysEventListener)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_start(self.uniffiClonePointer(),
+        FfiConverterCallbackInterfaceRolleysEventListener.lower(listener),$0
     )
 }
+}
+    
+open func subscribeNewsletterUpdates(channelJid: String)throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_subscribe_newsletter_updates(self.uniffiClonePointer(),
+        FfiConverterString.lower(channelJid),$0
+    )
+})
 }
     
     /**
      * Blocks or unblocks a contact ("block" or "unblock").
      */
 open func updateBlockStatus(jid: String, action: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_update_block_status(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_block_status(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterString.lower(action),$0
+    )
+}
+}
+    
+open func updateCoverPhoto(photoId: String, token: String, ts: UInt64)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_cover_photo(self.uniffiClonePointer(),
+        FfiConverterString.lower(photoId),
+        FfiConverterString.lower(token),
+        FfiConverterUInt64.lower(ts),$0
+    )
+}
+}
+    
+open func updateDisableLinkPreviewsPrivacy(isDisabled: Bool)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_disable_link_previews_privacy(self.uniffiClonePointer(),
+        FfiConverterBool.lower(isDisabled),$0
+    )
+}
+}
+    
+open func updateMediaMessage(messageId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_media_message(self.uniffiClonePointer(),
+        FfiConverterString.lower(messageId),$0
     )
 }
 }
@@ -2455,7 +2823,7 @@ open func updateBlockStatus(jid: String, action: String)throws  {try rustCallWit
      * Updates a privacy setting (e.g. category="last", value="all"|"contacts"|"none").
      */
 open func updatePrivacySetting(category: String, value: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_update_privacy_setting(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_privacy_setting(self.uniffiClonePointer(),
         FfiConverterString.lower(category),
         FfiConverterString.lower(value),$0
     )
@@ -2466,7 +2834,7 @@ open func updatePrivacySetting(category: String, value: String)throws  {try rust
      * Updates profile picture for self or a group using image bytes.
      */
 open func updateProfilePicture(jidOpt: String?, imageBytes: Data)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_update_profile_picture(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_picture(self.uniffiClonePointer(),
         FfiConverterOptionString.lower(jidOpt),
         FfiConverterData.lower(imageBytes),$0
     )
@@ -2477,7 +2845,7 @@ open func updateProfilePicture(jidOpt: String?, imageBytes: Data)throws  {try ru
      * Updates your WhatsApp About / Bio status string.
      */
 open func updateProfileStatus(status: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_update_profile_status(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_status(self.uniffiClonePointer(),
         FfiConverterString.lower(status),$0
     )
 }
@@ -2485,7 +2853,7 @@ open func updateProfileStatus(status: String)throws  {try rustCallWithError(FfiC
     
 open func upsertLabel(id: String?, name: String, color: Int32, predefinedId: Int32?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
-    uniffi_baileys_ffi_fn_method_auroraclient_upsert_label(self.uniffiClonePointer(),
+    uniffi_baileys_ffi_fn_method_rolleysclient_upsert_label(self.uniffiClonePointer(),
         FfiConverterOptionString.lower(id),
         FfiConverterString.lower(name),
         FfiConverterInt32.lower(color),
@@ -2500,20 +2868,20 @@ open func upsertLabel(id: String?, name: String, color: Int32, predefinedId: Int
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraClient: FfiConverter {
+public struct FfiConverterTypeRolleysClient: FfiConverter {
 
     typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = AuroraClient
+    typealias SwiftType = RolleysClient
 
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> AuroraClient {
-        return AuroraClient(unsafeFromRawPointer: pointer)
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> RolleysClient {
+        return RolleysClient(unsafeFromRawPointer: pointer)
     }
 
-    public static func lower(_ value: AuroraClient) -> UnsafeMutableRawPointer {
+    public static func lower(_ value: RolleysClient) -> UnsafeMutableRawPointer {
         return value.uniffiClonePointer()
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraClient {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysClient {
         let v: UInt64 = try readInt(&buf)
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -2524,7 +2892,7 @@ public struct FfiConverterTypeAuroraClient: FfiConverter {
         return try lift(ptr!)
     }
 
-    public static func write(_ value: AuroraClient, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysClient, into buf: inout [UInt8]) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
@@ -2537,19 +2905,159 @@ public struct FfiConverterTypeAuroraClient: FfiConverter {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraClient_lift(_ pointer: UnsafeMutableRawPointer) throws -> AuroraClient {
-    return try FfiConverterTypeAuroraClient.lift(pointer)
+public func FfiConverterTypeRolleysClient_lift(_ pointer: UnsafeMutableRawPointer) throws -> RolleysClient {
+    return try FfiConverterTypeRolleysClient.lift(pointer)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraClient_lower(_ value: AuroraClient) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeAuroraClient.lower(value)
+public func FfiConverterTypeRolleysClient_lower(_ value: RolleysClient) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeRolleysClient.lower(value)
 }
 
 
-public struct AuroraBusinessProfile {
+public struct RolleysAccountReachoutTimelock {
+    public var isActive: Bool
+    public var enforcementType: String?
+    public var timeEnforcementEnds: UInt64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(isActive: Bool, enforcementType: String?, timeEnforcementEnds: UInt64?) {
+        self.isActive = isActive
+        self.enforcementType = enforcementType
+        self.timeEnforcementEnds = timeEnforcementEnds
+    }
+}
+
+
+
+extension RolleysAccountReachoutTimelock: Equatable, Hashable {
+    public static func ==(lhs: RolleysAccountReachoutTimelock, rhs: RolleysAccountReachoutTimelock) -> Bool {
+        if lhs.isActive != rhs.isActive {
+            return false
+        }
+        if lhs.enforcementType != rhs.enforcementType {
+            return false
+        }
+        if lhs.timeEnforcementEnds != rhs.timeEnforcementEnds {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(isActive)
+        hasher.combine(enforcementType)
+        hasher.combine(timeEnforcementEnds)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysAccountReachoutTimelock: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysAccountReachoutTimelock {
+        return
+            try RolleysAccountReachoutTimelock(
+                isActive: FfiConverterBool.read(from: &buf), 
+                enforcementType: FfiConverterOptionString.read(from: &buf), 
+                timeEnforcementEnds: FfiConverterOptionUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysAccountReachoutTimelock, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.isActive, into: &buf)
+        FfiConverterOptionString.write(value.enforcementType, into: &buf)
+        FfiConverterOptionUInt64.write(value.timeEnforcementEnds, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysAccountReachoutTimelock_lift(_ buf: RustBuffer) throws -> RolleysAccountReachoutTimelock {
+    return try FfiConverterTypeRolleysAccountReachoutTimelock.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysAccountReachoutTimelock_lower(_ value: RolleysAccountReachoutTimelock) -> RustBuffer {
+    return FfiConverterTypeRolleysAccountReachoutTimelock.lower(value)
+}
+
+
+public struct RolleysBotEntry {
+    public var jid: String
+    public var personaId: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(jid: String, personaId: String) {
+        self.jid = jid
+        self.personaId = personaId
+    }
+}
+
+
+
+extension RolleysBotEntry: Equatable, Hashable {
+    public static func ==(lhs: RolleysBotEntry, rhs: RolleysBotEntry) -> Bool {
+        if lhs.jid != rhs.jid {
+            return false
+        }
+        if lhs.personaId != rhs.personaId {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(jid)
+        hasher.combine(personaId)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysBotEntry: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysBotEntry {
+        return
+            try RolleysBotEntry(
+                jid: FfiConverterString.read(from: &buf), 
+                personaId: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysBotEntry, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.jid, into: &buf)
+        FfiConverterString.write(value.personaId, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysBotEntry_lift(_ buf: RustBuffer) throws -> RolleysBotEntry {
+    return try FfiConverterTypeRolleysBotEntry.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysBotEntry_lower(_ value: RolleysBotEntry) -> RustBuffer {
+    return FfiConverterTypeRolleysBotEntry.lower(value)
+}
+
+
+public struct RolleysBusinessProfile {
     public var jid: String
     public var address: String?
     public var description: String?
@@ -2571,8 +3079,8 @@ public struct AuroraBusinessProfile {
 
 
 
-extension AuroraBusinessProfile: Equatable, Hashable {
-    public static func ==(lhs: AuroraBusinessProfile, rhs: AuroraBusinessProfile) -> Bool {
+extension RolleysBusinessProfile: Equatable, Hashable {
+    public static func ==(lhs: RolleysBusinessProfile, rhs: RolleysBusinessProfile) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -2608,10 +3116,10 @@ extension AuroraBusinessProfile: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraBusinessProfile {
+public struct FfiConverterTypeRolleysBusinessProfile: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysBusinessProfile {
         return
-            try AuroraBusinessProfile(
+            try RolleysBusinessProfile(
                 jid: FfiConverterString.read(from: &buf), 
                 address: FfiConverterOptionString.read(from: &buf), 
                 description: FfiConverterOptionString.read(from: &buf), 
@@ -2621,7 +3129,7 @@ public struct FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraBusinessProfile, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysBusinessProfile, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterOptionString.write(value.address, into: &buf)
         FfiConverterOptionString.write(value.description, into: &buf)
@@ -2635,19 +3143,19 @@ public struct FfiConverterTypeAuroraBusinessProfile: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraBusinessProfile_lift(_ buf: RustBuffer) throws -> AuroraBusinessProfile {
-    return try FfiConverterTypeAuroraBusinessProfile.lift(buf)
+public func FfiConverterTypeRolleysBusinessProfile_lift(_ buf: RustBuffer) throws -> RolleysBusinessProfile {
+    return try FfiConverterTypeRolleysBusinessProfile.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraBusinessProfile_lower(_ value: AuroraBusinessProfile) -> RustBuffer {
-    return FfiConverterTypeAuroraBusinessProfile.lower(value)
+public func FfiConverterTypeRolleysBusinessProfile_lower(_ value: RolleysBusinessProfile) -> RustBuffer {
+    return FfiConverterTypeRolleysBusinessProfile.lower(value)
 }
 
 
-public struct AuroraCallEvent {
+public struct RolleysCallEvent {
     public var id: String
     public var chatJid: String
     public var from: String
@@ -2679,8 +3187,8 @@ public struct AuroraCallEvent {
 
 
 
-extension AuroraCallEvent: Equatable, Hashable {
-    public static func ==(lhs: AuroraCallEvent, rhs: AuroraCallEvent) -> Bool {
+extension RolleysCallEvent: Equatable, Hashable {
+    public static func ==(lhs: RolleysCallEvent, rhs: RolleysCallEvent) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -2736,10 +3244,10 @@ extension AuroraCallEvent: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCallEvent {
+public struct FfiConverterTypeRolleysCallEvent: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCallEvent {
         return
-            try AuroraCallEvent(
+            try RolleysCallEvent(
                 id: FfiConverterString.read(from: &buf), 
                 chatJid: FfiConverterString.read(from: &buf), 
                 from: FfiConverterString.read(from: &buf), 
@@ -2754,7 +3262,7 @@ public struct FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraCallEvent, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysCallEvent, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.chatJid, into: &buf)
         FfiConverterString.write(value.from, into: &buf)
@@ -2773,19 +3281,19 @@ public struct FfiConverterTypeAuroraCallEvent: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCallEvent_lift(_ buf: RustBuffer) throws -> AuroraCallEvent {
-    return try FfiConverterTypeAuroraCallEvent.lift(buf)
+public func FfiConverterTypeRolleysCallEvent_lift(_ buf: RustBuffer) throws -> RolleysCallEvent {
+    return try FfiConverterTypeRolleysCallEvent.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCallEvent_lower(_ value: AuroraCallEvent) -> RustBuffer {
-    return FfiConverterTypeAuroraCallEvent.lower(value)
+public func FfiConverterTypeRolleysCallEvent_lower(_ value: RolleysCallEvent) -> RustBuffer {
+    return FfiConverterTypeRolleysCallEvent.lower(value)
 }
 
 
-public struct AuroraCatalogCollection {
+public struct RolleysCatalogCollection {
     public var id: String
     public var bizJid: String
     public var name: String
@@ -2805,8 +3313,8 @@ public struct AuroraCatalogCollection {
 
 
 
-extension AuroraCatalogCollection: Equatable, Hashable {
-    public static func ==(lhs: AuroraCatalogCollection, rhs: AuroraCatalogCollection) -> Bool {
+extension RolleysCatalogCollection: Equatable, Hashable {
+    public static func ==(lhs: RolleysCatalogCollection, rhs: RolleysCatalogCollection) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -2838,10 +3346,10 @@ extension AuroraCatalogCollection: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCatalogCollection {
+public struct FfiConverterTypeRolleysCatalogCollection: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCatalogCollection {
         return
-            try AuroraCatalogCollection(
+            try RolleysCatalogCollection(
                 id: FfiConverterString.read(from: &buf), 
                 bizJid: FfiConverterString.read(from: &buf), 
                 name: FfiConverterString.read(from: &buf), 
@@ -2850,7 +3358,7 @@ public struct FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraCatalogCollection, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysCatalogCollection, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.bizJid, into: &buf)
         FfiConverterString.write(value.name, into: &buf)
@@ -2863,19 +3371,19 @@ public struct FfiConverterTypeAuroraCatalogCollection: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCatalogCollection_lift(_ buf: RustBuffer) throws -> AuroraCatalogCollection {
-    return try FfiConverterTypeAuroraCatalogCollection.lift(buf)
+public func FfiConverterTypeRolleysCatalogCollection_lift(_ buf: RustBuffer) throws -> RolleysCatalogCollection {
+    return try FfiConverterTypeRolleysCatalogCollection.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCatalogCollection_lower(_ value: AuroraCatalogCollection) -> RustBuffer {
-    return FfiConverterTypeAuroraCatalogCollection.lower(value)
+public func FfiConverterTypeRolleysCatalogCollection_lower(_ value: RolleysCatalogCollection) -> RustBuffer {
+    return FfiConverterTypeRolleysCatalogCollection.lower(value)
 }
 
 
-public struct AuroraCatalogProduct {
+public struct RolleysCatalogProduct {
     public var id: String
     public var bizJid: String
     public var title: String
@@ -2909,8 +3417,8 @@ public struct AuroraCatalogProduct {
 
 
 
-extension AuroraCatalogProduct: Equatable, Hashable {
-    public static func ==(lhs: AuroraCatalogProduct, rhs: AuroraCatalogProduct) -> Bool {
+extension RolleysCatalogProduct: Equatable, Hashable {
+    public static func ==(lhs: RolleysCatalogProduct, rhs: RolleysCatalogProduct) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -2970,10 +3478,10 @@ extension AuroraCatalogProduct: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCatalogProduct {
+public struct FfiConverterTypeRolleysCatalogProduct: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCatalogProduct {
         return
-            try AuroraCatalogProduct(
+            try RolleysCatalogProduct(
                 id: FfiConverterString.read(from: &buf), 
                 bizJid: FfiConverterString.read(from: &buf), 
                 title: FfiConverterString.read(from: &buf), 
@@ -2989,7 +3497,7 @@ public struct FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraCatalogProduct, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysCatalogProduct, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.bizJid, into: &buf)
         FfiConverterString.write(value.title, into: &buf)
@@ -3009,25 +3517,25 @@ public struct FfiConverterTypeAuroraCatalogProduct: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCatalogProduct_lift(_ buf: RustBuffer) throws -> AuroraCatalogProduct {
-    return try FfiConverterTypeAuroraCatalogProduct.lift(buf)
+public func FfiConverterTypeRolleysCatalogProduct_lift(_ buf: RustBuffer) throws -> RolleysCatalogProduct {
+    return try FfiConverterTypeRolleysCatalogProduct.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCatalogProduct_lower(_ value: AuroraCatalogProduct) -> RustBuffer {
-    return FfiConverterTypeAuroraCatalogProduct.lower(value)
+public func FfiConverterTypeRolleysCatalogProduct_lower(_ value: RolleysCatalogProduct) -> RustBuffer {
+    return FfiConverterTypeRolleysCatalogProduct.lower(value)
 }
 
 
-public struct AuroraCatalogResult {
-    public var products: [AuroraCatalogProduct]
+public struct RolleysCatalogResult {
+    public var products: [RolleysCatalogProduct]
     public var cursor: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(products: [AuroraCatalogProduct], cursor: String?) {
+    public init(products: [RolleysCatalogProduct], cursor: String?) {
         self.products = products
         self.cursor = cursor
     }
@@ -3035,8 +3543,8 @@ public struct AuroraCatalogResult {
 
 
 
-extension AuroraCatalogResult: Equatable, Hashable {
-    public static func ==(lhs: AuroraCatalogResult, rhs: AuroraCatalogResult) -> Bool {
+extension RolleysCatalogResult: Equatable, Hashable {
+    public static func ==(lhs: RolleysCatalogResult, rhs: RolleysCatalogResult) -> Bool {
         if lhs.products != rhs.products {
             return false
         }
@@ -3056,17 +3564,17 @@ extension AuroraCatalogResult: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCatalogResult: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCatalogResult {
+public struct FfiConverterTypeRolleysCatalogResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCatalogResult {
         return
-            try AuroraCatalogResult(
-                products: FfiConverterSequenceTypeAuroraCatalogProduct.read(from: &buf), 
+            try RolleysCatalogResult(
+                products: FfiConverterSequenceTypeRolleysCatalogProduct.read(from: &buf), 
                 cursor: FfiConverterOptionString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraCatalogResult, into buf: inout [UInt8]) {
-        FfiConverterSequenceTypeAuroraCatalogProduct.write(value.products, into: &buf)
+    public static func write(_ value: RolleysCatalogResult, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeRolleysCatalogProduct.write(value.products, into: &buf)
         FfiConverterOptionString.write(value.cursor, into: &buf)
     }
 }
@@ -3075,19 +3583,19 @@ public struct FfiConverterTypeAuroraCatalogResult: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCatalogResult_lift(_ buf: RustBuffer) throws -> AuroraCatalogResult {
-    return try FfiConverterTypeAuroraCatalogResult.lift(buf)
+public func FfiConverterTypeRolleysCatalogResult_lift(_ buf: RustBuffer) throws -> RolleysCatalogResult {
+    return try FfiConverterTypeRolleysCatalogResult.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCatalogResult_lower(_ value: AuroraCatalogResult) -> RustBuffer {
-    return FfiConverterTypeAuroraCatalogResult.lower(value)
+public func FfiConverterTypeRolleysCatalogResult_lower(_ value: RolleysCatalogResult) -> RustBuffer {
+    return FfiConverterTypeRolleysCatalogResult.lower(value)
 }
 
 
-public struct AuroraChat {
+public struct RolleysChat {
     public var jid: String
     public var name: String?
     public var unreadCount: UInt32
@@ -3113,8 +3621,8 @@ public struct AuroraChat {
 
 
 
-extension AuroraChat: Equatable, Hashable {
-    public static func ==(lhs: AuroraChat, rhs: AuroraChat) -> Bool {
+extension RolleysChat: Equatable, Hashable {
+    public static func ==(lhs: RolleysChat, rhs: RolleysChat) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -3158,10 +3666,10 @@ extension AuroraChat: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraChat: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraChat {
+public struct FfiConverterTypeRolleysChat: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysChat {
         return
-            try AuroraChat(
+            try RolleysChat(
                 jid: FfiConverterString.read(from: &buf), 
                 name: FfiConverterOptionString.read(from: &buf), 
                 unreadCount: FfiConverterUInt32.read(from: &buf), 
@@ -3173,7 +3681,7 @@ public struct FfiConverterTypeAuroraChat: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraChat, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysChat, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterOptionString.write(value.name, into: &buf)
         FfiConverterUInt32.write(value.unreadCount, into: &buf)
@@ -3189,19 +3697,19 @@ public struct FfiConverterTypeAuroraChat: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraChat_lift(_ buf: RustBuffer) throws -> AuroraChat {
-    return try FfiConverterTypeAuroraChat.lift(buf)
+public func FfiConverterTypeRolleysChat_lift(_ buf: RustBuffer) throws -> RolleysChat {
+    return try FfiConverterTypeRolleysChat.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraChat_lower(_ value: AuroraChat) -> RustBuffer {
-    return FfiConverterTypeAuroraChat.lower(value)
+public func FfiConverterTypeRolleysChat_lower(_ value: RolleysChat) -> RustBuffer {
+    return FfiConverterTypeRolleysChat.lower(value)
 }
 
 
-public struct AuroraClientConfig {
+public struct RolleysClientConfig {
     public var databasePath: String
     public var browserName: String
     public var platform: String
@@ -3221,8 +3729,8 @@ public struct AuroraClientConfig {
 
 
 
-extension AuroraClientConfig: Equatable, Hashable {
-    public static func ==(lhs: AuroraClientConfig, rhs: AuroraClientConfig) -> Bool {
+extension RolleysClientConfig: Equatable, Hashable {
+    public static func ==(lhs: RolleysClientConfig, rhs: RolleysClientConfig) -> Bool {
         if lhs.databasePath != rhs.databasePath {
             return false
         }
@@ -3254,10 +3762,10 @@ extension AuroraClientConfig: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraClientConfig {
+public struct FfiConverterTypeRolleysClientConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysClientConfig {
         return
-            try AuroraClientConfig(
+            try RolleysClientConfig(
                 databasePath: FfiConverterString.read(from: &buf), 
                 browserName: FfiConverterString.read(from: &buf), 
                 platform: FfiConverterString.read(from: &buf), 
@@ -3266,7 +3774,7 @@ public struct FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraClientConfig, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysClientConfig, into buf: inout [UInt8]) {
         FfiConverterString.write(value.databasePath, into: &buf)
         FfiConverterString.write(value.browserName, into: &buf)
         FfiConverterString.write(value.platform, into: &buf)
@@ -3279,25 +3787,25 @@ public struct FfiConverterTypeAuroraClientConfig: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraClientConfig_lift(_ buf: RustBuffer) throws -> AuroraClientConfig {
-    return try FfiConverterTypeAuroraClientConfig.lift(buf)
+public func FfiConverterTypeRolleysClientConfig_lift(_ buf: RustBuffer) throws -> RolleysClientConfig {
+    return try FfiConverterTypeRolleysClientConfig.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraClientConfig_lower(_ value: AuroraClientConfig) -> RustBuffer {
-    return FfiConverterTypeAuroraClientConfig.lower(value)
+public func FfiConverterTypeRolleysClientConfig_lower(_ value: RolleysClientConfig) -> RustBuffer {
+    return FfiConverterTypeRolleysClientConfig.lower(value)
 }
 
 
-public struct AuroraCollectionsResult {
-    public var collections: [AuroraCatalogCollection]
+public struct RolleysCollectionsResult {
+    public var collections: [RolleysCatalogCollection]
     public var cursor: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(collections: [AuroraCatalogCollection], cursor: String?) {
+    public init(collections: [RolleysCatalogCollection], cursor: String?) {
         self.collections = collections
         self.cursor = cursor
     }
@@ -3305,8 +3813,8 @@ public struct AuroraCollectionsResult {
 
 
 
-extension AuroraCollectionsResult: Equatable, Hashable {
-    public static func ==(lhs: AuroraCollectionsResult, rhs: AuroraCollectionsResult) -> Bool {
+extension RolleysCollectionsResult: Equatable, Hashable {
+    public static func ==(lhs: RolleysCollectionsResult, rhs: RolleysCollectionsResult) -> Bool {
         if lhs.collections != rhs.collections {
             return false
         }
@@ -3326,17 +3834,17 @@ extension AuroraCollectionsResult: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCollectionsResult: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCollectionsResult {
+public struct FfiConverterTypeRolleysCollectionsResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCollectionsResult {
         return
-            try AuroraCollectionsResult(
-                collections: FfiConverterSequenceTypeAuroraCatalogCollection.read(from: &buf), 
+            try RolleysCollectionsResult(
+                collections: FfiConverterSequenceTypeRolleysCatalogCollection.read(from: &buf), 
                 cursor: FfiConverterOptionString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraCollectionsResult, into buf: inout [UInt8]) {
-        FfiConverterSequenceTypeAuroraCatalogCollection.write(value.collections, into: &buf)
+    public static func write(_ value: RolleysCollectionsResult, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeRolleysCatalogCollection.write(value.collections, into: &buf)
         FfiConverterOptionString.write(value.cursor, into: &buf)
     }
 }
@@ -3345,19 +3853,101 @@ public struct FfiConverterTypeAuroraCollectionsResult: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCollectionsResult_lift(_ buf: RustBuffer) throws -> AuroraCollectionsResult {
-    return try FfiConverterTypeAuroraCollectionsResult.lift(buf)
+public func FfiConverterTypeRolleysCollectionsResult_lift(_ buf: RustBuffer) throws -> RolleysCollectionsResult {
+    return try FfiConverterTypeRolleysCollectionsResult.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCollectionsResult_lower(_ value: AuroraCollectionsResult) -> RustBuffer {
-    return FfiConverterTypeAuroraCollectionsResult.lower(value)
+public func FfiConverterTypeRolleysCollectionsResult_lower(_ value: RolleysCollectionsResult) -> RustBuffer {
+    return FfiConverterTypeRolleysCollectionsResult.lower(value)
 }
 
 
-public struct AuroraCommunityMetadata {
+public struct RolleysCommunityInviteInfo {
+    public var jid: String
+    public var subject: String
+    public var creator: String?
+    public var size: UInt32?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(jid: String, subject: String, creator: String?, size: UInt32?) {
+        self.jid = jid
+        self.subject = subject
+        self.creator = creator
+        self.size = size
+    }
+}
+
+
+
+extension RolleysCommunityInviteInfo: Equatable, Hashable {
+    public static func ==(lhs: RolleysCommunityInviteInfo, rhs: RolleysCommunityInviteInfo) -> Bool {
+        if lhs.jid != rhs.jid {
+            return false
+        }
+        if lhs.subject != rhs.subject {
+            return false
+        }
+        if lhs.creator != rhs.creator {
+            return false
+        }
+        if lhs.size != rhs.size {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(jid)
+        hasher.combine(subject)
+        hasher.combine(creator)
+        hasher.combine(size)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysCommunityInviteInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCommunityInviteInfo {
+        return
+            try RolleysCommunityInviteInfo(
+                jid: FfiConverterString.read(from: &buf), 
+                subject: FfiConverterString.read(from: &buf), 
+                creator: FfiConverterOptionString.read(from: &buf), 
+                size: FfiConverterOptionUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysCommunityInviteInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.jid, into: &buf)
+        FfiConverterString.write(value.subject, into: &buf)
+        FfiConverterOptionString.write(value.creator, into: &buf)
+        FfiConverterOptionUInt32.write(value.size, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysCommunityInviteInfo_lift(_ buf: RustBuffer) throws -> RolleysCommunityInviteInfo {
+    return try FfiConverterTypeRolleysCommunityInviteInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysCommunityInviteInfo_lower(_ value: RolleysCommunityInviteInfo) -> RustBuffer {
+    return FfiConverterTypeRolleysCommunityInviteInfo.lower(value)
+}
+
+
+public struct RolleysCommunityMetadata {
     public var id: String
     public var subject: String
     public var subjectOwner: String?
@@ -3372,11 +3962,11 @@ public struct AuroraCommunityMetadata {
     public var isCommunityAnnounce: Bool
     public var joinApprovalMode: Bool
     public var memberAddMode: Bool
-    public var participants: [AuroraCommunityParticipant]
+    public var participants: [RolleysCommunityParticipant]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, subject: String, subjectOwner: String?, subjectTime: UInt64, size: UInt32, creation: UInt64, owner: String?, description: String?, descriptionId: String?, linkedParent: String?, isCommunity: Bool, isCommunityAnnounce: Bool, joinApprovalMode: Bool, memberAddMode: Bool, participants: [AuroraCommunityParticipant]) {
+    public init(id: String, subject: String, subjectOwner: String?, subjectTime: UInt64, size: UInt32, creation: UInt64, owner: String?, description: String?, descriptionId: String?, linkedParent: String?, isCommunity: Bool, isCommunityAnnounce: Bool, joinApprovalMode: Bool, memberAddMode: Bool, participants: [RolleysCommunityParticipant]) {
         self.id = id
         self.subject = subject
         self.subjectOwner = subjectOwner
@@ -3397,8 +3987,8 @@ public struct AuroraCommunityMetadata {
 
 
 
-extension AuroraCommunityMetadata: Equatable, Hashable {
-    public static func ==(lhs: AuroraCommunityMetadata, rhs: AuroraCommunityMetadata) -> Bool {
+extension RolleysCommunityMetadata: Equatable, Hashable {
+    public static func ==(lhs: RolleysCommunityMetadata, rhs: RolleysCommunityMetadata) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -3470,10 +4060,10 @@ extension AuroraCommunityMetadata: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCommunityMetadata {
+public struct FfiConverterTypeRolleysCommunityMetadata: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCommunityMetadata {
         return
-            try AuroraCommunityMetadata(
+            try RolleysCommunityMetadata(
                 id: FfiConverterString.read(from: &buf), 
                 subject: FfiConverterString.read(from: &buf), 
                 subjectOwner: FfiConverterOptionString.read(from: &buf), 
@@ -3488,11 +4078,11 @@ public struct FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer {
                 isCommunityAnnounce: FfiConverterBool.read(from: &buf), 
                 joinApprovalMode: FfiConverterBool.read(from: &buf), 
                 memberAddMode: FfiConverterBool.read(from: &buf), 
-                participants: FfiConverterSequenceTypeAuroraCommunityParticipant.read(from: &buf)
+                participants: FfiConverterSequenceTypeRolleysCommunityParticipant.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraCommunityMetadata, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysCommunityMetadata, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.subject, into: &buf)
         FfiConverterOptionString.write(value.subjectOwner, into: &buf)
@@ -3507,7 +4097,7 @@ public struct FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer {
         FfiConverterBool.write(value.isCommunityAnnounce, into: &buf)
         FfiConverterBool.write(value.joinApprovalMode, into: &buf)
         FfiConverterBool.write(value.memberAddMode, into: &buf)
-        FfiConverterSequenceTypeAuroraCommunityParticipant.write(value.participants, into: &buf)
+        FfiConverterSequenceTypeRolleysCommunityParticipant.write(value.participants, into: &buf)
     }
 }
 
@@ -3515,19 +4105,19 @@ public struct FfiConverterTypeAuroraCommunityMetadata: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCommunityMetadata_lift(_ buf: RustBuffer) throws -> AuroraCommunityMetadata {
-    return try FfiConverterTypeAuroraCommunityMetadata.lift(buf)
+public func FfiConverterTypeRolleysCommunityMetadata_lift(_ buf: RustBuffer) throws -> RolleysCommunityMetadata {
+    return try FfiConverterTypeRolleysCommunityMetadata.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCommunityMetadata_lower(_ value: AuroraCommunityMetadata) -> RustBuffer {
-    return FfiConverterTypeAuroraCommunityMetadata.lower(value)
+public func FfiConverterTypeRolleysCommunityMetadata_lower(_ value: RolleysCommunityMetadata) -> RustBuffer {
+    return FfiConverterTypeRolleysCommunityMetadata.lower(value)
 }
 
 
-public struct AuroraCommunityParticipant {
+public struct RolleysCommunityParticipant {
     public var jid: String
     public var admin: String?
 
@@ -3541,8 +4131,8 @@ public struct AuroraCommunityParticipant {
 
 
 
-extension AuroraCommunityParticipant: Equatable, Hashable {
-    public static func ==(lhs: AuroraCommunityParticipant, rhs: AuroraCommunityParticipant) -> Bool {
+extension RolleysCommunityParticipant: Equatable, Hashable {
+    public static func ==(lhs: RolleysCommunityParticipant, rhs: RolleysCommunityParticipant) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -3562,16 +4152,16 @@ extension AuroraCommunityParticipant: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCommunityParticipant: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCommunityParticipant {
+public struct FfiConverterTypeRolleysCommunityParticipant: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCommunityParticipant {
         return
-            try AuroraCommunityParticipant(
+            try RolleysCommunityParticipant(
                 jid: FfiConverterString.read(from: &buf), 
                 admin: FfiConverterOptionString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraCommunityParticipant, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysCommunityParticipant, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterOptionString.write(value.admin, into: &buf)
     }
@@ -3581,19 +4171,19 @@ public struct FfiConverterTypeAuroraCommunityParticipant: FfiConverterRustBuffer
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCommunityParticipant_lift(_ buf: RustBuffer) throws -> AuroraCommunityParticipant {
-    return try FfiConverterTypeAuroraCommunityParticipant.lift(buf)
+public func FfiConverterTypeRolleysCommunityParticipant_lift(_ buf: RustBuffer) throws -> RolleysCommunityParticipant {
+    return try FfiConverterTypeRolleysCommunityParticipant.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCommunityParticipant_lower(_ value: AuroraCommunityParticipant) -> RustBuffer {
-    return FfiConverterTypeAuroraCommunityParticipant.lower(value)
+public func FfiConverterTypeRolleysCommunityParticipant_lower(_ value: RolleysCommunityParticipant) -> RustBuffer {
+    return FfiConverterTypeRolleysCommunityParticipant.lower(value)
 }
 
 
-public struct AuroraCommunitySubgroup {
+public struct RolleysCommunitySubgroup {
     public var id: String
     public var subject: String
     public var creation: UInt64?
@@ -3613,8 +4203,8 @@ public struct AuroraCommunitySubgroup {
 
 
 
-extension AuroraCommunitySubgroup: Equatable, Hashable {
-    public static func ==(lhs: AuroraCommunitySubgroup, rhs: AuroraCommunitySubgroup) -> Bool {
+extension RolleysCommunitySubgroup: Equatable, Hashable {
+    public static func ==(lhs: RolleysCommunitySubgroup, rhs: RolleysCommunitySubgroup) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -3646,10 +4236,10 @@ extension AuroraCommunitySubgroup: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraCommunitySubgroup {
+public struct FfiConverterTypeRolleysCommunitySubgroup: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysCommunitySubgroup {
         return
-            try AuroraCommunitySubgroup(
+            try RolleysCommunitySubgroup(
                 id: FfiConverterString.read(from: &buf), 
                 subject: FfiConverterString.read(from: &buf), 
                 creation: FfiConverterOptionUInt64.read(from: &buf), 
@@ -3658,7 +4248,7 @@ public struct FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraCommunitySubgroup, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysCommunitySubgroup, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.subject, into: &buf)
         FfiConverterOptionUInt64.write(value.creation, into: &buf)
@@ -3671,19 +4261,19 @@ public struct FfiConverterTypeAuroraCommunitySubgroup: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCommunitySubgroup_lift(_ buf: RustBuffer) throws -> AuroraCommunitySubgroup {
-    return try FfiConverterTypeAuroraCommunitySubgroup.lift(buf)
+public func FfiConverterTypeRolleysCommunitySubgroup_lift(_ buf: RustBuffer) throws -> RolleysCommunitySubgroup {
+    return try FfiConverterTypeRolleysCommunitySubgroup.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraCommunitySubgroup_lower(_ value: AuroraCommunitySubgroup) -> RustBuffer {
-    return FfiConverterTypeAuroraCommunitySubgroup.lower(value)
+public func FfiConverterTypeRolleysCommunitySubgroup_lower(_ value: RolleysCommunitySubgroup) -> RustBuffer {
+    return FfiConverterTypeRolleysCommunitySubgroup.lower(value)
 }
 
 
-public struct AuroraContact {
+public struct RolleysContact {
     public var jid: String
     public var name: String?
     public var pushName: String?
@@ -3701,8 +4291,8 @@ public struct AuroraContact {
 
 
 
-extension AuroraContact: Equatable, Hashable {
-    public static func ==(lhs: AuroraContact, rhs: AuroraContact) -> Bool {
+extension RolleysContact: Equatable, Hashable {
+    public static func ==(lhs: RolleysContact, rhs: RolleysContact) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -3730,10 +4320,10 @@ extension AuroraContact: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraContact: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraContact {
+public struct FfiConverterTypeRolleysContact: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysContact {
         return
-            try AuroraContact(
+            try RolleysContact(
                 jid: FfiConverterString.read(from: &buf), 
                 name: FfiConverterOptionString.read(from: &buf), 
                 pushName: FfiConverterOptionString.read(from: &buf), 
@@ -3741,7 +4331,7 @@ public struct FfiConverterTypeAuroraContact: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraContact, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysContact, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterOptionString.write(value.name, into: &buf)
         FfiConverterOptionString.write(value.pushName, into: &buf)
@@ -3753,19 +4343,19 @@ public struct FfiConverterTypeAuroraContact: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraContact_lift(_ buf: RustBuffer) throws -> AuroraContact {
-    return try FfiConverterTypeAuroraContact.lift(buf)
+public func FfiConverterTypeRolleysContact_lift(_ buf: RustBuffer) throws -> RolleysContact {
+    return try FfiConverterTypeRolleysContact.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraContact_lower(_ value: AuroraContact) -> RustBuffer {
-    return FfiConverterTypeAuroraContact.lower(value)
+public func FfiConverterTypeRolleysContact_lower(_ value: RolleysContact) -> RustBuffer {
+    return FfiConverterTypeRolleysContact.lower(value)
 }
 
 
-public struct AuroraDeviceRecord {
+public struct RolleysDeviceRecord {
     public var id: UInt32
     public var keyIndex: UInt32?
 
@@ -3779,8 +4369,8 @@ public struct AuroraDeviceRecord {
 
 
 
-extension AuroraDeviceRecord: Equatable, Hashable {
-    public static func ==(lhs: AuroraDeviceRecord, rhs: AuroraDeviceRecord) -> Bool {
+extension RolleysDeviceRecord: Equatable, Hashable {
+    public static func ==(lhs: RolleysDeviceRecord, rhs: RolleysDeviceRecord) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -3800,16 +4390,16 @@ extension AuroraDeviceRecord: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraDeviceRecord: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraDeviceRecord {
+public struct FfiConverterTypeRolleysDeviceRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysDeviceRecord {
         return
-            try AuroraDeviceRecord(
+            try RolleysDeviceRecord(
                 id: FfiConverterUInt32.read(from: &buf), 
                 keyIndex: FfiConverterOptionUInt32.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraDeviceRecord, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysDeviceRecord, into buf: inout [UInt8]) {
         FfiConverterUInt32.write(value.id, into: &buf)
         FfiConverterOptionUInt32.write(value.keyIndex, into: &buf)
     }
@@ -3819,19 +4409,19 @@ public struct FfiConverterTypeAuroraDeviceRecord: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraDeviceRecord_lift(_ buf: RustBuffer) throws -> AuroraDeviceRecord {
-    return try FfiConverterTypeAuroraDeviceRecord.lift(buf)
+public func FfiConverterTypeRolleysDeviceRecord_lift(_ buf: RustBuffer) throws -> RolleysDeviceRecord {
+    return try FfiConverterTypeRolleysDeviceRecord.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraDeviceRecord_lower(_ value: AuroraDeviceRecord) -> RustBuffer {
-    return FfiConverterTypeAuroraDeviceRecord.lower(value)
+public func FfiConverterTypeRolleysDeviceRecord_lower(_ value: RolleysDeviceRecord) -> RustBuffer {
+    return FfiConverterTypeRolleysDeviceRecord.lower(value)
 }
 
 
-public struct AuroraGroupInfo {
+public struct RolleysGroupInfo {
     public var jid: String
     public var subject: String
     public var owner: String?
@@ -3851,8 +4441,8 @@ public struct AuroraGroupInfo {
 
 
 
-extension AuroraGroupInfo: Equatable, Hashable {
-    public static func ==(lhs: AuroraGroupInfo, rhs: AuroraGroupInfo) -> Bool {
+extension RolleysGroupInfo: Equatable, Hashable {
+    public static func ==(lhs: RolleysGroupInfo, rhs: RolleysGroupInfo) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -3884,10 +4474,10 @@ extension AuroraGroupInfo: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraGroupInfo {
+public struct FfiConverterTypeRolleysGroupInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysGroupInfo {
         return
-            try AuroraGroupInfo(
+            try RolleysGroupInfo(
                 jid: FfiConverterString.read(from: &buf), 
                 subject: FfiConverterString.read(from: &buf), 
                 owner: FfiConverterOptionString.read(from: &buf), 
@@ -3896,7 +4486,7 @@ public struct FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraGroupInfo, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysGroupInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterString.write(value.subject, into: &buf)
         FfiConverterOptionString.write(value.owner, into: &buf)
@@ -3909,19 +4499,19 @@ public struct FfiConverterTypeAuroraGroupInfo: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupInfo_lift(_ buf: RustBuffer) throws -> AuroraGroupInfo {
-    return try FfiConverterTypeAuroraGroupInfo.lift(buf)
+public func FfiConverterTypeRolleysGroupInfo_lift(_ buf: RustBuffer) throws -> RolleysGroupInfo {
+    return try FfiConverterTypeRolleysGroupInfo.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupInfo_lower(_ value: AuroraGroupInfo) -> RustBuffer {
-    return FfiConverterTypeAuroraGroupInfo.lower(value)
+public func FfiConverterTypeRolleysGroupInfo_lower(_ value: RolleysGroupInfo) -> RustBuffer {
+    return FfiConverterTypeRolleysGroupInfo.lower(value)
 }
 
 
-public struct AuroraGroupJoinRequest {
+public struct RolleysGroupJoinRequest {
     public var jid: String
     public var requestedTime: Int64
     public var requestMethod: String?
@@ -3937,8 +4527,8 @@ public struct AuroraGroupJoinRequest {
 
 
 
-extension AuroraGroupJoinRequest: Equatable, Hashable {
-    public static func ==(lhs: AuroraGroupJoinRequest, rhs: AuroraGroupJoinRequest) -> Bool {
+extension RolleysGroupJoinRequest: Equatable, Hashable {
+    public static func ==(lhs: RolleysGroupJoinRequest, rhs: RolleysGroupJoinRequest) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -3962,17 +4552,17 @@ extension AuroraGroupJoinRequest: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraGroupJoinRequest: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraGroupJoinRequest {
+public struct FfiConverterTypeRolleysGroupJoinRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysGroupJoinRequest {
         return
-            try AuroraGroupJoinRequest(
+            try RolleysGroupJoinRequest(
                 jid: FfiConverterString.read(from: &buf), 
                 requestedTime: FfiConverterInt64.read(from: &buf), 
                 requestMethod: FfiConverterOptionString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraGroupJoinRequest, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysGroupJoinRequest, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterInt64.write(value.requestedTime, into: &buf)
         FfiConverterOptionString.write(value.requestMethod, into: &buf)
@@ -3983,19 +4573,19 @@ public struct FfiConverterTypeAuroraGroupJoinRequest: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupJoinRequest_lift(_ buf: RustBuffer) throws -> AuroraGroupJoinRequest {
-    return try FfiConverterTypeAuroraGroupJoinRequest.lift(buf)
+public func FfiConverterTypeRolleysGroupJoinRequest_lift(_ buf: RustBuffer) throws -> RolleysGroupJoinRequest {
+    return try FfiConverterTypeRolleysGroupJoinRequest.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupJoinRequest_lower(_ value: AuroraGroupJoinRequest) -> RustBuffer {
-    return FfiConverterTypeAuroraGroupJoinRequest.lower(value)
+public func FfiConverterTypeRolleysGroupJoinRequest_lower(_ value: RolleysGroupJoinRequest) -> RustBuffer {
+    return FfiConverterTypeRolleysGroupJoinRequest.lower(value)
 }
 
 
-public struct AuroraGroupMetadata {
+public struct RolleysGroupMetadata {
     public var id: String
     public var subject: String
     public var subjectOwner: String?
@@ -4012,11 +4602,11 @@ public struct AuroraGroupMetadata {
     public var joinApprovalMode: Bool
     public var memberAddMode: String
     public var ephemeralDuration: UInt32?
-    public var participants: [AuroraGroupParticipant]
+    public var participants: [RolleysGroupParticipant]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, subject: String, subjectOwner: String?, subjectTime: Int64?, size: UInt32, creation: Int64, owner: String?, description: String?, descriptionId: String?, restrict: Bool, announce: Bool, isCommunity: Bool, isCommunityAnnounce: Bool, joinApprovalMode: Bool, memberAddMode: String, ephemeralDuration: UInt32?, participants: [AuroraGroupParticipant]) {
+    public init(id: String, subject: String, subjectOwner: String?, subjectTime: Int64?, size: UInt32, creation: Int64, owner: String?, description: String?, descriptionId: String?, restrict: Bool, announce: Bool, isCommunity: Bool, isCommunityAnnounce: Bool, joinApprovalMode: Bool, memberAddMode: String, ephemeralDuration: UInt32?, participants: [RolleysGroupParticipant]) {
         self.id = id
         self.subject = subject
         self.subjectOwner = subjectOwner
@@ -4039,8 +4629,8 @@ public struct AuroraGroupMetadata {
 
 
 
-extension AuroraGroupMetadata: Equatable, Hashable {
-    public static func ==(lhs: AuroraGroupMetadata, rhs: AuroraGroupMetadata) -> Bool {
+extension RolleysGroupMetadata: Equatable, Hashable {
+    public static func ==(lhs: RolleysGroupMetadata, rhs: RolleysGroupMetadata) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -4120,10 +4710,10 @@ extension AuroraGroupMetadata: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraGroupMetadata {
+public struct FfiConverterTypeRolleysGroupMetadata: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysGroupMetadata {
         return
-            try AuroraGroupMetadata(
+            try RolleysGroupMetadata(
                 id: FfiConverterString.read(from: &buf), 
                 subject: FfiConverterString.read(from: &buf), 
                 subjectOwner: FfiConverterOptionString.read(from: &buf), 
@@ -4140,11 +4730,11 @@ public struct FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer {
                 joinApprovalMode: FfiConverterBool.read(from: &buf), 
                 memberAddMode: FfiConverterString.read(from: &buf), 
                 ephemeralDuration: FfiConverterOptionUInt32.read(from: &buf), 
-                participants: FfiConverterSequenceTypeAuroraGroupParticipant.read(from: &buf)
+                participants: FfiConverterSequenceTypeRolleysGroupParticipant.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraGroupMetadata, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysGroupMetadata, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.subject, into: &buf)
         FfiConverterOptionString.write(value.subjectOwner, into: &buf)
@@ -4161,7 +4751,7 @@ public struct FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer {
         FfiConverterBool.write(value.joinApprovalMode, into: &buf)
         FfiConverterString.write(value.memberAddMode, into: &buf)
         FfiConverterOptionUInt32.write(value.ephemeralDuration, into: &buf)
-        FfiConverterSequenceTypeAuroraGroupParticipant.write(value.participants, into: &buf)
+        FfiConverterSequenceTypeRolleysGroupParticipant.write(value.participants, into: &buf)
     }
 }
 
@@ -4169,19 +4759,19 @@ public struct FfiConverterTypeAuroraGroupMetadata: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupMetadata_lift(_ buf: RustBuffer) throws -> AuroraGroupMetadata {
-    return try FfiConverterTypeAuroraGroupMetadata.lift(buf)
+public func FfiConverterTypeRolleysGroupMetadata_lift(_ buf: RustBuffer) throws -> RolleysGroupMetadata {
+    return try FfiConverterTypeRolleysGroupMetadata.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupMetadata_lower(_ value: AuroraGroupMetadata) -> RustBuffer {
-    return FfiConverterTypeAuroraGroupMetadata.lower(value)
+public func FfiConverterTypeRolleysGroupMetadata_lower(_ value: RolleysGroupMetadata) -> RustBuffer {
+    return FfiConverterTypeRolleysGroupMetadata.lower(value)
 }
 
 
-public struct AuroraGroupParticipant {
+public struct RolleysGroupParticipant {
     public var jid: String
     public var phoneNumber: String?
     public var lid: String?
@@ -4199,8 +4789,8 @@ public struct AuroraGroupParticipant {
 
 
 
-extension AuroraGroupParticipant: Equatable, Hashable {
-    public static func ==(lhs: AuroraGroupParticipant, rhs: AuroraGroupParticipant) -> Bool {
+extension RolleysGroupParticipant: Equatable, Hashable {
+    public static func ==(lhs: RolleysGroupParticipant, rhs: RolleysGroupParticipant) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -4228,10 +4818,10 @@ extension AuroraGroupParticipant: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraGroupParticipant: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraGroupParticipant {
+public struct FfiConverterTypeRolleysGroupParticipant: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysGroupParticipant {
         return
-            try AuroraGroupParticipant(
+            try RolleysGroupParticipant(
                 jid: FfiConverterString.read(from: &buf), 
                 phoneNumber: FfiConverterOptionString.read(from: &buf), 
                 lid: FfiConverterOptionString.read(from: &buf), 
@@ -4239,7 +4829,7 @@ public struct FfiConverterTypeAuroraGroupParticipant: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraGroupParticipant, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysGroupParticipant, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterOptionString.write(value.phoneNumber, into: &buf)
         FfiConverterOptionString.write(value.lid, into: &buf)
@@ -4251,19 +4841,19 @@ public struct FfiConverterTypeAuroraGroupParticipant: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupParticipant_lift(_ buf: RustBuffer) throws -> AuroraGroupParticipant {
-    return try FfiConverterTypeAuroraGroupParticipant.lift(buf)
+public func FfiConverterTypeRolleysGroupParticipant_lift(_ buf: RustBuffer) throws -> RolleysGroupParticipant {
+    return try FfiConverterTypeRolleysGroupParticipant.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraGroupParticipant_lower(_ value: AuroraGroupParticipant) -> RustBuffer {
-    return FfiConverterTypeAuroraGroupParticipant.lower(value)
+public func FfiConverterTypeRolleysGroupParticipant_lower(_ value: RolleysGroupParticipant) -> RustBuffer {
+    return FfiConverterTypeRolleysGroupParticipant.lower(value)
 }
 
 
-public struct AuroraInteractiveButton {
+public struct RolleysInteractiveButton {
     public var name: String
     public var buttonParamsJson: String
 
@@ -4277,8 +4867,8 @@ public struct AuroraInteractiveButton {
 
 
 
-extension AuroraInteractiveButton: Equatable, Hashable {
-    public static func ==(lhs: AuroraInteractiveButton, rhs: AuroraInteractiveButton) -> Bool {
+extension RolleysInteractiveButton: Equatable, Hashable {
+    public static func ==(lhs: RolleysInteractiveButton, rhs: RolleysInteractiveButton) -> Bool {
         if lhs.name != rhs.name {
             return false
         }
@@ -4298,16 +4888,16 @@ extension AuroraInteractiveButton: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraInteractiveButton: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraInteractiveButton {
+public struct FfiConverterTypeRolleysInteractiveButton: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysInteractiveButton {
         return
-            try AuroraInteractiveButton(
+            try RolleysInteractiveButton(
                 name: FfiConverterString.read(from: &buf), 
                 buttonParamsJson: FfiConverterString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraInteractiveButton, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysInteractiveButton, into buf: inout [UInt8]) {
         FfiConverterString.write(value.name, into: &buf)
         FfiConverterString.write(value.buttonParamsJson, into: &buf)
     }
@@ -4317,19 +4907,19 @@ public struct FfiConverterTypeAuroraInteractiveButton: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraInteractiveButton_lift(_ buf: RustBuffer) throws -> AuroraInteractiveButton {
-    return try FfiConverterTypeAuroraInteractiveButton.lift(buf)
+public func FfiConverterTypeRolleysInteractiveButton_lift(_ buf: RustBuffer) throws -> RolleysInteractiveButton {
+    return try FfiConverterTypeRolleysInteractiveButton.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraInteractiveButton_lower(_ value: AuroraInteractiveButton) -> RustBuffer {
-    return FfiConverterTypeAuroraInteractiveButton.lower(value)
+public func FfiConverterTypeRolleysInteractiveButton_lower(_ value: RolleysInteractiveButton) -> RustBuffer {
+    return FfiConverterTypeRolleysInteractiveButton.lower(value)
 }
 
 
-public struct AuroraLabel {
+public struct RolleysLabel {
     public var id: String
     public var name: String
     public var color: Int32
@@ -4349,8 +4939,8 @@ public struct AuroraLabel {
 
 
 
-extension AuroraLabel: Equatable, Hashable {
-    public static func ==(lhs: AuroraLabel, rhs: AuroraLabel) -> Bool {
+extension RolleysLabel: Equatable, Hashable {
+    public static func ==(lhs: RolleysLabel, rhs: RolleysLabel) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -4382,10 +4972,10 @@ extension AuroraLabel: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraLabel: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraLabel {
+public struct FfiConverterTypeRolleysLabel: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysLabel {
         return
-            try AuroraLabel(
+            try RolleysLabel(
                 id: FfiConverterString.read(from: &buf), 
                 name: FfiConverterString.read(from: &buf), 
                 color: FfiConverterInt32.read(from: &buf), 
@@ -4394,7 +4984,7 @@ public struct FfiConverterTypeAuroraLabel: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraLabel, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysLabel, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.name, into: &buf)
         FfiConverterInt32.write(value.color, into: &buf)
@@ -4407,19 +4997,19 @@ public struct FfiConverterTypeAuroraLabel: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraLabel_lift(_ buf: RustBuffer) throws -> AuroraLabel {
-    return try FfiConverterTypeAuroraLabel.lift(buf)
+public func FfiConverterTypeRolleysLabel_lift(_ buf: RustBuffer) throws -> RolleysLabel {
+    return try FfiConverterTypeRolleysLabel.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraLabel_lower(_ value: AuroraLabel) -> RustBuffer {
-    return FfiConverterTypeAuroraLabel.lower(value)
+public func FfiConverterTypeRolleysLabel_lower(_ value: RolleysLabel) -> RustBuffer {
+    return FfiConverterTypeRolleysLabel.lower(value)
 }
 
 
-public struct AuroraListRow {
+public struct RolleysListRow {
     public var title: String
     public var description: String?
     public var rowId: String
@@ -4435,8 +5025,8 @@ public struct AuroraListRow {
 
 
 
-extension AuroraListRow: Equatable, Hashable {
-    public static func ==(lhs: AuroraListRow, rhs: AuroraListRow) -> Bool {
+extension RolleysListRow: Equatable, Hashable {
+    public static func ==(lhs: RolleysListRow, rhs: RolleysListRow) -> Bool {
         if lhs.title != rhs.title {
             return false
         }
@@ -4460,17 +5050,17 @@ extension AuroraListRow: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraListRow: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraListRow {
+public struct FfiConverterTypeRolleysListRow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysListRow {
         return
-            try AuroraListRow(
+            try RolleysListRow(
                 title: FfiConverterString.read(from: &buf), 
                 description: FfiConverterOptionString.read(from: &buf), 
                 rowId: FfiConverterString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraListRow, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysListRow, into buf: inout [UInt8]) {
         FfiConverterString.write(value.title, into: &buf)
         FfiConverterOptionString.write(value.description, into: &buf)
         FfiConverterString.write(value.rowId, into: &buf)
@@ -4481,25 +5071,25 @@ public struct FfiConverterTypeAuroraListRow: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraListRow_lift(_ buf: RustBuffer) throws -> AuroraListRow {
-    return try FfiConverterTypeAuroraListRow.lift(buf)
+public func FfiConverterTypeRolleysListRow_lift(_ buf: RustBuffer) throws -> RolleysListRow {
+    return try FfiConverterTypeRolleysListRow.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraListRow_lower(_ value: AuroraListRow) -> RustBuffer {
-    return FfiConverterTypeAuroraListRow.lower(value)
+public func FfiConverterTypeRolleysListRow_lower(_ value: RolleysListRow) -> RustBuffer {
+    return FfiConverterTypeRolleysListRow.lower(value)
 }
 
 
-public struct AuroraListSection {
+public struct RolleysListSection {
     public var title: String
-    public var rows: [AuroraListRow]
+    public var rows: [RolleysListRow]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(title: String, rows: [AuroraListRow]) {
+    public init(title: String, rows: [RolleysListRow]) {
         self.title = title
         self.rows = rows
     }
@@ -4507,8 +5097,8 @@ public struct AuroraListSection {
 
 
 
-extension AuroraListSection: Equatable, Hashable {
-    public static func ==(lhs: AuroraListSection, rhs: AuroraListSection) -> Bool {
+extension RolleysListSection: Equatable, Hashable {
+    public static func ==(lhs: RolleysListSection, rhs: RolleysListSection) -> Bool {
         if lhs.title != rhs.title {
             return false
         }
@@ -4528,18 +5118,18 @@ extension AuroraListSection: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraListSection: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraListSection {
+public struct FfiConverterTypeRolleysListSection: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysListSection {
         return
-            try AuroraListSection(
+            try RolleysListSection(
                 title: FfiConverterString.read(from: &buf), 
-                rows: FfiConverterSequenceTypeAuroraListRow.read(from: &buf)
+                rows: FfiConverterSequenceTypeRolleysListRow.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraListSection, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysListSection, into buf: inout [UInt8]) {
         FfiConverterString.write(value.title, into: &buf)
-        FfiConverterSequenceTypeAuroraListRow.write(value.rows, into: &buf)
+        FfiConverterSequenceTypeRolleysListRow.write(value.rows, into: &buf)
     }
 }
 
@@ -4547,19 +5137,19 @@ public struct FfiConverterTypeAuroraListSection: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraListSection_lift(_ buf: RustBuffer) throws -> AuroraListSection {
-    return try FfiConverterTypeAuroraListSection.lift(buf)
+public func FfiConverterTypeRolleysListSection_lift(_ buf: RustBuffer) throws -> RolleysListSection {
+    return try FfiConverterTypeRolleysListSection.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraListSection_lower(_ value: AuroraListSection) -> RustBuffer {
-    return FfiConverterTypeAuroraListSection.lower(value)
+public func FfiConverterTypeRolleysListSection_lower(_ value: RolleysListSection) -> RustBuffer {
+    return FfiConverterTypeRolleysListSection.lower(value)
 }
 
 
-public struct AuroraMessage {
+public struct RolleysMessage {
     public var id: String
     public var remoteJid: String
     public var participantJid: String?
@@ -4585,8 +5175,8 @@ public struct AuroraMessage {
 
 
 
-extension AuroraMessage: Equatable, Hashable {
-    public static func ==(lhs: AuroraMessage, rhs: AuroraMessage) -> Bool {
+extension RolleysMessage: Equatable, Hashable {
+    public static func ==(lhs: RolleysMessage, rhs: RolleysMessage) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -4630,10 +5220,10 @@ extension AuroraMessage: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraMessage: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraMessage {
+public struct FfiConverterTypeRolleysMessage: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysMessage {
         return
-            try AuroraMessage(
+            try RolleysMessage(
                 id: FfiConverterString.read(from: &buf), 
                 remoteJid: FfiConverterString.read(from: &buf), 
                 participantJid: FfiConverterOptionString.read(from: &buf), 
@@ -4645,7 +5235,7 @@ public struct FfiConverterTypeAuroraMessage: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraMessage, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysMessage, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.remoteJid, into: &buf)
         FfiConverterOptionString.write(value.participantJid, into: &buf)
@@ -4661,19 +5251,19 @@ public struct FfiConverterTypeAuroraMessage: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraMessage_lift(_ buf: RustBuffer) throws -> AuroraMessage {
-    return try FfiConverterTypeAuroraMessage.lift(buf)
+public func FfiConverterTypeRolleysMessage_lift(_ buf: RustBuffer) throws -> RolleysMessage {
+    return try FfiConverterTypeRolleysMessage.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraMessage_lower(_ value: AuroraMessage) -> RustBuffer {
-    return FfiConverterTypeAuroraMessage.lower(value)
+public func FfiConverterTypeRolleysMessage_lower(_ value: RolleysMessage) -> RustBuffer {
+    return FfiConverterTypeRolleysMessage.lower(value)
 }
 
 
-public struct AuroraNewsletter {
+public struct RolleysNewsletter {
     public var jid: String
     public var name: String
     public var description: String?
@@ -4701,8 +5291,8 @@ public struct AuroraNewsletter {
 
 
 
-extension AuroraNewsletter: Equatable, Hashable {
-    public static func ==(lhs: AuroraNewsletter, rhs: AuroraNewsletter) -> Bool {
+extension RolleysNewsletter: Equatable, Hashable {
+    public static func ==(lhs: RolleysNewsletter, rhs: RolleysNewsletter) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -4750,10 +5340,10 @@ extension AuroraNewsletter: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraNewsletter {
+public struct FfiConverterTypeRolleysNewsletter: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysNewsletter {
         return
-            try AuroraNewsletter(
+            try RolleysNewsletter(
                 jid: FfiConverterString.read(from: &buf), 
                 name: FfiConverterString.read(from: &buf), 
                 description: FfiConverterOptionString.read(from: &buf), 
@@ -4766,7 +5356,7 @@ public struct FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraNewsletter, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysNewsletter, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterString.write(value.name, into: &buf)
         FfiConverterOptionString.write(value.description, into: &buf)
@@ -4783,19 +5373,19 @@ public struct FfiConverterTypeAuroraNewsletter: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraNewsletter_lift(_ buf: RustBuffer) throws -> AuroraNewsletter {
-    return try FfiConverterTypeAuroraNewsletter.lift(buf)
+public func FfiConverterTypeRolleysNewsletter_lift(_ buf: RustBuffer) throws -> RolleysNewsletter {
+    return try FfiConverterTypeRolleysNewsletter.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraNewsletter_lower(_ value: AuroraNewsletter) -> RustBuffer {
-    return FfiConverterTypeAuroraNewsletter.lower(value)
+public func FfiConverterTypeRolleysNewsletter_lower(_ value: RolleysNewsletter) -> RustBuffer {
+    return FfiConverterTypeRolleysNewsletter.lower(value)
 }
 
 
-public struct AuroraNewsletterMessage {
+public struct RolleysNewsletterMessage {
     public var serverId: UInt64
     public var viewsCount: UInt64?
     public var timestamp: UInt64
@@ -4815,8 +5405,8 @@ public struct AuroraNewsletterMessage {
 
 
 
-extension AuroraNewsletterMessage: Equatable, Hashable {
-    public static func ==(lhs: AuroraNewsletterMessage, rhs: AuroraNewsletterMessage) -> Bool {
+extension RolleysNewsletterMessage: Equatable, Hashable {
+    public static func ==(lhs: RolleysNewsletterMessage, rhs: RolleysNewsletterMessage) -> Bool {
         if lhs.serverId != rhs.serverId {
             return false
         }
@@ -4848,10 +5438,10 @@ extension AuroraNewsletterMessage: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraNewsletterMessage {
+public struct FfiConverterTypeRolleysNewsletterMessage: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysNewsletterMessage {
         return
-            try AuroraNewsletterMessage(
+            try RolleysNewsletterMessage(
                 serverId: FfiConverterUInt64.read(from: &buf), 
                 viewsCount: FfiConverterOptionUInt64.read(from: &buf), 
                 timestamp: FfiConverterUInt64.read(from: &buf), 
@@ -4860,7 +5450,7 @@ public struct FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraNewsletterMessage, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysNewsletterMessage, into buf: inout [UInt8]) {
         FfiConverterUInt64.write(value.serverId, into: &buf)
         FfiConverterOptionUInt64.write(value.viewsCount, into: &buf)
         FfiConverterUInt64.write(value.timestamp, into: &buf)
@@ -4873,19 +5463,19 @@ public struct FfiConverterTypeAuroraNewsletterMessage: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraNewsletterMessage_lift(_ buf: RustBuffer) throws -> AuroraNewsletterMessage {
-    return try FfiConverterTypeAuroraNewsletterMessage.lift(buf)
+public func FfiConverterTypeRolleysNewsletterMessage_lift(_ buf: RustBuffer) throws -> RolleysNewsletterMessage {
+    return try FfiConverterTypeRolleysNewsletterMessage.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraNewsletterMessage_lower(_ value: AuroraNewsletterMessage) -> RustBuffer {
-    return FfiConverterTypeAuroraNewsletterMessage.lower(value)
+public func FfiConverterTypeRolleysNewsletterMessage_lower(_ value: RolleysNewsletterMessage) -> RustBuffer {
+    return FfiConverterTypeRolleysNewsletterMessage.lower(value)
 }
 
 
-public struct AuroraOnWhatsAppResult {
+public struct RolleysOnWhatsAppResult {
     public var jid: String
     public var exists: Bool
     public var phoneNumber: String
@@ -4901,8 +5491,8 @@ public struct AuroraOnWhatsAppResult {
 
 
 
-extension AuroraOnWhatsAppResult: Equatable, Hashable {
-    public static func ==(lhs: AuroraOnWhatsAppResult, rhs: AuroraOnWhatsAppResult) -> Bool {
+extension RolleysOnWhatsAppResult: Equatable, Hashable {
+    public static func ==(lhs: RolleysOnWhatsAppResult, rhs: RolleysOnWhatsAppResult) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -4926,17 +5516,17 @@ extension AuroraOnWhatsAppResult: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraOnWhatsAppResult: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraOnWhatsAppResult {
+public struct FfiConverterTypeRolleysOnWhatsAppResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysOnWhatsAppResult {
         return
-            try AuroraOnWhatsAppResult(
+            try RolleysOnWhatsAppResult(
                 jid: FfiConverterString.read(from: &buf), 
                 exists: FfiConverterBool.read(from: &buf), 
                 phoneNumber: FfiConverterString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraOnWhatsAppResult, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysOnWhatsAppResult, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterBool.write(value.exists, into: &buf)
         FfiConverterString.write(value.phoneNumber, into: &buf)
@@ -4947,19 +5537,19 @@ public struct FfiConverterTypeAuroraOnWhatsAppResult: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraOnWhatsAppResult_lift(_ buf: RustBuffer) throws -> AuroraOnWhatsAppResult {
-    return try FfiConverterTypeAuroraOnWhatsAppResult.lift(buf)
+public func FfiConverterTypeRolleysOnWhatsAppResult_lift(_ buf: RustBuffer) throws -> RolleysOnWhatsAppResult {
+    return try FfiConverterTypeRolleysOnWhatsAppResult.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraOnWhatsAppResult_lower(_ value: AuroraOnWhatsAppResult) -> RustBuffer {
-    return FfiConverterTypeAuroraOnWhatsAppResult.lower(value)
+public func FfiConverterTypeRolleysOnWhatsAppResult_lower(_ value: RolleysOnWhatsAppResult) -> RustBuffer {
+    return FfiConverterTypeRolleysOnWhatsAppResult.lower(value)
 }
 
 
-public struct AuroraOrder {
+public struct RolleysOrder {
     public var orderId: String
     public var chatJid: String
     public var sellerJid: String
@@ -4993,8 +5583,8 @@ public struct AuroraOrder {
 
 
 
-extension AuroraOrder: Equatable, Hashable {
-    public static func ==(lhs: AuroraOrder, rhs: AuroraOrder) -> Bool {
+extension RolleysOrder: Equatable, Hashable {
+    public static func ==(lhs: RolleysOrder, rhs: RolleysOrder) -> Bool {
         if lhs.orderId != rhs.orderId {
             return false
         }
@@ -5054,10 +5644,10 @@ extension AuroraOrder: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraOrder: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraOrder {
+public struct FfiConverterTypeRolleysOrder: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysOrder {
         return
-            try AuroraOrder(
+            try RolleysOrder(
                 orderId: FfiConverterString.read(from: &buf), 
                 chatJid: FfiConverterString.read(from: &buf), 
                 sellerJid: FfiConverterString.read(from: &buf), 
@@ -5073,7 +5663,7 @@ public struct FfiConverterTypeAuroraOrder: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraOrder, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysOrder, into buf: inout [UInt8]) {
         FfiConverterString.write(value.orderId, into: &buf)
         FfiConverterString.write(value.chatJid, into: &buf)
         FfiConverterString.write(value.sellerJid, into: &buf)
@@ -5093,19 +5683,19 @@ public struct FfiConverterTypeAuroraOrder: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraOrder_lift(_ buf: RustBuffer) throws -> AuroraOrder {
-    return try FfiConverterTypeAuroraOrder.lift(buf)
+public func FfiConverterTypeRolleysOrder_lift(_ buf: RustBuffer) throws -> RolleysOrder {
+    return try FfiConverterTypeRolleysOrder.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraOrder_lower(_ value: AuroraOrder) -> RustBuffer {
-    return FfiConverterTypeAuroraOrder.lower(value)
+public func FfiConverterTypeRolleysOrder_lower(_ value: RolleysOrder) -> RustBuffer {
+    return FfiConverterTypeRolleysOrder.lower(value)
 }
 
 
-public struct AuroraParticipantUpdateResult {
+public struct RolleysParticipantUpdateResult {
     public var jid: String
     public var status: String
 
@@ -5119,8 +5709,8 @@ public struct AuroraParticipantUpdateResult {
 
 
 
-extension AuroraParticipantUpdateResult: Equatable, Hashable {
-    public static func ==(lhs: AuroraParticipantUpdateResult, rhs: AuroraParticipantUpdateResult) -> Bool {
+extension RolleysParticipantUpdateResult: Equatable, Hashable {
+    public static func ==(lhs: RolleysParticipantUpdateResult, rhs: RolleysParticipantUpdateResult) -> Bool {
         if lhs.jid != rhs.jid {
             return false
         }
@@ -5140,16 +5730,16 @@ extension AuroraParticipantUpdateResult: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraParticipantUpdateResult: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraParticipantUpdateResult {
+public struct FfiConverterTypeRolleysParticipantUpdateResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysParticipantUpdateResult {
         return
-            try AuroraParticipantUpdateResult(
+            try RolleysParticipantUpdateResult(
                 jid: FfiConverterString.read(from: &buf), 
                 status: FfiConverterString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraParticipantUpdateResult, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysParticipantUpdateResult, into buf: inout [UInt8]) {
         FfiConverterString.write(value.jid, into: &buf)
         FfiConverterString.write(value.status, into: &buf)
     }
@@ -5159,19 +5749,19 @@ public struct FfiConverterTypeAuroraParticipantUpdateResult: FfiConverterRustBuf
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraParticipantUpdateResult_lift(_ buf: RustBuffer) throws -> AuroraParticipantUpdateResult {
-    return try FfiConverterTypeAuroraParticipantUpdateResult.lift(buf)
+public func FfiConverterTypeRolleysParticipantUpdateResult_lift(_ buf: RustBuffer) throws -> RolleysParticipantUpdateResult {
+    return try FfiConverterTypeRolleysParticipantUpdateResult.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraParticipantUpdateResult_lower(_ value: AuroraParticipantUpdateResult) -> RustBuffer {
-    return FfiConverterTypeAuroraParticipantUpdateResult.lower(value)
+public func FfiConverterTypeRolleysParticipantUpdateResult_lower(_ value: RolleysParticipantUpdateResult) -> RustBuffer {
+    return FfiConverterTypeRolleysParticipantUpdateResult.lower(value)
 }
 
 
-public struct AuroraPoll {
+public struct RolleysPoll {
     public var id: String
     public var chatJid: String
     public var senderJid: String
@@ -5195,8 +5785,8 @@ public struct AuroraPoll {
 
 
 
-extension AuroraPoll: Equatable, Hashable {
-    public static func ==(lhs: AuroraPoll, rhs: AuroraPoll) -> Bool {
+extension RolleysPoll: Equatable, Hashable {
+    public static func ==(lhs: RolleysPoll, rhs: RolleysPoll) -> Bool {
         if lhs.id != rhs.id {
             return false
         }
@@ -5236,10 +5826,10 @@ extension AuroraPoll: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraPoll: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraPoll {
+public struct FfiConverterTypeRolleysPoll: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysPoll {
         return
-            try AuroraPoll(
+            try RolleysPoll(
                 id: FfiConverterString.read(from: &buf), 
                 chatJid: FfiConverterString.read(from: &buf), 
                 senderJid: FfiConverterString.read(from: &buf), 
@@ -5250,7 +5840,7 @@ public struct FfiConverterTypeAuroraPoll: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraPoll, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysPoll, into buf: inout [UInt8]) {
         FfiConverterString.write(value.id, into: &buf)
         FfiConverterString.write(value.chatJid, into: &buf)
         FfiConverterString.write(value.senderJid, into: &buf)
@@ -5265,19 +5855,19 @@ public struct FfiConverterTypeAuroraPoll: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraPoll_lift(_ buf: RustBuffer) throws -> AuroraPoll {
-    return try FfiConverterTypeAuroraPoll.lift(buf)
+public func FfiConverterTypeRolleysPoll_lift(_ buf: RustBuffer) throws -> RolleysPoll {
+    return try FfiConverterTypeRolleysPoll.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraPoll_lower(_ value: AuroraPoll) -> RustBuffer {
-    return FfiConverterTypeAuroraPoll.lower(value)
+public func FfiConverterTypeRolleysPoll_lower(_ value: RolleysPoll) -> RustBuffer {
+    return FfiConverterTypeRolleysPoll.lower(value)
 }
 
 
-public struct AuroraPollTally {
+public struct RolleysPollTally {
     public var pollId: String
     public var question: String
     public var totalVoters: UInt32
@@ -5295,8 +5885,8 @@ public struct AuroraPollTally {
 
 
 
-extension AuroraPollTally: Equatable, Hashable {
-    public static func ==(lhs: AuroraPollTally, rhs: AuroraPollTally) -> Bool {
+extension RolleysPollTally: Equatable, Hashable {
+    public static func ==(lhs: RolleysPollTally, rhs: RolleysPollTally) -> Bool {
         if lhs.pollId != rhs.pollId {
             return false
         }
@@ -5324,10 +5914,10 @@ extension AuroraPollTally: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraPollTally: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraPollTally {
+public struct FfiConverterTypeRolleysPollTally: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysPollTally {
         return
-            try AuroraPollTally(
+            try RolleysPollTally(
                 pollId: FfiConverterString.read(from: &buf), 
                 question: FfiConverterString.read(from: &buf), 
                 totalVoters: FfiConverterUInt32.read(from: &buf), 
@@ -5335,7 +5925,7 @@ public struct FfiConverterTypeAuroraPollTally: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraPollTally, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysPollTally, into buf: inout [UInt8]) {
         FfiConverterString.write(value.pollId, into: &buf)
         FfiConverterString.write(value.question, into: &buf)
         FfiConverterUInt32.write(value.totalVoters, into: &buf)
@@ -5347,19 +5937,19 @@ public struct FfiConverterTypeAuroraPollTally: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraPollTally_lift(_ buf: RustBuffer) throws -> AuroraPollTally {
-    return try FfiConverterTypeAuroraPollTally.lift(buf)
+public func FfiConverterTypeRolleysPollTally_lift(_ buf: RustBuffer) throws -> RolleysPollTally {
+    return try FfiConverterTypeRolleysPollTally.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraPollTally_lower(_ value: AuroraPollTally) -> RustBuffer {
-    return FfiConverterTypeAuroraPollTally.lower(value)
+public func FfiConverterTypeRolleysPollTally_lower(_ value: RolleysPollTally) -> RustBuffer {
+    return FfiConverterTypeRolleysPollTally.lower(value)
 }
 
 
-public struct AuroraPrivacySettings {
+public struct RolleysPrivacySettings {
     public var readreceipts: String?
     public var profile: String?
     public var status: String?
@@ -5385,8 +5975,8 @@ public struct AuroraPrivacySettings {
 
 
 
-extension AuroraPrivacySettings: Equatable, Hashable {
-    public static func ==(lhs: AuroraPrivacySettings, rhs: AuroraPrivacySettings) -> Bool {
+extension RolleysPrivacySettings: Equatable, Hashable {
+    public static func ==(lhs: RolleysPrivacySettings, rhs: RolleysPrivacySettings) -> Bool {
         if lhs.readreceipts != rhs.readreceipts {
             return false
         }
@@ -5430,10 +6020,10 @@ extension AuroraPrivacySettings: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraPrivacySettings {
+public struct FfiConverterTypeRolleysPrivacySettings: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysPrivacySettings {
         return
-            try AuroraPrivacySettings(
+            try RolleysPrivacySettings(
                 readreceipts: FfiConverterOptionString.read(from: &buf), 
                 profile: FfiConverterOptionString.read(from: &buf), 
                 status: FfiConverterOptionString.read(from: &buf), 
@@ -5445,7 +6035,7 @@ public struct FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraPrivacySettings, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysPrivacySettings, into buf: inout [UInt8]) {
         FfiConverterOptionString.write(value.readreceipts, into: &buf)
         FfiConverterOptionString.write(value.profile, into: &buf)
         FfiConverterOptionString.write(value.status, into: &buf)
@@ -5461,19 +6051,19 @@ public struct FfiConverterTypeAuroraPrivacySettings: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraPrivacySettings_lift(_ buf: RustBuffer) throws -> AuroraPrivacySettings {
-    return try FfiConverterTypeAuroraPrivacySettings.lift(buf)
+public func FfiConverterTypeRolleysPrivacySettings_lift(_ buf: RustBuffer) throws -> RolleysPrivacySettings {
+    return try FfiConverterTypeRolleysPrivacySettings.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraPrivacySettings_lower(_ value: AuroraPrivacySettings) -> RustBuffer {
-    return FfiConverterTypeAuroraPrivacySettings.lower(value)
+public func FfiConverterTypeRolleysPrivacySettings_lower(_ value: RolleysPrivacySettings) -> RustBuffer {
+    return FfiConverterTypeRolleysPrivacySettings.lower(value)
 }
 
 
-public struct AuroraProfileStatus {
+public struct RolleysProfileStatus {
     public var status: String
     public var setAt: UInt64?
 
@@ -5487,8 +6077,8 @@ public struct AuroraProfileStatus {
 
 
 
-extension AuroraProfileStatus: Equatable, Hashable {
-    public static func ==(lhs: AuroraProfileStatus, rhs: AuroraProfileStatus) -> Bool {
+extension RolleysProfileStatus: Equatable, Hashable {
+    public static func ==(lhs: RolleysProfileStatus, rhs: RolleysProfileStatus) -> Bool {
         if lhs.status != rhs.status {
             return false
         }
@@ -5508,16 +6098,16 @@ extension AuroraProfileStatus: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraProfileStatus: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraProfileStatus {
+public struct FfiConverterTypeRolleysProfileStatus: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysProfileStatus {
         return
-            try AuroraProfileStatus(
+            try RolleysProfileStatus(
                 status: FfiConverterString.read(from: &buf), 
                 setAt: FfiConverterOptionUInt64.read(from: &buf)
         )
     }
 
-    public static func write(_ value: AuroraProfileStatus, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysProfileStatus, into buf: inout [UInt8]) {
         FfiConverterString.write(value.status, into: &buf)
         FfiConverterOptionUInt64.write(value.setAt, into: &buf)
     }
@@ -5527,19 +6117,19 @@ public struct FfiConverterTypeAuroraProfileStatus: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraProfileStatus_lift(_ buf: RustBuffer) throws -> AuroraProfileStatus {
-    return try FfiConverterTypeAuroraProfileStatus.lift(buf)
+public func FfiConverterTypeRolleysProfileStatus_lift(_ buf: RustBuffer) throws -> RolleysProfileStatus {
+    return try FfiConverterTypeRolleysProfileStatus.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraProfileStatus_lower(_ value: AuroraProfileStatus) -> RustBuffer {
-    return FfiConverterTypeAuroraProfileStatus.lower(value)
+public func FfiConverterTypeRolleysProfileStatus_lower(_ value: RolleysProfileStatus) -> RustBuffer {
+    return FfiConverterTypeRolleysProfileStatus.lower(value)
 }
 
 
-public struct AuroraStoredCall {
+public struct RolleysStoredCall {
     public var callId: String
     public var chatJid: String
     public var callerJid: String
@@ -5567,8 +6157,8 @@ public struct AuroraStoredCall {
 
 
 
-extension AuroraStoredCall: Equatable, Hashable {
-    public static func ==(lhs: AuroraStoredCall, rhs: AuroraStoredCall) -> Bool {
+extension RolleysStoredCall: Equatable, Hashable {
+    public static func ==(lhs: RolleysStoredCall, rhs: RolleysStoredCall) -> Bool {
         if lhs.callId != rhs.callId {
             return false
         }
@@ -5616,10 +6206,10 @@ extension AuroraStoredCall: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraStoredCall {
+public struct FfiConverterTypeRolleysStoredCall: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysStoredCall {
         return
-            try AuroraStoredCall(
+            try RolleysStoredCall(
                 callId: FfiConverterString.read(from: &buf), 
                 chatJid: FfiConverterString.read(from: &buf), 
                 callerJid: FfiConverterString.read(from: &buf), 
@@ -5632,7 +6222,7 @@ public struct FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraStoredCall, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysStoredCall, into buf: inout [UInt8]) {
         FfiConverterString.write(value.callId, into: &buf)
         FfiConverterString.write(value.chatJid, into: &buf)
         FfiConverterString.write(value.callerJid, into: &buf)
@@ -5649,19 +6239,19 @@ public struct FfiConverterTypeAuroraStoredCall: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraStoredCall_lift(_ buf: RustBuffer) throws -> AuroraStoredCall {
-    return try FfiConverterTypeAuroraStoredCall.lift(buf)
+public func FfiConverterTypeRolleysStoredCall_lift(_ buf: RustBuffer) throws -> RolleysStoredCall {
+    return try FfiConverterTypeRolleysStoredCall.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraStoredCall_lower(_ value: AuroraStoredCall) -> RustBuffer {
-    return FfiConverterTypeAuroraStoredCall.lower(value)
+public func FfiConverterTypeRolleysStoredCall_lower(_ value: RolleysStoredCall) -> RustBuffer {
+    return FfiConverterTypeRolleysStoredCall.lower(value)
 }
 
 
-public struct AuroraStoredStory {
+public struct RolleysStoredStory {
     public var msgId: String
     public var authorJid: String
     public var authorName: String?
@@ -5689,8 +6279,8 @@ public struct AuroraStoredStory {
 
 
 
-extension AuroraStoredStory: Equatable, Hashable {
-    public static func ==(lhs: AuroraStoredStory, rhs: AuroraStoredStory) -> Bool {
+extension RolleysStoredStory: Equatable, Hashable {
+    public static func ==(lhs: RolleysStoredStory, rhs: RolleysStoredStory) -> Bool {
         if lhs.msgId != rhs.msgId {
             return false
         }
@@ -5738,10 +6328,10 @@ extension AuroraStoredStory: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraStoredStory {
+public struct FfiConverterTypeRolleysStoredStory: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysStoredStory {
         return
-            try AuroraStoredStory(
+            try RolleysStoredStory(
                 msgId: FfiConverterString.read(from: &buf), 
                 authorJid: FfiConverterString.read(from: &buf), 
                 authorName: FfiConverterOptionString.read(from: &buf), 
@@ -5754,7 +6344,7 @@ public struct FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: AuroraStoredStory, into buf: inout [UInt8]) {
+    public static func write(_ value: RolleysStoredStory, into buf: inout [UInt8]) {
         FfiConverterString.write(value.msgId, into: &buf)
         FfiConverterString.write(value.authorJid, into: &buf)
         FfiConverterOptionString.write(value.authorName, into: &buf)
@@ -5771,260 +6361,64 @@ public struct FfiConverterTypeAuroraStoredStory: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraStoredStory_lift(_ buf: RustBuffer) throws -> AuroraStoredStory {
-    return try FfiConverterTypeAuroraStoredStory.lift(buf)
+public func FfiConverterTypeRolleysStoredStory_lift(_ buf: RustBuffer) throws -> RolleysStoredStory {
+    return try FfiConverterTypeRolleysStoredStory.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraStoredStory_lower(_ value: AuroraStoredStory) -> RustBuffer {
-    return FfiConverterTypeAuroraStoredStory.lower(value)
-}
-
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-
-public enum AuroraEvent {
-    
-    case connecting
-    case connected(meJid: String
-    )
-    case disconnected(reason: String
-    )
-    case qrCode(code: String
-    )
-    case pairingCode(code: String
-    )
-    case messageReceived(message: AuroraMessage
-    )
-    case receiptUpdate(id: String, remoteJid: String, status: String
-    )
-    case presenceUpdate(jid: String, state: String
-    )
-    case historySync(syncType: Int32, progress: UInt32, conversationCount: UInt32
-    )
-    case pollVoteReceived(pollId: String, voterJid: String, selectedOptions: [String], tally: AuroraPollTally
-    )
-    case callReceived(call: AuroraCallEvent
-    )
-    case storyReceived(story: AuroraStoredStory
-    )
-    case blocklistUpdate(added: [String], removed: [String]
-    )
-    case messageEdited(chatJid: String, messageId: String, newText: String
-    )
-    case messageRevoked(chatJid: String, messageId: String, participant: String?
-    )
-    case chatEphemeralUpdate(chatJid: String, ephemeralExpiration: UInt32
-    )
-    case labelEdit(label: AuroraLabel
-    )
-    case chatLabelUpdate(chatJid: String, labelId: String, labeled: Bool
-    )
-    case messageLabelUpdate(chatJid: String, messageId: String, labelId: String, labeled: Bool
-    )
-    case deviceUpdate(userJid: String, devices: [UInt32]
-    )
+public func FfiConverterTypeRolleysStoredStory_lower(_ value: RolleysStoredStory) -> RustBuffer {
+    return FfiConverterTypeRolleysStoredStory.lower(value)
 }
 
 
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeAuroraEvent: FfiConverterRustBuffer {
-    typealias SwiftType = AuroraEvent
+public struct RolleysTelemetrySnapshot {
+    public var messagesIn: UInt64
+    public var messagesOut: UInt64
+    public var lastPingLatencyMs: UInt64
+    public var signalCacheHitRatePct: Double
+    public var reconnectCount: UInt64
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuroraEvent {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .connecting
-        
-        case 2: return .connected(meJid: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 3: return .disconnected(reason: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 4: return .qrCode(code: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 5: return .pairingCode(code: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 6: return .messageReceived(message: try FfiConverterTypeAuroraMessage.read(from: &buf)
-        )
-        
-        case 7: return .receiptUpdate(id: try FfiConverterString.read(from: &buf), remoteJid: try FfiConverterString.read(from: &buf), status: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 8: return .presenceUpdate(jid: try FfiConverterString.read(from: &buf), state: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 9: return .historySync(syncType: try FfiConverterInt32.read(from: &buf), progress: try FfiConverterUInt32.read(from: &buf), conversationCount: try FfiConverterUInt32.read(from: &buf)
-        )
-        
-        case 10: return .pollVoteReceived(pollId: try FfiConverterString.read(from: &buf), voterJid: try FfiConverterString.read(from: &buf), selectedOptions: try FfiConverterSequenceString.read(from: &buf), tally: try FfiConverterTypeAuroraPollTally.read(from: &buf)
-        )
-        
-        case 11: return .callReceived(call: try FfiConverterTypeAuroraCallEvent.read(from: &buf)
-        )
-        
-        case 12: return .storyReceived(story: try FfiConverterTypeAuroraStoredStory.read(from: &buf)
-        )
-        
-        case 13: return .blocklistUpdate(added: try FfiConverterSequenceString.read(from: &buf), removed: try FfiConverterSequenceString.read(from: &buf)
-        )
-        
-        case 14: return .messageEdited(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), newText: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 15: return .messageRevoked(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), participant: try FfiConverterOptionString.read(from: &buf)
-        )
-        
-        case 16: return .chatEphemeralUpdate(chatJid: try FfiConverterString.read(from: &buf), ephemeralExpiration: try FfiConverterUInt32.read(from: &buf)
-        )
-        
-        case 17: return .labelEdit(label: try FfiConverterTypeAuroraLabel.read(from: &buf)
-        )
-        
-        case 18: return .chatLabelUpdate(chatJid: try FfiConverterString.read(from: &buf), labelId: try FfiConverterString.read(from: &buf), labeled: try FfiConverterBool.read(from: &buf)
-        )
-        
-        case 19: return .messageLabelUpdate(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), labelId: try FfiConverterString.read(from: &buf), labeled: try FfiConverterBool.read(from: &buf)
-        )
-        
-        case 20: return .deviceUpdate(userJid: try FfiConverterString.read(from: &buf), devices: try FfiConverterSequenceUInt32.read(from: &buf)
-        )
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(messagesIn: UInt64, messagesOut: UInt64, lastPingLatencyMs: UInt64, signalCacheHitRatePct: Double, reconnectCount: UInt64) {
+        self.messagesIn = messagesIn
+        self.messagesOut = messagesOut
+        self.lastPingLatencyMs = lastPingLatencyMs
+        self.signalCacheHitRatePct = signalCacheHitRatePct
+        self.reconnectCount = reconnectCount
+    }
+}
+
+
+
+extension RolleysTelemetrySnapshot: Equatable, Hashable {
+    public static func ==(lhs: RolleysTelemetrySnapshot, rhs: RolleysTelemetrySnapshot) -> Bool {
+        if lhs.messagesIn != rhs.messagesIn {
+            return false
         }
+        if lhs.messagesOut != rhs.messagesOut {
+            return false
+        }
+        if lhs.lastPingLatencyMs != rhs.lastPingLatencyMs {
+            return false
+        }
+        if lhs.signalCacheHitRatePct != rhs.signalCacheHitRatePct {
+            return false
+        }
+        if lhs.reconnectCount != rhs.reconnectCount {
+            return false
+        }
+        return true
     }
 
-    public static func write(_ value: AuroraEvent, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case .connecting:
-            writeInt(&buf, Int32(1))
-        
-        
-        case let .connected(meJid):
-            writeInt(&buf, Int32(2))
-            FfiConverterString.write(meJid, into: &buf)
-            
-        
-        case let .disconnected(reason):
-            writeInt(&buf, Int32(3))
-            FfiConverterString.write(reason, into: &buf)
-            
-        
-        case let .qrCode(code):
-            writeInt(&buf, Int32(4))
-            FfiConverterString.write(code, into: &buf)
-            
-        
-        case let .pairingCode(code):
-            writeInt(&buf, Int32(5))
-            FfiConverterString.write(code, into: &buf)
-            
-        
-        case let .messageReceived(message):
-            writeInt(&buf, Int32(6))
-            FfiConverterTypeAuroraMessage.write(message, into: &buf)
-            
-        
-        case let .receiptUpdate(id,remoteJid,status):
-            writeInt(&buf, Int32(7))
-            FfiConverterString.write(id, into: &buf)
-            FfiConverterString.write(remoteJid, into: &buf)
-            FfiConverterString.write(status, into: &buf)
-            
-        
-        case let .presenceUpdate(jid,state):
-            writeInt(&buf, Int32(8))
-            FfiConverterString.write(jid, into: &buf)
-            FfiConverterString.write(state, into: &buf)
-            
-        
-        case let .historySync(syncType,progress,conversationCount):
-            writeInt(&buf, Int32(9))
-            FfiConverterInt32.write(syncType, into: &buf)
-            FfiConverterUInt32.write(progress, into: &buf)
-            FfiConverterUInt32.write(conversationCount, into: &buf)
-            
-        
-        case let .pollVoteReceived(pollId,voterJid,selectedOptions,tally):
-            writeInt(&buf, Int32(10))
-            FfiConverterString.write(pollId, into: &buf)
-            FfiConverterString.write(voterJid, into: &buf)
-            FfiConverterSequenceString.write(selectedOptions, into: &buf)
-            FfiConverterTypeAuroraPollTally.write(tally, into: &buf)
-            
-        
-        case let .callReceived(call):
-            writeInt(&buf, Int32(11))
-            FfiConverterTypeAuroraCallEvent.write(call, into: &buf)
-            
-        
-        case let .storyReceived(story):
-            writeInt(&buf, Int32(12))
-            FfiConverterTypeAuroraStoredStory.write(story, into: &buf)
-            
-        
-        case let .blocklistUpdate(added,removed):
-            writeInt(&buf, Int32(13))
-            FfiConverterSequenceString.write(added, into: &buf)
-            FfiConverterSequenceString.write(removed, into: &buf)
-            
-        
-        case let .messageEdited(chatJid,messageId,newText):
-            writeInt(&buf, Int32(14))
-            FfiConverterString.write(chatJid, into: &buf)
-            FfiConverterString.write(messageId, into: &buf)
-            FfiConverterString.write(newText, into: &buf)
-            
-        
-        case let .messageRevoked(chatJid,messageId,participant):
-            writeInt(&buf, Int32(15))
-            FfiConverterString.write(chatJid, into: &buf)
-            FfiConverterString.write(messageId, into: &buf)
-            FfiConverterOptionString.write(participant, into: &buf)
-            
-        
-        case let .chatEphemeralUpdate(chatJid,ephemeralExpiration):
-            writeInt(&buf, Int32(16))
-            FfiConverterString.write(chatJid, into: &buf)
-            FfiConverterUInt32.write(ephemeralExpiration, into: &buf)
-            
-        
-        case let .labelEdit(label):
-            writeInt(&buf, Int32(17))
-            FfiConverterTypeAuroraLabel.write(label, into: &buf)
-            
-        
-        case let .chatLabelUpdate(chatJid,labelId,labeled):
-            writeInt(&buf, Int32(18))
-            FfiConverterString.write(chatJid, into: &buf)
-            FfiConverterString.write(labelId, into: &buf)
-            FfiConverterBool.write(labeled, into: &buf)
-            
-        
-        case let .messageLabelUpdate(chatJid,messageId,labelId,labeled):
-            writeInt(&buf, Int32(19))
-            FfiConverterString.write(chatJid, into: &buf)
-            FfiConverterString.write(messageId, into: &buf)
-            FfiConverterString.write(labelId, into: &buf)
-            FfiConverterBool.write(labeled, into: &buf)
-            
-        
-        case let .deviceUpdate(userJid,devices):
-            writeInt(&buf, Int32(20))
-            FfiConverterString.write(userJid, into: &buf)
-            FfiConverterSequenceUInt32.write(devices, into: &buf)
-            
-        }
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(messagesIn)
+        hasher.combine(messagesOut)
+        hasher.combine(lastPingLatencyMs)
+        hasher.combine(signalCacheHitRatePct)
+        hasher.combine(reconnectCount)
     }
 }
 
@@ -6032,22 +6426,205 @@ public struct FfiConverterTypeAuroraEvent: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraEvent_lift(_ buf: RustBuffer) throws -> AuroraEvent {
-    return try FfiConverterTypeAuroraEvent.lift(buf)
+public struct FfiConverterTypeRolleysTelemetrySnapshot: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysTelemetrySnapshot {
+        return
+            try RolleysTelemetrySnapshot(
+                messagesIn: FfiConverterUInt64.read(from: &buf), 
+                messagesOut: FfiConverterUInt64.read(from: &buf), 
+                lastPingLatencyMs: FfiConverterUInt64.read(from: &buf), 
+                signalCacheHitRatePct: FfiConverterDouble.read(from: &buf), 
+                reconnectCount: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysTelemetrySnapshot, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.messagesIn, into: &buf)
+        FfiConverterUInt64.write(value.messagesOut, into: &buf)
+        FfiConverterUInt64.write(value.lastPingLatencyMs, into: &buf)
+        FfiConverterDouble.write(value.signalCacheHitRatePct, into: &buf)
+        FfiConverterUInt64.write(value.reconnectCount, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysTelemetrySnapshot_lift(_ buf: RustBuffer) throws -> RolleysTelemetrySnapshot {
+    return try FfiConverterTypeRolleysTelemetrySnapshot.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeAuroraEvent_lower(_ value: AuroraEvent) -> RustBuffer {
-    return FfiConverterTypeAuroraEvent.lower(value)
+public func FfiConverterTypeRolleysTelemetrySnapshot_lower(_ value: RolleysTelemetrySnapshot) -> RustBuffer {
+    return FfiConverterTypeRolleysTelemetrySnapshot.lower(value)
+}
+
+
+public struct RolleysUrlPreview {
+    public var matchedText: String
+    public var canonicalUrl: String
+    public var title: String?
+    public var description: String?
+    public var jpegThumbnail: Data?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(matchedText: String, canonicalUrl: String, title: String?, description: String?, jpegThumbnail: Data?) {
+        self.matchedText = matchedText
+        self.canonicalUrl = canonicalUrl
+        self.title = title
+        self.description = description
+        self.jpegThumbnail = jpegThumbnail
+    }
 }
 
 
 
-extension AuroraEvent: Equatable, Hashable {}
+extension RolleysUrlPreview: Equatable, Hashable {
+    public static func ==(lhs: RolleysUrlPreview, rhs: RolleysUrlPreview) -> Bool {
+        if lhs.matchedText != rhs.matchedText {
+            return false
+        }
+        if lhs.canonicalUrl != rhs.canonicalUrl {
+            return false
+        }
+        if lhs.title != rhs.title {
+            return false
+        }
+        if lhs.description != rhs.description {
+            return false
+        }
+        if lhs.jpegThumbnail != rhs.jpegThumbnail {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(matchedText)
+        hasher.combine(canonicalUrl)
+        hasher.combine(title)
+        hasher.combine(description)
+        hasher.combine(jpegThumbnail)
+    }
+}
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysUrlPreview: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysUrlPreview {
+        return
+            try RolleysUrlPreview(
+                matchedText: FfiConverterString.read(from: &buf), 
+                canonicalUrl: FfiConverterString.read(from: &buf), 
+                title: FfiConverterOptionString.read(from: &buf), 
+                description: FfiConverterOptionString.read(from: &buf), 
+                jpegThumbnail: FfiConverterOptionData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysUrlPreview, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.matchedText, into: &buf)
+        FfiConverterString.write(value.canonicalUrl, into: &buf)
+        FfiConverterOptionString.write(value.title, into: &buf)
+        FfiConverterOptionString.write(value.description, into: &buf)
+        FfiConverterOptionData.write(value.jpegThumbnail, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysUrlPreview_lift(_ buf: RustBuffer) throws -> RolleysUrlPreview {
+    return try FfiConverterTypeRolleysUrlPreview.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysUrlPreview_lower(_ value: RolleysUrlPreview) -> RustBuffer {
+    return FfiConverterTypeRolleysUrlPreview.lower(value)
+}
+
+
+public struct RolleysUserStatus {
+    public var jid: String
+    public var status: String
+    public var timestamp: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(jid: String, status: String, timestamp: UInt64) {
+        self.jid = jid
+        self.status = status
+        self.timestamp = timestamp
+    }
+}
+
+
+
+extension RolleysUserStatus: Equatable, Hashable {
+    public static func ==(lhs: RolleysUserStatus, rhs: RolleysUserStatus) -> Bool {
+        if lhs.jid != rhs.jid {
+            return false
+        }
+        if lhs.status != rhs.status {
+            return false
+        }
+        if lhs.timestamp != rhs.timestamp {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(jid)
+        hasher.combine(status)
+        hasher.combine(timestamp)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysUserStatus: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysUserStatus {
+        return
+            try RolleysUserStatus(
+                jid: FfiConverterString.read(from: &buf), 
+                status: FfiConverterString.read(from: &buf), 
+                timestamp: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysUserStatus, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.jid, into: &buf)
+        FfiConverterString.write(value.status, into: &buf)
+        FfiConverterUInt64.write(value.timestamp, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysUserStatus_lift(_ buf: RustBuffer) throws -> RolleysUserStatus {
+    return try FfiConverterTypeRolleysUserStatus.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysUserStatus_lower(_ value: RolleysUserStatus) -> RustBuffer {
+    return FfiConverterTypeRolleysUserStatus.lower(value)
+}
 
 
 public enum FfiError {
@@ -6114,12 +6691,352 @@ extension FfiError: Foundation.LocalizedError {
     }
 }
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
-
-
-public protocol AuroraEventListener : AnyObject {
+public enum RolleysEvent {
     
-    func onEvent(event: AuroraEvent) 
+    case connecting
+    case connected(meJid: String
+    )
+    case disconnected(reason: String
+    )
+    case qrCode(code: String
+    )
+    case pairingCode(code: String
+    )
+    case messageReceived(message: RolleysMessage
+    )
+    case receiptUpdate(id: String, remoteJid: String, status: String
+    )
+    case presenceUpdate(jid: String, state: String
+    )
+    case historySync(syncType: Int32, progress: UInt32, conversationCount: UInt32
+    )
+    case pollVoteReceived(pollId: String, voterJid: String, selectedOptions: [String], tally: RolleysPollTally
+    )
+    case callReceived(call: RolleysCallEvent
+    )
+    case storyReceived(story: RolleysStoredStory
+    )
+    case blocklistUpdate(added: [String], removed: [String]
+    )
+    case messageEdited(chatJid: String, messageId: String, newText: String
+    )
+    case messageRevoked(chatJid: String, messageId: String, participant: String?
+    )
+    case chatEphemeralUpdate(chatJid: String, ephemeralExpiration: UInt32
+    )
+    case labelEdit(label: RolleysLabel
+    )
+    case chatLabelUpdate(chatJid: String, labelId: String, labeled: Bool
+    )
+    case messageLabelUpdate(chatJid: String, messageId: String, labelId: String, labeled: Bool
+    )
+    case deviceUpdate(userJid: String, devices: [UInt32]
+    )
+    case identityChanged(jid: String, timestamp: UInt64
+    )
+    case mediaUpdated(messageId: String, directPath: String
+    )
+    case chatUpdate(jid: String, pinned: Bool?, archived: Bool?, muteUntil: UInt64?, unreadCount: UInt32?
+    )
+    case contactUpdate(jid: String, name: String?, pushName: String?
+    )
+    case appStateSynced(collectionsSynced: UInt32, mutationsApplied: UInt32
+    )
+    case mediaProgress(taskId: String, direction: String, bytesTransferred: UInt64, totalBytes: UInt64, percentage: Float
+    )
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysEvent: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysEvent
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysEvent {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .connecting
+        
+        case 2: return .connected(meJid: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .disconnected(reason: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 4: return .qrCode(code: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 5: return .pairingCode(code: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 6: return .messageReceived(message: try FfiConverterTypeRolleysMessage.read(from: &buf)
+        )
+        
+        case 7: return .receiptUpdate(id: try FfiConverterString.read(from: &buf), remoteJid: try FfiConverterString.read(from: &buf), status: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 8: return .presenceUpdate(jid: try FfiConverterString.read(from: &buf), state: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 9: return .historySync(syncType: try FfiConverterInt32.read(from: &buf), progress: try FfiConverterUInt32.read(from: &buf), conversationCount: try FfiConverterUInt32.read(from: &buf)
+        )
+        
+        case 10: return .pollVoteReceived(pollId: try FfiConverterString.read(from: &buf), voterJid: try FfiConverterString.read(from: &buf), selectedOptions: try FfiConverterSequenceString.read(from: &buf), tally: try FfiConverterTypeRolleysPollTally.read(from: &buf)
+        )
+        
+        case 11: return .callReceived(call: try FfiConverterTypeRolleysCallEvent.read(from: &buf)
+        )
+        
+        case 12: return .storyReceived(story: try FfiConverterTypeRolleysStoredStory.read(from: &buf)
+        )
+        
+        case 13: return .blocklistUpdate(added: try FfiConverterSequenceString.read(from: &buf), removed: try FfiConverterSequenceString.read(from: &buf)
+        )
+        
+        case 14: return .messageEdited(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), newText: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 15: return .messageRevoked(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), participant: try FfiConverterOptionString.read(from: &buf)
+        )
+        
+        case 16: return .chatEphemeralUpdate(chatJid: try FfiConverterString.read(from: &buf), ephemeralExpiration: try FfiConverterUInt32.read(from: &buf)
+        )
+        
+        case 17: return .labelEdit(label: try FfiConverterTypeRolleysLabel.read(from: &buf)
+        )
+        
+        case 18: return .chatLabelUpdate(chatJid: try FfiConverterString.read(from: &buf), labelId: try FfiConverterString.read(from: &buf), labeled: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 19: return .messageLabelUpdate(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), labelId: try FfiConverterString.read(from: &buf), labeled: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 20: return .deviceUpdate(userJid: try FfiConverterString.read(from: &buf), devices: try FfiConverterSequenceUInt32.read(from: &buf)
+        )
+        
+        case 21: return .identityChanged(jid: try FfiConverterString.read(from: &buf), timestamp: try FfiConverterUInt64.read(from: &buf)
+        )
+        
+        case 22: return .mediaUpdated(messageId: try FfiConverterString.read(from: &buf), directPath: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 23: return .chatUpdate(jid: try FfiConverterString.read(from: &buf), pinned: try FfiConverterOptionBool.read(from: &buf), archived: try FfiConverterOptionBool.read(from: &buf), muteUntil: try FfiConverterOptionUInt64.read(from: &buf), unreadCount: try FfiConverterOptionUInt32.read(from: &buf)
+        )
+        
+        case 24: return .contactUpdate(jid: try FfiConverterString.read(from: &buf), name: try FfiConverterOptionString.read(from: &buf), pushName: try FfiConverterOptionString.read(from: &buf)
+        )
+        
+        case 25: return .appStateSynced(collectionsSynced: try FfiConverterUInt32.read(from: &buf), mutationsApplied: try FfiConverterUInt32.read(from: &buf)
+        )
+        
+        case 26: return .mediaProgress(taskId: try FfiConverterString.read(from: &buf), direction: try FfiConverterString.read(from: &buf), bytesTransferred: try FfiConverterUInt64.read(from: &buf), totalBytes: try FfiConverterUInt64.read(from: &buf), percentage: try FfiConverterFloat.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: RolleysEvent, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .connecting:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .connected(meJid):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(meJid, into: &buf)
+            
+        
+        case let .disconnected(reason):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(reason, into: &buf)
+            
+        
+        case let .qrCode(code):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(code, into: &buf)
+            
+        
+        case let .pairingCode(code):
+            writeInt(&buf, Int32(5))
+            FfiConverterString.write(code, into: &buf)
+            
+        
+        case let .messageReceived(message):
+            writeInt(&buf, Int32(6))
+            FfiConverterTypeRolleysMessage.write(message, into: &buf)
+            
+        
+        case let .receiptUpdate(id,remoteJid,status):
+            writeInt(&buf, Int32(7))
+            FfiConverterString.write(id, into: &buf)
+            FfiConverterString.write(remoteJid, into: &buf)
+            FfiConverterString.write(status, into: &buf)
+            
+        
+        case let .presenceUpdate(jid,state):
+            writeInt(&buf, Int32(8))
+            FfiConverterString.write(jid, into: &buf)
+            FfiConverterString.write(state, into: &buf)
+            
+        
+        case let .historySync(syncType,progress,conversationCount):
+            writeInt(&buf, Int32(9))
+            FfiConverterInt32.write(syncType, into: &buf)
+            FfiConverterUInt32.write(progress, into: &buf)
+            FfiConverterUInt32.write(conversationCount, into: &buf)
+            
+        
+        case let .pollVoteReceived(pollId,voterJid,selectedOptions,tally):
+            writeInt(&buf, Int32(10))
+            FfiConverterString.write(pollId, into: &buf)
+            FfiConverterString.write(voterJid, into: &buf)
+            FfiConverterSequenceString.write(selectedOptions, into: &buf)
+            FfiConverterTypeRolleysPollTally.write(tally, into: &buf)
+            
+        
+        case let .callReceived(call):
+            writeInt(&buf, Int32(11))
+            FfiConverterTypeRolleysCallEvent.write(call, into: &buf)
+            
+        
+        case let .storyReceived(story):
+            writeInt(&buf, Int32(12))
+            FfiConverterTypeRolleysStoredStory.write(story, into: &buf)
+            
+        
+        case let .blocklistUpdate(added,removed):
+            writeInt(&buf, Int32(13))
+            FfiConverterSequenceString.write(added, into: &buf)
+            FfiConverterSequenceString.write(removed, into: &buf)
+            
+        
+        case let .messageEdited(chatJid,messageId,newText):
+            writeInt(&buf, Int32(14))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterString.write(messageId, into: &buf)
+            FfiConverterString.write(newText, into: &buf)
+            
+        
+        case let .messageRevoked(chatJid,messageId,participant):
+            writeInt(&buf, Int32(15))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterString.write(messageId, into: &buf)
+            FfiConverterOptionString.write(participant, into: &buf)
+            
+        
+        case let .chatEphemeralUpdate(chatJid,ephemeralExpiration):
+            writeInt(&buf, Int32(16))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterUInt32.write(ephemeralExpiration, into: &buf)
+            
+        
+        case let .labelEdit(label):
+            writeInt(&buf, Int32(17))
+            FfiConverterTypeRolleysLabel.write(label, into: &buf)
+            
+        
+        case let .chatLabelUpdate(chatJid,labelId,labeled):
+            writeInt(&buf, Int32(18))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterString.write(labelId, into: &buf)
+            FfiConverterBool.write(labeled, into: &buf)
+            
+        
+        case let .messageLabelUpdate(chatJid,messageId,labelId,labeled):
+            writeInt(&buf, Int32(19))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterString.write(messageId, into: &buf)
+            FfiConverterString.write(labelId, into: &buf)
+            FfiConverterBool.write(labeled, into: &buf)
+            
+        
+        case let .deviceUpdate(userJid,devices):
+            writeInt(&buf, Int32(20))
+            FfiConverterString.write(userJid, into: &buf)
+            FfiConverterSequenceUInt32.write(devices, into: &buf)
+            
+        
+        case let .identityChanged(jid,timestamp):
+            writeInt(&buf, Int32(21))
+            FfiConverterString.write(jid, into: &buf)
+            FfiConverterUInt64.write(timestamp, into: &buf)
+            
+        
+        case let .mediaUpdated(messageId,directPath):
+            writeInt(&buf, Int32(22))
+            FfiConverterString.write(messageId, into: &buf)
+            FfiConverterString.write(directPath, into: &buf)
+            
+        
+        case let .chatUpdate(jid,pinned,archived,muteUntil,unreadCount):
+            writeInt(&buf, Int32(23))
+            FfiConverterString.write(jid, into: &buf)
+            FfiConverterOptionBool.write(pinned, into: &buf)
+            FfiConverterOptionBool.write(archived, into: &buf)
+            FfiConverterOptionUInt64.write(muteUntil, into: &buf)
+            FfiConverterOptionUInt32.write(unreadCount, into: &buf)
+            
+        
+        case let .contactUpdate(jid,name,pushName):
+            writeInt(&buf, Int32(24))
+            FfiConverterString.write(jid, into: &buf)
+            FfiConverterOptionString.write(name, into: &buf)
+            FfiConverterOptionString.write(pushName, into: &buf)
+            
+        
+        case let .appStateSynced(collectionsSynced,mutationsApplied):
+            writeInt(&buf, Int32(25))
+            FfiConverterUInt32.write(collectionsSynced, into: &buf)
+            FfiConverterUInt32.write(mutationsApplied, into: &buf)
+            
+        
+        case let .mediaProgress(taskId,direction,bytesTransferred,totalBytes,percentage):
+            writeInt(&buf, Int32(26))
+            FfiConverterString.write(taskId, into: &buf)
+            FfiConverterString.write(direction, into: &buf)
+            FfiConverterUInt64.write(bytesTransferred, into: &buf)
+            FfiConverterUInt64.write(totalBytes, into: &buf)
+            FfiConverterFloat.write(percentage, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysEvent_lift(_ buf: RustBuffer) throws -> RolleysEvent {
+    return try FfiConverterTypeRolleysEvent.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysEvent_lower(_ value: RolleysEvent) -> RustBuffer {
+    return FfiConverterTypeRolleysEvent.lower(value)
+}
+
+
+
+extension RolleysEvent: Equatable, Hashable {}
+
+
+
+
+
+
+public protocol RolleysEventListener : AnyObject {
+    
+    func onEvent(event: RolleysEvent) 
     
 }
 
@@ -6132,11 +7049,11 @@ private let UNIFFI_CALLBACK_ERROR: Int32 = 1
 private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
 
 // Put the implementation in a struct so we don't pollute the top-level namespace
-fileprivate struct UniffiCallbackInterfaceAuroraEventListener {
+fileprivate struct UniffiCallbackInterfaceRolleysEventListener {
 
     // Create the VTable using a series of closures.
     // Swift automatically converts these into C callback functions.
-    static var vtable: UniffiVTableCallbackInterfaceAuroraEventListener = UniffiVTableCallbackInterfaceAuroraEventListener(
+    static var vtable: UniffiVTableCallbackInterfaceRolleysEventListener = UniffiVTableCallbackInterfaceRolleysEventListener(
         onEvent: { (
             uniffiHandle: UInt64,
             event: RustBuffer,
@@ -6145,11 +7062,11 @@ fileprivate struct UniffiCallbackInterfaceAuroraEventListener {
         ) in
             let makeCall = {
                 () throws -> () in
-                guard let uniffiObj = try? FfiConverterCallbackInterfaceAuroraEventListener.handleMap.get(handle: uniffiHandle) else {
+                guard let uniffiObj = try? FfiConverterCallbackInterfaceRolleysEventListener.handleMap.get(handle: uniffiHandle) else {
                     throw UniffiInternalError.unexpectedStaleHandle
                 }
                 return uniffiObj.onEvent(
-                     event: try FfiConverterTypeAuroraEvent.lift(event)
+                     event: try FfiConverterTypeRolleysEvent.lift(event)
                 )
             }
 
@@ -6162,31 +7079,31 @@ fileprivate struct UniffiCallbackInterfaceAuroraEventListener {
             )
         },
         uniffiFree: { (uniffiHandle: UInt64) -> () in
-            let result = try? FfiConverterCallbackInterfaceAuroraEventListener.handleMap.remove(handle: uniffiHandle)
+            let result = try? FfiConverterCallbackInterfaceRolleysEventListener.handleMap.remove(handle: uniffiHandle)
             if result == nil {
-                print("Uniffi callback interface AuroraEventListener: handle missing in uniffiFree")
+                print("Uniffi callback interface RolleysEventListener: handle missing in uniffiFree")
             }
         }
     )
 }
 
-private func uniffiCallbackInitAuroraEventListener() {
-    uniffi_baileys_ffi_fn_init_callback_vtable_auroraeventlistener(&UniffiCallbackInterfaceAuroraEventListener.vtable)
+private func uniffiCallbackInitRolleysEventListener() {
+    uniffi_baileys_ffi_fn_init_callback_vtable_rolleyseventlistener(&UniffiCallbackInterfaceRolleysEventListener.vtable)
 }
 
 // FfiConverter protocol for callback interfaces
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterCallbackInterfaceAuroraEventListener {
-    fileprivate static var handleMap = UniffiHandleMap<AuroraEventListener>()
+fileprivate struct FfiConverterCallbackInterfaceRolleysEventListener {
+    fileprivate static var handleMap = UniffiHandleMap<RolleysEventListener>()
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-extension FfiConverterCallbackInterfaceAuroraEventListener : FfiConverter {
-    typealias SwiftType = AuroraEventListener
+extension FfiConverterCallbackInterfaceRolleysEventListener : FfiConverter {
+    typealias SwiftType = RolleysEventListener
     typealias FfiType = UInt64
 
 #if swift(>=5.8)
@@ -6318,6 +7235,30 @@ fileprivate struct FfiConverterOptionInt64: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionBool: FfiConverterRustBuffer {
+    typealias SwiftType = Bool?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterBool.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterBool.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -6366,8 +7307,8 @@ fileprivate struct FfiConverterOptionData: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeAuroraBusinessProfile: FfiConverterRustBuffer {
-    typealias SwiftType = AuroraBusinessProfile?
+fileprivate struct FfiConverterOptionTypeRolleysAccountReachoutTimelock: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysAccountReachoutTimelock?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -6375,13 +7316,13 @@ fileprivate struct FfiConverterOptionTypeAuroraBusinessProfile: FfiConverterRust
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeAuroraBusinessProfile.write(value, into: &buf)
+        FfiConverterTypeRolleysAccountReachoutTimelock.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeAuroraBusinessProfile.read(from: &buf)
+        case 1: return try FfiConverterTypeRolleysAccountReachoutTimelock.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6390,8 +7331,8 @@ fileprivate struct FfiConverterOptionTypeAuroraBusinessProfile: FfiConverterRust
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeAuroraContact: FfiConverterRustBuffer {
-    typealias SwiftType = AuroraContact?
+fileprivate struct FfiConverterOptionTypeRolleysBusinessProfile: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysBusinessProfile?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -6399,13 +7340,13 @@ fileprivate struct FfiConverterOptionTypeAuroraContact: FfiConverterRustBuffer {
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeAuroraContact.write(value, into: &buf)
+        FfiConverterTypeRolleysBusinessProfile.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeAuroraContact.read(from: &buf)
+        case 1: return try FfiConverterTypeRolleysBusinessProfile.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6414,8 +7355,8 @@ fileprivate struct FfiConverterOptionTypeAuroraContact: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeAuroraLabel: FfiConverterRustBuffer {
-    typealias SwiftType = AuroraLabel?
+fileprivate struct FfiConverterOptionTypeRolleysContact: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysContact?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -6423,13 +7364,13 @@ fileprivate struct FfiConverterOptionTypeAuroraLabel: FfiConverterRustBuffer {
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeAuroraLabel.write(value, into: &buf)
+        FfiConverterTypeRolleysContact.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeAuroraLabel.read(from: &buf)
+        case 1: return try FfiConverterTypeRolleysContact.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6438,8 +7379,8 @@ fileprivate struct FfiConverterOptionTypeAuroraLabel: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeAuroraPollTally: FfiConverterRustBuffer {
-    typealias SwiftType = AuroraPollTally?
+fileprivate struct FfiConverterOptionTypeRolleysLabel: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysLabel?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -6447,13 +7388,13 @@ fileprivate struct FfiConverterOptionTypeAuroraPollTally: FfiConverterRustBuffer
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeAuroraPollTally.write(value, into: &buf)
+        FfiConverterTypeRolleysLabel.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeAuroraPollTally.read(from: &buf)
+        case 1: return try FfiConverterTypeRolleysLabel.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6462,8 +7403,8 @@ fileprivate struct FfiConverterOptionTypeAuroraPollTally: FfiConverterRustBuffer
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeAuroraProfileStatus: FfiConverterRustBuffer {
-    typealias SwiftType = AuroraProfileStatus?
+fileprivate struct FfiConverterOptionTypeRolleysPollTally: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysPollTally?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -6471,13 +7412,85 @@ fileprivate struct FfiConverterOptionTypeAuroraProfileStatus: FfiConverterRustBu
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeAuroraProfileStatus.write(value, into: &buf)
+        FfiConverterTypeRolleysPollTally.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeAuroraProfileStatus.read(from: &buf)
+        case 1: return try FfiConverterTypeRolleysPollTally.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeRolleysProfileStatus: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysProfileStatus?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRolleysProfileStatus.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRolleysProfileStatus.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeRolleysUrlPreview: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysUrlPreview?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRolleysUrlPreview.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRolleysUrlPreview.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeRolleysUserStatus: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysUserStatus?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRolleysUserStatus.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRolleysUserStatus.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -6560,23 +7573,23 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraCatalogCollection: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraCatalogCollection]
+fileprivate struct FfiConverterSequenceTypeRolleysBotEntry: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysBotEntry]
 
-    public static func write(_ value: [AuroraCatalogCollection], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysBotEntry], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraCatalogCollection.write(item, into: &buf)
+            FfiConverterTypeRolleysBotEntry.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraCatalogCollection] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysBotEntry] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraCatalogCollection]()
+        var seq = [RolleysBotEntry]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraCatalogCollection.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysBotEntry.read(from: &buf))
         }
         return seq
     }
@@ -6585,23 +7598,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraCatalogCollection: FfiConverter
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraCatalogProduct: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraCatalogProduct]
+fileprivate struct FfiConverterSequenceTypeRolleysCatalogCollection: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysCatalogCollection]
 
-    public static func write(_ value: [AuroraCatalogProduct], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysCatalogCollection], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraCatalogProduct.write(item, into: &buf)
+            FfiConverterTypeRolleysCatalogCollection.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraCatalogProduct] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysCatalogCollection] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraCatalogProduct]()
+        var seq = [RolleysCatalogCollection]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraCatalogProduct.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysCatalogCollection.read(from: &buf))
         }
         return seq
     }
@@ -6610,23 +7623,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraCatalogProduct: FfiConverterRus
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraChat: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraChat]
+fileprivate struct FfiConverterSequenceTypeRolleysCatalogProduct: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysCatalogProduct]
 
-    public static func write(_ value: [AuroraChat], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysCatalogProduct], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraChat.write(item, into: &buf)
+            FfiConverterTypeRolleysCatalogProduct.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraChat] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysCatalogProduct] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraChat]()
+        var seq = [RolleysCatalogProduct]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraChat.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysCatalogProduct.read(from: &buf))
         }
         return seq
     }
@@ -6635,23 +7648,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraChat: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraCommunityParticipant: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraCommunityParticipant]
+fileprivate struct FfiConverterSequenceTypeRolleysChat: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysChat]
 
-    public static func write(_ value: [AuroraCommunityParticipant], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysChat], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraCommunityParticipant.write(item, into: &buf)
+            FfiConverterTypeRolleysChat.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraCommunityParticipant] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysChat] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraCommunityParticipant]()
+        var seq = [RolleysChat]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraCommunityParticipant.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysChat.read(from: &buf))
         }
         return seq
     }
@@ -6660,23 +7673,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraCommunityParticipant: FfiConver
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraCommunitySubgroup: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraCommunitySubgroup]
+fileprivate struct FfiConverterSequenceTypeRolleysCommunityParticipant: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysCommunityParticipant]
 
-    public static func write(_ value: [AuroraCommunitySubgroup], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysCommunityParticipant], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraCommunitySubgroup.write(item, into: &buf)
+            FfiConverterTypeRolleysCommunityParticipant.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraCommunitySubgroup] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysCommunityParticipant] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraCommunitySubgroup]()
+        var seq = [RolleysCommunityParticipant]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraCommunitySubgroup.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysCommunityParticipant.read(from: &buf))
         }
         return seq
     }
@@ -6685,23 +7698,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraCommunitySubgroup: FfiConverter
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraDeviceRecord: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraDeviceRecord]
+fileprivate struct FfiConverterSequenceTypeRolleysCommunitySubgroup: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysCommunitySubgroup]
 
-    public static func write(_ value: [AuroraDeviceRecord], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysCommunitySubgroup], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraDeviceRecord.write(item, into: &buf)
+            FfiConverterTypeRolleysCommunitySubgroup.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraDeviceRecord] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysCommunitySubgroup] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraDeviceRecord]()
+        var seq = [RolleysCommunitySubgroup]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraDeviceRecord.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysCommunitySubgroup.read(from: &buf))
         }
         return seq
     }
@@ -6710,23 +7723,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraDeviceRecord: FfiConverterRustB
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraGroupJoinRequest: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraGroupJoinRequest]
+fileprivate struct FfiConverterSequenceTypeRolleysDeviceRecord: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysDeviceRecord]
 
-    public static func write(_ value: [AuroraGroupJoinRequest], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysDeviceRecord], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraGroupJoinRequest.write(item, into: &buf)
+            FfiConverterTypeRolleysDeviceRecord.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraGroupJoinRequest] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysDeviceRecord] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraGroupJoinRequest]()
+        var seq = [RolleysDeviceRecord]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraGroupJoinRequest.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysDeviceRecord.read(from: &buf))
         }
         return seq
     }
@@ -6735,23 +7748,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraGroupJoinRequest: FfiConverterR
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraGroupMetadata: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraGroupMetadata]
+fileprivate struct FfiConverterSequenceTypeRolleysGroupJoinRequest: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysGroupJoinRequest]
 
-    public static func write(_ value: [AuroraGroupMetadata], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysGroupJoinRequest], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraGroupMetadata.write(item, into: &buf)
+            FfiConverterTypeRolleysGroupJoinRequest.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraGroupMetadata] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysGroupJoinRequest] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraGroupMetadata]()
+        var seq = [RolleysGroupJoinRequest]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraGroupMetadata.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysGroupJoinRequest.read(from: &buf))
         }
         return seq
     }
@@ -6760,23 +7773,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraGroupMetadata: FfiConverterRust
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraGroupParticipant: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraGroupParticipant]
+fileprivate struct FfiConverterSequenceTypeRolleysGroupMetadata: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysGroupMetadata]
 
-    public static func write(_ value: [AuroraGroupParticipant], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysGroupMetadata], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraGroupParticipant.write(item, into: &buf)
+            FfiConverterTypeRolleysGroupMetadata.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraGroupParticipant] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysGroupMetadata] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraGroupParticipant]()
+        var seq = [RolleysGroupMetadata]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraGroupParticipant.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysGroupMetadata.read(from: &buf))
         }
         return seq
     }
@@ -6785,23 +7798,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraGroupParticipant: FfiConverterR
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraInteractiveButton: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraInteractiveButton]
+fileprivate struct FfiConverterSequenceTypeRolleysGroupParticipant: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysGroupParticipant]
 
-    public static func write(_ value: [AuroraInteractiveButton], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysGroupParticipant], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraInteractiveButton.write(item, into: &buf)
+            FfiConverterTypeRolleysGroupParticipant.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraInteractiveButton] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysGroupParticipant] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraInteractiveButton]()
+        var seq = [RolleysGroupParticipant]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraInteractiveButton.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysGroupParticipant.read(from: &buf))
         }
         return seq
     }
@@ -6810,23 +7823,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraInteractiveButton: FfiConverter
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraLabel: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraLabel]
+fileprivate struct FfiConverterSequenceTypeRolleysInteractiveButton: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysInteractiveButton]
 
-    public static func write(_ value: [AuroraLabel], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysInteractiveButton], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraLabel.write(item, into: &buf)
+            FfiConverterTypeRolleysInteractiveButton.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraLabel] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysInteractiveButton] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraLabel]()
+        var seq = [RolleysInteractiveButton]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraLabel.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysInteractiveButton.read(from: &buf))
         }
         return seq
     }
@@ -6835,23 +7848,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraLabel: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraListRow: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraListRow]
+fileprivate struct FfiConverterSequenceTypeRolleysLabel: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysLabel]
 
-    public static func write(_ value: [AuroraListRow], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysLabel], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraListRow.write(item, into: &buf)
+            FfiConverterTypeRolleysLabel.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraListRow] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysLabel] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraListRow]()
+        var seq = [RolleysLabel]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraListRow.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysLabel.read(from: &buf))
         }
         return seq
     }
@@ -6860,23 +7873,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraListRow: FfiConverterRustBuffer
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraListSection: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraListSection]
+fileprivate struct FfiConverterSequenceTypeRolleysListRow: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysListRow]
 
-    public static func write(_ value: [AuroraListSection], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysListRow], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraListSection.write(item, into: &buf)
+            FfiConverterTypeRolleysListRow.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraListSection] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysListRow] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraListSection]()
+        var seq = [RolleysListRow]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraListSection.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysListRow.read(from: &buf))
         }
         return seq
     }
@@ -6885,23 +7898,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraListSection: FfiConverterRustBu
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraMessage: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraMessage]
+fileprivate struct FfiConverterSequenceTypeRolleysListSection: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysListSection]
 
-    public static func write(_ value: [AuroraMessage], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysListSection], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraMessage.write(item, into: &buf)
+            FfiConverterTypeRolleysListSection.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraMessage] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysListSection] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraMessage]()
+        var seq = [RolleysListSection]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraMessage.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysListSection.read(from: &buf))
         }
         return seq
     }
@@ -6910,23 +7923,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraMessage: FfiConverterRustBuffer
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraNewsletter: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraNewsletter]
+fileprivate struct FfiConverterSequenceTypeRolleysMessage: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysMessage]
 
-    public static func write(_ value: [AuroraNewsletter], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysMessage], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraNewsletter.write(item, into: &buf)
+            FfiConverterTypeRolleysMessage.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraNewsletter] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysMessage] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraNewsletter]()
+        var seq = [RolleysMessage]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraNewsletter.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysMessage.read(from: &buf))
         }
         return seq
     }
@@ -6935,23 +7948,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraNewsletter: FfiConverterRustBuf
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraNewsletterMessage: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraNewsletterMessage]
+fileprivate struct FfiConverterSequenceTypeRolleysNewsletter: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysNewsletter]
 
-    public static func write(_ value: [AuroraNewsletterMessage], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysNewsletter], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraNewsletterMessage.write(item, into: &buf)
+            FfiConverterTypeRolleysNewsletter.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraNewsletterMessage] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysNewsletter] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraNewsletterMessage]()
+        var seq = [RolleysNewsletter]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraNewsletterMessage.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysNewsletter.read(from: &buf))
         }
         return seq
     }
@@ -6960,23 +7973,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraNewsletterMessage: FfiConverter
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraOnWhatsAppResult: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraOnWhatsAppResult]
+fileprivate struct FfiConverterSequenceTypeRolleysNewsletterMessage: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysNewsletterMessage]
 
-    public static func write(_ value: [AuroraOnWhatsAppResult], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysNewsletterMessage], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraOnWhatsAppResult.write(item, into: &buf)
+            FfiConverterTypeRolleysNewsletterMessage.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraOnWhatsAppResult] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysNewsletterMessage] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraOnWhatsAppResult]()
+        var seq = [RolleysNewsletterMessage]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraOnWhatsAppResult.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysNewsletterMessage.read(from: &buf))
         }
         return seq
     }
@@ -6985,23 +7998,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraOnWhatsAppResult: FfiConverterR
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraOrder: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraOrder]
+fileprivate struct FfiConverterSequenceTypeRolleysOnWhatsAppResult: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysOnWhatsAppResult]
 
-    public static func write(_ value: [AuroraOrder], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysOnWhatsAppResult], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraOrder.write(item, into: &buf)
+            FfiConverterTypeRolleysOnWhatsAppResult.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraOrder] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysOnWhatsAppResult] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraOrder]()
+        var seq = [RolleysOnWhatsAppResult]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraOrder.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysOnWhatsAppResult.read(from: &buf))
         }
         return seq
     }
@@ -7010,23 +8023,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraOrder: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraParticipantUpdateResult: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraParticipantUpdateResult]
+fileprivate struct FfiConverterSequenceTypeRolleysOrder: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysOrder]
 
-    public static func write(_ value: [AuroraParticipantUpdateResult], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysOrder], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraParticipantUpdateResult.write(item, into: &buf)
+            FfiConverterTypeRolleysOrder.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraParticipantUpdateResult] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysOrder] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraParticipantUpdateResult]()
+        var seq = [RolleysOrder]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraParticipantUpdateResult.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysOrder.read(from: &buf))
         }
         return seq
     }
@@ -7035,23 +8048,23 @@ fileprivate struct FfiConverterSequenceTypeAuroraParticipantUpdateResult: FfiCon
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraStoredCall: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraStoredCall]
+fileprivate struct FfiConverterSequenceTypeRolleysParticipantUpdateResult: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysParticipantUpdateResult]
 
-    public static func write(_ value: [AuroraStoredCall], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysParticipantUpdateResult], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraStoredCall.write(item, into: &buf)
+            FfiConverterTypeRolleysParticipantUpdateResult.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraStoredCall] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysParticipantUpdateResult] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraStoredCall]()
+        var seq = [RolleysParticipantUpdateResult]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraStoredCall.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysParticipantUpdateResult.read(from: &buf))
         }
         return seq
     }
@@ -7060,23 +8073,48 @@ fileprivate struct FfiConverterSequenceTypeAuroraStoredCall: FfiConverterRustBuf
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeAuroraStoredStory: FfiConverterRustBuffer {
-    typealias SwiftType = [AuroraStoredStory]
+fileprivate struct FfiConverterSequenceTypeRolleysStoredCall: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysStoredCall]
 
-    public static func write(_ value: [AuroraStoredStory], into buf: inout [UInt8]) {
+    public static func write(_ value: [RolleysStoredCall], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
         for item in value {
-            FfiConverterTypeAuroraStoredStory.write(item, into: &buf)
+            FfiConverterTypeRolleysStoredCall.write(item, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AuroraStoredStory] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysStoredCall] {
         let len: Int32 = try readInt(&buf)
-        var seq = [AuroraStoredStory]()
+        var seq = [RolleysStoredCall]()
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAuroraStoredStory.read(from: &buf))
+            seq.append(try FfiConverterTypeRolleysStoredCall.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeRolleysStoredStory: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysStoredStory]
+
+    public static func write(_ value: [RolleysStoredStory], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRolleysStoredStory.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysStoredStory] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RolleysStoredStory]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRolleysStoredStory.read(from: &buf))
         }
         return seq
     }
@@ -7149,383 +8187,476 @@ private var initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_add_chat_label() != 3699) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_add_chat_label() != 20666) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_add_message_label() != 53044) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_add_message_label() != 23579) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_archive() != 28368) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_archive() != 20091) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_clear() != 37433) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_clear() != 43689) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_delete() != 3744) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_delete() != 55238) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_mark_unread() != 22767) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_mark_unread() != 3396) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_mute() != 60328) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_mute() != 30552) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_pin() != 47368) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_pin() != 29689) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_chat_modify_star() != 57769) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_chat_modify_star() != 22669) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_check_on_whatsapp() != 52750) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_check_on_whatsapp() != 10555) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_accept_invite() != 55292) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_clean_dirty_bits() != 60253) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_create() != 49764) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_accept_invite() != 15212) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_create_subgroup() != 4129) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_create() != 64307) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_fetch_subgroups() != 25503) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_create_subgroup() != 26727) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_get_invite_code() != 23656) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_fetch_all_participating() != 19999) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_get_metadata() != 23280) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_fetch_subgroups() != 54335) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_leave() != 23353) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_invite_code() != 50180) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_link_subgroup() != 9081) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_invite_info() != 33326) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_community_unlink_subgroup() != 44165) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_get_metadata() != 4218) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_delete_label() != 19594) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_join_approval_mode() != 59567) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_disconnect() != 23471) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_leave() != 11990) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_download_media() != 8130) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_link_subgroup() != 3822) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_edit_message() != 30004) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_member_add_mode() != 39257) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_fetch_blocklist() != 41797) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_revoke_invite() != 38632) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_fetch_message_history() != 16873) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_setting_update() != 12524) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_fetch_privacy_settings() != 36262) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_toggle_ephemeral() != 20105) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_fetch_status() != 8583) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_community_unlink_subgroup() != 16107) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_blocked_contacts() != 64395) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_create_call_link() != 22168) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_business_profile() != 63447) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_delete_label() != 14923) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_catalog() != 61689) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_disconnect() != 38576) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_collections() != 48229) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_download_media() != 43295) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_cached_orders() != 25241) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_download_media_streaming() != 47858) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_call_history() != 51771) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_edit_message() != 57553) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_catalog() != 24717) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_account_reachout_timelock() != 6908) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_chat_ephemeral() != 36765) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_blocklist() != 1301) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_chat_labels() != 29320) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_message_history() != 39235) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_chats() != 35805) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_new_chat_message_cap() != 40903) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_chats_by_label() != 30006) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_privacy_settings() != 21815) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_collections() != 59605) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_status() != 6998) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_contact() != 49312) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_url_preview() != 17996) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_group_info() != 9925) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_blocked_contacts() != 1849) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_label() != 33147) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_bot_list_v2() != 37626) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_labels() != 54427) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_business_profile() != 33807) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_me_jid() != 11783) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_catalog() != 10036) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_message_labels() != 43686) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_collections() != 19917) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_messages() != 52187) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_cached_orders() != 3561) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_messages_by_label() != 45491) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_call_history() != 23903) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_paired_devices() != 8380) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_catalog() != 45372) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_poll_tally() != 54482) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_chat_ephemeral() != 26809) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_product() != 6328) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_chat_labels() != 25051) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_recent_stories() != 31335) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_chats() != 13765) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_stories_by_author() != 23914) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_chats_by_label() != 34996) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_get_user_devices() != 3639) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_collections() != 2624) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_accept_invite() != 33619) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_connection_state() != 30547) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_accept_invite_v4() != 34808) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_contact() != 54012) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_create() != 44495) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_group_info() != 64774) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_fetch_all_participating() != 56136) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_label() != 57614) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_fetch_metadata() != 59774) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_labels() != 46724) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_get_invite_code() != 34022) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_lid_for_pn() != 42509) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_join_approval_mode() != 6629) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_me_jid() != 24239) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_leave() != 146) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_message_labels() != 62642) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_member_add_mode() != 49500) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_messages() != 35143) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_participants_update() != 15011) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_messages_by_label() != 24432) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_request_participants_list() != 17732) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_paired_devices() != 64937) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_request_participants_update() != 35051) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_pn_for_lid() != 13154) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_revoke_invite() != 40679) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_poll_tally() != 25527) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_revoke_invite_v4() != 62870) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_product() != 11521) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_setting_update() != 28546) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_recent_stories() != 55721) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_update_description() != 38809) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_stories_by_author() != 3042) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_group_update_subject() != 55758) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_telemetry_snapshot() != 14442) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_is_auto_download() != 10967) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_user_devices() != 24456) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_is_connected() != 646) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_user_status() != 61500) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_create() != 30963) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_accept_invite() != 58009) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_fetch_messages() != 36107) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_accept_invite_v4() != 2455) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_follow() != 6239) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_create() != 45071) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_get_subscribed() != 4592) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_fetch_all_participating() != 16654) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_mute() != 35556) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_fetch_metadata() != 43378) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_query_metadata() != 18451) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_code() != 54537) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_react() != 64812) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_join_approval_mode() != 17372) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_send_post() != 32605) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_leave() != 23105) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_newsletter_unfollow() != 14021) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_member_add_mode() != 64075) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_ping() != 3108) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_participants_update() != 13697) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_presence_subscribe() != 27094) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_request_participants_list() != 51130) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_profile_picture_url() != 49492) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_request_participants_update() != 51722) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_reject_call() != 46931) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_revoke_invite() != 4536) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_remove_chat_label() != 37168) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_revoke_invite_v4() != 28948) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_remove_companion_device() != 33615) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_setting_update() != 2611) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_remove_message_label() != 12636) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_update_description() != 49990) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_remove_profile_picture() != 25827) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_update_subject() != 42778) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_revoke_message() != 27600) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_is_auto_download() != 52037) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_audio() != 7446) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_is_connected() != 37466) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_contact() != 64196) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_admin_count() != 28366) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_document() != 62782) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_change_owner() != 39130) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_document_attachment() != 35445) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_create() != 15811) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_group_invite() != 40243) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_demote() != 33965) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_image() != 61690) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_fetch_messages() != 44051) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_interactive_buttons() != 16188) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_follow() != 16252) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_list_message() != 58594) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_get_subscribed() != 46707) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_live_location() != 7487) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_mute() != 55104) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_location() != 11400) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_promote() != 56082) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_order_message() != 43526) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_query_metadata() != 30215) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_poll() != 28946) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_react() != 31618) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_poll_vote() != 2676) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_post() != 62567) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_presence() != 52473) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_unfollow() != 18500) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_product_message() != 33188) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_ping() != 37054) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_reaction() != 38116) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_presence_subscribe() != 12248) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_read() != 26207) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_product_delete() != 30730) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_revoke() != 43004) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_profile_picture_url() != 6503) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_status_read_receipt() != 31401) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_reject_call() != 42728) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_sticker() != 43732) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_remove_chat_label() != 25444) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_text() != 49850) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_remove_companion_device() != 60052) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_text_status() != 43527) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_remove_cover_photo() != 19082) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_text_with_quote() != 17622) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_remove_message_label() != 13161) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_video() != 19697) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_remove_profile_picture() != 60441) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_send_voice_note() != 55992) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_revoke_message() != 64592) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_set_auto_download() != 24989) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_audio() != 19309) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_set_chat_ephemeral() != 10192) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_contact() != 41165) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_start() != 59664) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_document() != 40425) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_update_block_status() != 24449) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_document_attachment() != 45719) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_update_privacy_setting() != 30343) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_group_invite() != 20524) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_update_profile_picture() != 5087) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_image() != 56089) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_update_profile_status() != 63927) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_interactive_buttons() != 24656) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraclient_upsert_label() != 22523) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_list_message() != 55884) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_constructor_auroraclient_new() != 22418) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_live_location() != 14783) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_baileys_ffi_checksum_method_auroraeventlistener_on_event() != 55207) {
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_location() != 31539) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_media_file() != 3707) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_order_message() != 21230) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_poll() != 25149) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_poll_vote() != 49768) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_presence() != 58389) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_product_message() != 25659) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_reaction() != 52838) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_read() != 52289) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_revoke() != 15489) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_read_receipt() != 20310) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_sticker() != 50321) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_text() != 1226) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_status() != 29586) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_preview() != 41136) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_quote() != 17178) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_video() != 9139) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_voice_note() != 16097) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_set_auto_download() != 47287) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_set_chat_ephemeral() != 41979) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_start() != 19242) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_subscribe_newsletter_updates() != 38379) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_block_status() != 46953) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_cover_photo() != 14646) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_disable_link_previews_privacy() != 25768) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_media_message() != 41105) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_privacy_setting() != 31032) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_picture() != 15024) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_status() != 60604) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_upsert_label() != 37799) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_constructor_rolleysclient_new() != 56112) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleyseventlistener_on_event() != 45190) {
         return InitializationResult.apiChecksumMismatch
     }
 
-    uniffiCallbackInitAuroraEventListener()
+    uniffiCallbackInitRolleysEventListener()
     return InitializationResult.ok
 }()
 

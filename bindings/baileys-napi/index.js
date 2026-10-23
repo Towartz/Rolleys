@@ -32,7 +32,7 @@ const { RoseBaileysClient } = nativeBinding;
  * Creates a Baileys-compatible WhatsApp Socket engine backed by pure Rust.
  */
 function makeWASocket(config = {}) {
-  const dbPath = config.databasePath || config.authPath || 'aurora_session.db';
+  const dbPath = config.databasePath || config.authPath || 'rolleys_session.db';
   const phone = config.phoneNumber || config.phone || null;
 
   const client = new RoseBaileysClient(dbPath, phone);

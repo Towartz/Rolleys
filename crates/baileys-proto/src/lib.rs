@@ -47,7 +47,7 @@ mod tests {
         let payload = ClientPayload {
             connect_type: Some(client_payload::ConnectType::WifiUnknown as i32),
             connect_reason: Some(client_payload::ConnectReason::UserActivated as i32),
-            push_name: Some("Aurora User".to_string()),
+            push_name: Some("Test User".to_string()),
             passive: Some(true),
             ..Default::default()
         };
@@ -57,7 +57,7 @@ mod tests {
         assert!(!buf.is_empty());
 
         let decoded = ClientPayload::decode(&buf[..]).expect("Decode failed");
-        assert_eq!(decoded.push_name.as_deref(), Some("Aurora User"));
+        assert_eq!(decoded.push_name.as_deref(), Some("Test User"));
         assert_eq!(decoded.passive, Some(true));
     }
 }
