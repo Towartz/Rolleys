@@ -143,7 +143,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!("      --json            Print the report as JSON after the table");
     println!("  -h, --help");
@@ -267,6 +267,7 @@ async fn main() {
 
     run_core(&mut suite, &phone).await;
     run_messaging(&mut suite, &self_jid).await;
+    run_rich(&mut suite, &self_jid).await;
     run_media(&mut suite, &self_jid).await;
     run_groups(&mut suite).await;
     run_community(&mut suite).await;
@@ -863,6 +864,175 @@ async fn run_newsletter(s: &mut Suite) {
         .map(|_| "deleted".to_string())
     })
     .await;
+}
+
+/// One self-chat send that must be acked by the server. `$send` may use `$c` (the client) and
+/// `$t` (a clone of the target JID).
+macro_rules! ack_step {
+    ($s:expr, $name:expr, $to:expr, |$c:ident, $t:ident| $send:expr) => {{
+        let $t = $to.clone();
+        $s.step("rich", $name, move |client| async move {
+            let (id, st) = send_acked(&client, || async {
+                let $c = &client;
+                $send.await
+            })
+            .await?;
+            Ok(format!("id={id} {st}"))
+        })
+        .await;
+    }};
+}
+
+async fn run_rich(s: &mut Suite, self_jid: &str) {
+    use baileys_core::baileys_proto::proto::{Message, MessageKey};
+    use baileys_core::{InteractiveButton, ListRow, ListSection};
+
+    println!("== rich message types (self-chat) ==");
+    if !s.selected("rich") {
+        return;
+    }
+    let to = self_jid.to_string();
+
+    // A base message the reply/pin/comment scenarios can point at.
+    let base: Slot<String> = slot();
+    let (t, b) = (to.clone(), base.clone());
+    s.step("rich", "base text", move |c| async move {
+        let (id, st) = send_acked(&c, || c.send_text_message(&t, "live-suite: base")).await?;
+        *b.lock().await = Some(id.clone());
+        Ok(format!("id={id} {st}"))
+    })
+    .await;
+    let base_id = base.lock().await.clone();
+
+    ack_step!(s, "location", to, |c, t| c.send_location(
+        &t,
+        -6.2088,
+        106.8456,
+        Some("live-suite"),
+        Some("Jakarta"),
+        None
+    ));
+    ack_step!(s, "live location", to, |c, t| c.send_live_location(
+        &t,
+        -6.2088,
+        106.8456,
+        Some(20),
+        Some("live-suite")
+    ));
+    ack_step!(s, "contact", to, |c, t| c.send_contact(
+        &t,
+        "Live Suite",
+        "+6281234567890"
+    ));
+    ack_step!(s, "vcard", to, |c, t| c.send_vcard(
+        &t,
+        "Live Suite",
+        "BEGIN:VCARD\nVERSION:3.0\nFN:Live Suite\nTEL;type=CELL:+6281234567890\nEND:VCARD"
+    ));
+    ack_step!(s, "contacts array", to, |c, t| c.send_contacts_array(
+        &t,
+        "2 contacts",
+        vec![
+            ("Live A".to_string(), "+6281111111111".to_string()),
+            ("Live B".to_string(), "+6282222222222".to_string()),
+        ]
+    ));
+    ack_step!(s, "event", to, |c, t| c.send_event(
+        &t,
+        "live-suite event",
+        Some("created by live-suite"),
+        chrono::Utc::now().timestamp() + 86_400,
+        None,
+        Some("Jakarta")
+    ));
+    ack_step!(s, "album", to, |c, t| c.send_album(&t, 2, 0));
+    ack_step!(s, "view-once (text payload)", to, |c, t| c.send_view_once(
+        &t,
+        Message {
+            conversation: Some("live-suite: view once".to_string()),
+            ..Default::default()
+        },
+        true
+    ));
+    ack_step!(s, "forward", to, |c, t| c.forward_message(
+        &t,
+        Message {
+            conversation: Some("live-suite: forwarded".to_string()),
+            ..Default::default()
+        },
+        true,
+        1
+    ));
+    ack_step!(s, "json message", to, |c, t| c.send_message_json(
+        &t,
+        &serde_json::json!({ "conversation": "live-suite: from json" })
+    ));
+    ack_step!(s, "quick-reply buttons", to, |c, t| c
+        .send_interactive_buttons(
+            &t,
+            "live-suite buttons",
+            &[
+                InteractiveButton::quick_reply("One", "1"),
+                InteractiveButton::quick_reply("Two", "2"),
+            ],
+            Some("header"),
+            Some("footer")
+        ));
+    ack_step!(s, "list", to, |c, t| c.send_list_message(
+        &t,
+        "live-suite list",
+        "pick one",
+        "Open",
+        &[ListSection {
+            title: "Section".to_string(),
+            rows: vec![
+                ListRow {
+                    title: "Row 1".to_string(),
+                    description: Some("first".to_string()),
+                    row_id: "r1".to_string(),
+                },
+                ListRow {
+                    title: "Row 2".to_string(),
+                    description: None,
+                    row_id: "r2".to_string(),
+                },
+            ],
+        }],
+        Some("footer")
+    ));
+
+    let Some(base_id) = base_id else {
+        for name in ["reply (quote)", "comment", "pin", "unpin"] {
+            s.skip("rich", name, "depends on 'base text'");
+        }
+        return;
+    };
+
+    let (self_for_quote, bid) = (to.clone(), base_id.clone());
+    ack_step!(s, "reply (quote)", to, |c, t| c
+        .send_text_message_with_quote(
+            &t,
+            "live-suite: reply",
+            &bid,
+            Some(self_for_quote.as_str()),
+            Some("live-suite: base")
+        ));
+    let bid = base_id.clone();
+    ack_step!(s, "comment", to, |c, t| c.send_comment(
+        &t,
+        &MessageKey {
+            remote_jid: Some(t.clone()),
+            from_me: Some(true),
+            id: Some(bid.clone()),
+            participant: None,
+        },
+        "live-suite: comment"
+    ));
+    let bid = base_id.clone();
+    ack_step!(s, "pin", to, |c, t| c.pin_message(&t, &bid, true, 86_400));
+    let bid = base_id.clone();
+    // Always unpin so the chat is left as we found it.
+    ack_step!(s, "unpin", to, |c, t| c.pin_message(&t, &bid, false, 0));
 }
 
 async fn run_groups(s: &mut Suite) {

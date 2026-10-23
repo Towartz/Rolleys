@@ -90,3 +90,8 @@ view receipt, mute, admin count, subscribed list, delete + verifikasi hilang). K
 list, invite, unlink lulus. `community_leave` oleh pemilik **timeout 15 dtk dan tidak berefek** (node sama dengan Baileys
 `communityLeave`; Baileys juga tidak punya fungsi deactivate). Karena itu area komunitas opt-in (`--community`) dan
 meninggalkan komunitas stub yang harus dinonaktifkan manual di HP.
+
+Rich message types (live-suite `rich`, self-chat, semua `server_ack`): lokasi, live location, kontak, vCard, daftar kontak, event,
+album, view-once (payload teks), forward, JSON, tombol quick-reply, list, reply/quote, comment, pin, unpin.
+`server_ack` hanya membuktikan server menerima stanza, bukan bahwa HP merender pesannya (tombol/list sering tidak
+dirender untuk akun non-bisnis). Belum dicakup: view-once media sungguhan, album dengan media anak, produk, request-payment.
