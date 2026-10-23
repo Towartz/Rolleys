@@ -44,6 +44,12 @@ jobs:
       - name: Run Clippy Linter
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      - name: Check generated C-ABI is up to date
+        run: |
+          python3 scripts/gen-cabi-parity.py
+          rustfmt --edition 2021 bindings/baileys-cabi/src/parity.rs
+          git diff --exit-code -- bindings/baileys-cabi/src/parity.rs bindings/c/baileys.h
+
   # -------------------------------------------------------------
   # Node binding: event mapping to Baileys names (no native build needed)
   # -------------------------------------------------------------

@@ -74,7 +74,7 @@ Rincian per area ada di rencana kerja; ringkasannya:
 |---|---|---|
 | napi | done (unit) | event: semua event core muncul di `sock.ev` dengan nama/bentuk Baileys. Native: setiap method core terjangkau (test Rust). Socket JS: setiap kunci `makeWASocket` Baileys 7.0.0-rc14 ada di `sock` atau dikecualikan dengan alasan (test `node --test`); 162 kunci. `index.d.ts` belum diperiksa `tsc` |
 | ffi (uniffi) | done (unit) | semua event core diteruskan; setiap method core terjangkau atau dikecualikan dengan alasan, dijaga test `parity_tests` (2026-10-23). Swift/Kotlin hasil generate belum dikompilasi di sini (tanpa swiftc/kotlinc) |
-| cabi | partial | tanpa callback event; banyak fungsi grup/kirim hilang (verifikasi terhadap `bindings/c/baileys.h`) |
+| cabi | done (unit) | callback event (`baileys_client_set_event_callback`, JSON serde `BaileysEvent`), setiap method core terjangkau atau dikecualikan dengan alasan (test), header dijaga test terhadap ekspor, `baileys_last_error()`. Terbukti dengan program C yang di-link ke `.so` (2026-10-23) |
 
 `CredsUpdate` baru dipancarkan dari loop koneksi (pairing, LID, companion finish); jalur `save_creds` lain di `client/` belum.
 Binding: napi mengirim event baru sebagai `{event:"raw"}`; ffi meneruskan semuanya sebagai varian `RolleysEvent` bertipe.
@@ -166,3 +166,9 @@ removeQuickReply, getOrderDetails, updateBussinesProfile, updateMemberLabel, upd
 fetchDisappearingDuration, requestPlaceholderResend, newsletterUpdate, newsletterUpdateDescription, newsletterUpdatePicture,
 newsletterRemovePicture, newsletterSubscribers; updateCoverPhoto (core menerima foto yang sudah diunggah). Daftar ini
 dijaga oleh `bindings/baileys-napi/test/sock-api.test.js` (NOT_EXPOSED).
+
+**cabi (2026-10-23).** Sebelumnya pemanggil C tidak bisa menerima event sama sekali dan 100 method core tidak terjangkau
+(termasuk `group_create`, `send_reaction`, `send_read_receipt`, `me_jid`, `is_connected`, `ping`). Kini 99 fungsi dihasilkan
+dari satu tabel (`scripts/gen-cabi-parity.py`) dan callback event tersedia. Test kontrak menemukan 5 ekspor lama yang tidak
+pernah dideklarasikan di `baileys.h` (`send_json`, `send_event`, `send_status_image`, `send_status_video`,
+`recognize_message_json`). Contoh C di `FFI_GUIDE.md` memakai fungsi yang tidak ada; sudah ditulis ulang dan terkompilasi.

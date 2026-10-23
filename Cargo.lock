@@ -234,6 +234,7 @@ name = "baileys-cabi"
 version = "0.1.0"
 dependencies = [
  "baileys-core",
+ "baileys-media",
  "baileys-store",
  "prost",
  "serde",

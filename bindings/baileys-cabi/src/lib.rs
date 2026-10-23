@@ -3,13 +3,178 @@
 use baileys_core::{BaileysClient, BaileysConfigBuilder};
 use baileys_store::SqliteStore;
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int};
-use std::sync::Arc;
+use std::os::raw::{c_char, c_int, c_void};
+use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
+
+/// Called once per event with the event serialized as JSON (the serde form of
+/// `baileys_core::BaileysEvent`: unit variants are bare strings such as `"CredsUpdate"`, the rest
+/// are `{"Variant": {...snake_case fields...}}`).
+///
+/// The string is only valid for the duration of the call; copy it to keep it. The callback runs
+/// on a runtime worker thread and must not call `baileys_client_set_event_callback`,
+/// `baileys_client_destroy` or any other blocking `baileys_client_*` function on the same handle.
+pub type BaileysEventCallback =
+    Option<unsafe extern "C" fn(event_json: *const c_char, user_data: *mut c_void)>;
+
+/// The registered callback. Held under a mutex while it runs, so replacing or clearing it waits
+/// for a callback already in progress and none starts afterwards.
+struct EventSink {
+    callback: unsafe extern "C" fn(*const c_char, *mut c_void),
+    user_data: *mut c_void,
+}
+
+// The caller guarantees `user_data` may be used from the runtime's threads.
+unsafe impl Send for EventSink {}
+
+mod parity;
+
+thread_local! {
+    static LAST_ERROR: std::cell::RefCell<Option<CString>> = const { std::cell::RefCell::new(None) };
+}
+
+pub(crate) fn set_last_error(message: impl std::fmt::Display) {
+    // A message with an interior NUL cannot be a C string; keep what comes before it.
+    let text = message.to_string();
+    let text = text.split('\0').next().unwrap_or_default();
+    LAST_ERROR.with(|e| *e.borrow_mut() = CString::new(text).ok());
+}
+
+pub(crate) fn invalid_arg(name: &str) {
+    set_last_error(format!("invalid argument: {name}"));
+}
+
+/// Why the last call on this thread failed, or NULL. Valid until the next call on this thread.
+#[no_mangle]
+pub extern "C" fn baileys_last_error() -> *const c_char {
+    LAST_ERROR.with(|e| e.borrow().as_ref().map_or(std::ptr::null(), |c| c.as_ptr()))
+}
+
+/// Starts a call: clears the previous error so `baileys_last_error` always describes this call.
+pub(crate) unsafe fn handle_ref<'a>(
+    handle: *mut BaileysClientHandle,
+) -> Option<&'a BaileysClientHandle> {
+    LAST_ERROR.with(|e| *e.borrow_mut() = None);
+    if handle.is_null() {
+        set_last_error("invalid argument: handle is NULL");
+        None
+    } else {
+        Some(&*handle)
+    }
+}
+/// `None` = not valid UTF-8, `Some(None)` = NULL pointer, `Some(Some(s))` = the string.
+pub(crate) unsafe fn cstr_opt(p: *const c_char) -> Option<Option<String>> {
+    if p.is_null() {
+        return Some(None);
+    }
+    CStr::from_ptr(p).to_str().ok().map(|s| Some(s.to_owned()))
+}
+
+pub(crate) unsafe fn byte_slice<'a>(p: *const u8, len: usize) -> Option<&'a [u8]> {
+    if len == 0 {
+        return Some(&[]);
+    }
+    if p.is_null() {
+        return None;
+    }
+    Some(std::slice::from_raw_parts(p, len))
+}
+
+pub(crate) unsafe fn u64_slice<'a>(p: *const u64, len: usize) -> Option<&'a [u64]> {
+    if len == 0 {
+        return Some(&[]);
+    }
+    if p.is_null() {
+        return None;
+    }
+    Some(std::slice::from_raw_parts(p, len))
+}
+
+pub(crate) unsafe fn str_array(p: *const *const c_char, count: usize) -> Option<Vec<String>> {
+    if count == 0 {
+        return Some(Vec::new());
+    }
+    if p.is_null() {
+        return None;
+    }
+    std::slice::from_raw_parts(p, count)
+        .iter()
+        .map(|&item| cstr_opt(item).flatten())
+        .collect()
+}
+
+pub(crate) fn to_c(s: String) -> *mut c_char {
+    match CString::new(s) {
+        Ok(c) => c.into_raw(),
+        Err(e) => {
+            set_last_error(e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+pub(crate) fn finish_unit(res: Result<(), baileys_core::CoreError>) -> c_int {
+    match res {
+        Ok(()) => 0,
+        Err(e) => {
+            set_last_error(e);
+            -2
+        }
+    }
+}
+
+pub(crate) fn finish_str(res: Result<String, baileys_core::CoreError>) -> *mut c_char {
+    match res {
+        Ok(s) => to_c(s),
+        Err(e) => {
+            set_last_error(e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// `Ok(None)` is NULL without an error, so callers can tell "nothing" from a failure.
+pub(crate) fn finish_ostr(res: Result<Option<String>, baileys_core::CoreError>) -> *mut c_char {
+    match res {
+        Ok(Some(s)) => to_c(s),
+        Ok(None) => std::ptr::null_mut(),
+        Err(e) => {
+            set_last_error(e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+pub(crate) fn finish_json<T: serde::Serialize>(
+    res: Result<T, baileys_core::CoreError>,
+) -> *mut c_char {
+    match res
+        .map_err(|e| e.to_string())
+        .and_then(|v| serde_json::to_string(&v).map_err(|e| e.to_string()))
+    {
+        Ok(json) => to_c(json),
+        Err(e) => {
+            set_last_error(e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+pub(crate) fn finish_i64(res: Result<i64, baileys_core::CoreError>) -> i64 {
+    match res {
+        Ok(v) => v,
+        Err(e) => {
+            set_last_error(e);
+            -1
+        }
+    }
+}
 
 pub struct BaileysClientHandle {
     client: BaileysClient,
     runtime: Runtime,
+    sink: Arc<Mutex<Option<EventSink>>>,
+    event_task: Mutex<Option<tokio::task::JoinHandle<()>>>,
 }
 
 #[no_mangle]
@@ -54,7 +219,12 @@ pub unsafe extern "C" fn baileys_client_create_with_url(
     let config = builder.build();
     let client = BaileysClient::new(store, config);
 
-    let handle = Box::new(BaileysClientHandle { client, runtime });
+    let handle = Box::new(BaileysClientHandle {
+        client,
+        runtime,
+        sink: Arc::new(Mutex::new(None)),
+        event_task: Mutex::new(None),
+    });
     Box::into_raw(handle)
 }
 
@@ -2926,9 +3096,70 @@ pub unsafe extern "C" fn baileys_client_recognize_message_json(
     }
 }
 
+/// Registers `callback` to receive every client event (pass NULL to stop). Replaces any previous
+/// callback; once this returns, the old callback is no longer running and will not be called again.
+/// Returns 0 on success, -1 for a NULL handle.
+///
+/// Events raised before the call are not replayed. Register before `baileys_client_connect` to see
+/// the QR code, pairing code and connection events.
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_set_event_callback(
+    handle: *mut BaileysClientHandle,
+    callback: BaileysEventCallback,
+    user_data: *mut c_void,
+) -> c_int {
+    if handle.is_null() {
+        return -1;
+    }
+    let h = &*handle;
+
+    // Stop the previous forwarder, then wait out a callback it may be running.
+    if let Some(task) = h.event_task.lock().unwrap().take() {
+        task.abort();
+    }
+    *h.sink.lock().unwrap() = None;
+
+    let Some(callback) = callback else {
+        return 0;
+    };
+    *h.sink.lock().unwrap() = Some(EventSink {
+        callback,
+        user_data,
+    });
+
+    // Subscribe before returning so no event after this call is missed.
+    let mut rx = h.client.events();
+    let sink = Arc::clone(&h.sink);
+    let task = h.runtime.spawn(async move {
+        loop {
+            let event = match rx.recv().await {
+                Ok(event) => event,
+                // The consumer fell behind; carry on with the newest events.
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+            };
+            let Ok(json) = serde_json::to_string(&event) else {
+                continue;
+            };
+            let Ok(c_json) = CString::new(json) else {
+                continue;
+            };
+            let guard = sink.lock().unwrap();
+            match guard.as_ref() {
+                Some(s) => (s.callback)(c_json.as_ptr(), s.user_data),
+                None => break, // cleared while we were serializing
+            }
+        }
+    });
+    *h.event_task.lock().unwrap() = Some(task);
+    0
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn baileys_client_destroy(handle: *mut BaileysClientHandle) {
     if !handle.is_null() {
+        // Silence the callback before the runtime (and the user's data) go away.
+        baileys_client_set_event_callback(handle, None, std::ptr::null_mut());
         drop(Box::from_raw(handle));
     }
 }
@@ -2936,6 +3167,333 @@ pub unsafe extern "C" fn baileys_client_destroy(handle: *mut BaileysClientHandle
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parity::*;
+
+    /// Core client methods deliberately not exposed through the C ABI.
+    const NOT_EXPOSED: &[(&str, &str)] = &[
+        ("assert_session", "internal Signal session setup"),
+        ("inner", "internal state accessor"),
+        ("metrics", "exposed as telemetry_snapshot"),
+        ("refresh_media_conn", "internal media host refresh"),
+        (
+            "subscribe_connection_state",
+            "Rust stream; events arrive through the callback",
+        ),
+        (
+            "send_message",
+            "takes a protobuf Message; use baileys_client_send_*",
+        ),
+        ("send_message_with_options", "takes a protobuf Message"),
+        ("relay_message", "takes a protobuf Message"),
+        (
+            "send_peer_message",
+            "takes a protobuf Message; used internally",
+        ),
+        (
+            "send_message_json",
+            "not exposed yet: no C caller needs raw message JSON",
+        ),
+        ("send_node", "raw binary node"),
+        ("send_iq", "raw binary node"),
+        (
+            "send_interactive_message",
+            "takes the Rust builder; use the buttons/list functions",
+        ),
+        (
+            "with_additional_node",
+            "MessageOptions builder, not a client method",
+        ),
+        (
+            "with_additional_nodes",
+            "MessageOptions builder, not a client method",
+        ),
+        (
+            "get_recent_message",
+            "returns a protobuf message; messages arrive as events",
+        ),
+        ("new", "constructor; use baileys_client_create_*"),
+        ("commerce", "Rust service facade"),
+        ("companion", "Rust service facade"),
+        ("groups", "Rust service facade"),
+        ("messages", "Rust service facade"),
+        ("newsletters", "Rust service facade"),
+        ("privacy", "Rust service facade"),
+        ("status", "Rust service facade"),
+    ];
+
+    const CORE_SOURCES: &[&str] = &[
+        include_str!("../../../crates/baileys-core/src/client/business.rs"),
+        include_str!("../../../crates/baileys-core/src/client/channels.rs"),
+        include_str!("../../../crates/baileys-core/src/client/chat_actions.rs"),
+        include_str!("../../../crates/baileys-core/src/client/community.rs"),
+        include_str!("../../../crates/baileys-core/src/client/companions.rs"),
+        include_str!("../../../crates/baileys-core/src/client/connection.rs"),
+        include_str!("../../../crates/baileys-core/src/client/groups.rs"),
+        include_str!("../../../crates/baileys-core/src/client/media.rs"),
+        include_str!("../../../crates/baileys-core/src/client/messaging.rs"),
+        include_str!("../../../crates/baileys-core/src/client/mod.rs"),
+        include_str!("../../../crates/baileys-core/src/client/privacy.rs"),
+        include_str!("../../../crates/baileys-core/src/client/status.rs"),
+    ];
+
+    fn pub_fns(src: &str) -> impl Iterator<Item = &str> {
+        src.lines().filter_map(|line| {
+            let rest = line
+                .trim_start()
+                .strip_prefix("pub async fn ")
+                .or_else(|| line.trim_start().strip_prefix("pub fn "))?;
+            rest.split(['(', '<']).next()
+        })
+    }
+
+    #[test]
+    fn every_core_method_is_reachable_from_c() {
+        let lib = include_str!("lib.rs");
+        let parity = include_str!("parity.rs");
+        let core: Vec<&str> = CORE_SOURCES.iter().flat_map(|s| pub_fns(s)).collect();
+
+        let missing: Vec<&str> = core
+            .iter()
+            .copied()
+            .filter(|name| !NOT_EXPOSED.iter().any(|(n, _)| n == name))
+            .filter(|name| {
+                let call = format!(".{name}(");
+                !lib.contains(&call) && !parity.contains(&call)
+            })
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "core methods not reachable from C; expose them (scripts/gen-cabi-parity.py) or list them in NOT_EXPOSED with a reason: {missing:?}"
+        );
+
+        let stale: Vec<&str> = NOT_EXPOSED
+            .iter()
+            .map(|(n, _)| *n)
+            .filter(|n| !core.contains(n))
+            .collect();
+        assert!(
+            stale.is_empty(),
+            "NOT_EXPOSED lists methods core no longer has: {stale:?}"
+        );
+    }
+
+    /// The header is maintained by hand and by the generator; it must declare exactly the
+    /// `baileys_*` functions the library exports, or C callers get link errors or UB.
+    #[test]
+    fn header_declares_every_export_and_nothing_else() {
+        let header = include_str!("../../c/baileys.h");
+        let exported = |src: &str| -> std::collections::BTreeSet<String> {
+            src.lines()
+                .filter_map(|l| l.split("extern \"C\" fn ").nth(1))
+                .filter_map(|r| r.split('(').next())
+                .filter(|n| n.starts_with("baileys_"))
+                .map(str::to_owned)
+                .collect()
+        };
+        let mut exports = exported(include_str!("lib.rs"));
+        exports.extend(exported(include_str!("parity.rs")));
+
+        let declared: std::collections::BTreeSet<String> = header
+            .lines()
+            .filter_map(|l| l.trim_start().strip_prefix("BAILEYS_API "))
+            .filter_map(|decl| decl.split('(').next())
+            .filter_map(|before| before.rsplit([' ', '*']).next())
+            .filter(|n| n.starts_with("baileys_"))
+            .map(str::to_owned)
+            .collect();
+
+        let undeclared: Vec<_> = exports.difference(&declared).collect();
+        let phantom: Vec<_> = declared.difference(&exports).collect();
+        assert!(
+            undeclared.is_empty(),
+            "exported but missing from baileys.h: {undeclared:?}"
+        );
+        assert!(
+            phantom.is_empty(),
+            "declared in baileys.h but not exported: {phantom:?}"
+        );
+    }
+
+    fn last_error() -> Option<String> {
+        let p = baileys_last_error();
+        (!p.is_null()).then(|| unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned())
+    }
+
+    fn take(p: *mut c_char) -> Option<String> {
+        (!p.is_null()).then(|| unsafe {
+            let s = CStr::from_ptr(p).to_string_lossy().into_owned();
+            baileys_free_string(p);
+            s
+        })
+    }
+
+    #[test]
+    fn test_cabi_parity_functions_report_errors_and_convert_arguments() {
+        let path = CString::new(":memory:").unwrap();
+        let ws_url = CString::new("mock://cabi").unwrap();
+        let jid = CString::new("1@g.us").unwrap();
+        unsafe {
+            // A NULL handle is rejected with a reason, and nothing crashes.
+            assert!(!baileys_client_is_connected(std::ptr::null_mut()));
+            assert!(last_error().unwrap().contains("handle is NULL"));
+            assert_eq!(
+                baileys_client_group_leave(std::ptr::null_mut(), jid.as_ptr()),
+                -1
+            );
+
+            let handle = baileys_client_create_with_url(path.as_ptr(), ws_url.as_ptr());
+            assert!(!handle.is_null());
+
+            // Synchronous getters and setters round-trip, and a good call clears the old error.
+            assert!(!baileys_client_is_ghost_mode(handle));
+            assert!(
+                last_error().is_none(),
+                "a successful call must clear the last error"
+            );
+            assert_eq!(baileys_client_set_ghost_mode(handle, true), 0);
+            assert!(baileys_client_is_ghost_mode(handle));
+            assert!(take(baileys_client_get_connection_state(handle)).is_some());
+
+            // A required string that is NULL names the offending argument.
+            assert_eq!(baileys_client_group_leave(handle, std::ptr::null()), -1);
+            assert_eq!(last_error().as_deref(), Some("invalid argument: group_jid"));
+            assert!(
+                baileys_client_group_create(handle, std::ptr::null(), std::ptr::null(), 0)
+                    .is_null()
+            );
+            assert_eq!(last_error().as_deref(), Some("invalid argument: subject"));
+
+            // A non-empty array with a NULL pointer is rejected rather than dereferenced.
+            let subject = CString::new("s").unwrap();
+            assert!(
+                baileys_client_group_create(handle, subject.as_ptr(), std::ptr::null(), 2)
+                    .is_null()
+            );
+            assert_eq!(
+                last_error().as_deref(),
+                Some("invalid argument: participants")
+            );
+
+            // Malformed JSON is reported with the argument name.
+            let bad = CString::new("not json").unwrap();
+            let name = CString::new("n").unwrap();
+            assert!(baileys_client_send_contacts_array(
+                handle,
+                jid.as_ptr(),
+                name.as_ptr(),
+                bad.as_ptr()
+            )
+            .is_null());
+            assert!(
+                last_error().unwrap().starts_with("contacts:"),
+                "{:?}",
+                last_error()
+            );
+
+            // Bytes with a NULL pointer and a length are rejected; a zero length is not.
+            assert!(baileys_client_send_image_message(
+                handle,
+                jid.as_ptr(),
+                std::ptr::null(),
+                4,
+                std::ptr::null()
+            )
+            .is_null());
+            assert_eq!(last_error().as_deref(), Some("invalid argument: image"));
+
+            // Local queries return JSON; "nothing" is NULL without an error.
+            assert_eq!(
+                take(baileys_client_get_chats(handle)).as_deref(),
+                Some("[]")
+            );
+            assert!(baileys_client_me_jid(handle).is_null());
+            assert!(
+                last_error().is_none(),
+                "no result is not an error: {:?}",
+                last_error()
+            );
+
+            // A failing operation returns -2 and says why.
+            let unconnected = baileys_client_get_connection_state(handle);
+            baileys_free_string(unconnected);
+            let code = baileys_client_send_presence_update(
+                handle,
+                CString::new("available").unwrap().as_ptr(),
+                std::ptr::null(),
+            );
+            assert_eq!(code, -2);
+            assert!(last_error().is_some());
+
+            baileys_client_destroy(handle);
+        }
+    }
+
+    #[derive(Default)]
+    struct Collected {
+        events: Mutex<Vec<String>>,
+    }
+
+    unsafe extern "C" fn collect(event_json: *const c_char, user_data: *mut c_void) {
+        let collected = &*(user_data as *const Collected);
+        let json = CStr::from_ptr(event_json).to_string_lossy().into_owned();
+        collected.events.lock().unwrap().push(json);
+    }
+
+    fn wait_for(collected: &Collected, what: &str) -> Vec<String> {
+        for _ in 0..100 {
+            let events = collected.events.lock().unwrap().clone();
+            if events.iter().any(|e| e.contains(what)) {
+                return events;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        panic!(
+            "no event containing {what:?}, got {:?}",
+            collected.events.lock().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_cabi_event_callback_delivers_json_and_stops() {
+        let path = CString::new(":memory:").unwrap();
+        let ws_url = CString::new("mock://cabi").unwrap();
+        let collected = Collected::default();
+        let user_data = &collected as *const Collected as *mut c_void;
+        unsafe {
+            let handle = baileys_client_create_with_url(path.as_ptr(), ws_url.as_ptr());
+            assert!(!handle.is_null());
+
+            assert_eq!(
+                baileys_client_set_event_callback(std::ptr::null_mut(), Some(collect), user_data),
+                -1
+            );
+            assert_eq!(
+                baileys_client_set_event_callback(handle, Some(collect), user_data),
+                0
+            );
+            assert_eq!(baileys_client_connect(handle), 0);
+
+            // Events arrive as the serde JSON of BaileysEvent: unit variants are strings, the
+            // rest are objects keyed by variant. A fresh session asks for a QR code first.
+            let events = wait_for(&collected, "QrCode");
+            assert!(events.iter().any(|e| e == "\"Connecting\""), "{events:?}");
+            let qr = events.iter().find(|e| e.contains("QrCode")).unwrap();
+            let parsed: serde_json::Value = serde_json::from_str(qr).unwrap();
+            assert!(parsed["QrCode"]["code"].is_string(), "{qr}");
+
+            // After clearing, nothing more is delivered.
+            assert_eq!(
+                baileys_client_set_event_callback(handle, None, std::ptr::null_mut()),
+                0
+            );
+            let seen = collected.events.lock().unwrap().len();
+            baileys_client_disconnect(handle);
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            assert_eq!(collected.events.lock().unwrap().len(), seen);
+
+            baileys_client_destroy(handle);
+        }
+    }
 
     #[test]
     fn test_cabi_lifecycle() {
