@@ -18,13 +18,13 @@ assertion `message TestChild {` pada parser nested message).
 | `messaging-history.status` | - | missing | |
 | `chats.upsert` | - | missing | |
 | `chats.update` | `ChatUpdate` | done | |
-| `lid-mapping.update` | - | missing | |
-| `chats.delete` | - | missing | |
+| `lid-mapping.update` | `LidMappingUpdate` (dari syncd) | partial (unit) | |
+| `chats.delete` | `ChatsDelete` | done (unit; live: tidak dipancarkan saat sinkronisasi awal) | |
 | `presence.update` | `Presence` | done | |
-| `contacts.upsert` | - | missing | |
+| `contacts.upsert` | `ContactsUpsert` | partial | hanya dari `lidContactAction`; belum dari history sync |
 | `contacts.update` | `ContactUpdate` | done | |
-| `messages.delete` | `MessageRevoked` (sebagian) | partial | |
-| `messages.update` | `MessageEdited`, `Receipt` | partial | |
+| `messages.delete` | `MessagesDelete`, `MessageRevoked` | partial | deleteMessageForMe (unit); revoke tetap `MessageRevoked` |
+| `messages.update` | `MessageEdited`, `Receipt`, `MessageStarred` | partial | starred: live (`appstate`) |
 | `messages.media-update` | `MediaUpdated` | done | |
 | `messages.upsert` | `Message` | done | |
 | `messages.reaction` | - | missing | |
@@ -43,8 +43,8 @@ assertion `message TestChild {` pada parser nested message).
 | `newsletter-participants.update` | `NewsletterParticipantsUpdate` | done (unit) | |
 | `newsletter-settings.update` | `NewsletterSettingsUpdate` | done (unit) | |
 | `message-capping.update` | - | missing | |
-| `chats.lock` | - | missing | |
-| `settings.update` | - | missing | |
+| `chats.lock` | `ChatsLock` | done (live) | `appstate`: 23 event dari snapshot |
+| `settings.update` | `SettingsUpdate` | done (live) | `appstate`: 9 event |
 
 ## Fungsi (`sock.*`)
 
@@ -129,3 +129,12 @@ server. Hasil: 5 koleksi, 1724 mutasi, tanpa peringatan; chatModify (mute/pin/ar
 state lokal hasil rantai patch identik dengan rekonstruksi snapshot (regular_low v123, 800 entri). Status: done (live).
 Catatan: patch yang dikirim sebelum perbaikan ini memakai hash dari basis yang tidak lengkap; pengguna melaporkan grup
 uji normal, tetapi dampak jangka panjang di perangkat lain tidak dapat diverifikasi dari sini.
+
+**Event dari app-state (2026-10-23).** Aksi syncd kini dikenali berdasarkan field nilai yang terisi (seperti
+`processSyncAction` Baileys): kunci chat, setting (locale, timeFormat, unarchiveChats, statusPrivacy, disableLinkPreviews,
+privacySettingRelayAllCalls, notificationActivitySetting, channelsPersonalisedRecommendation), pemetaan LID, kontak LID,
+hapus-untuk-saya, dan bintang. `chats.delete`/`messages.delete` tidak dipancarkan saat sinkronisasi awal (seperti Baileys).
+**Bug ditemukan:** kanal event berkapasitas 256 membuang 1509 dari ~1766 event saat satu resync; kapasitas kini 16384
+(~3,5 MiB per klien, 224 B per slot) dengan test. Referensi lokal: Baileys 7.0.0-rc14 `0af2386`, zapo `c02165a`.
+**Pertanyaan terbuka:** koleksi untuk `star` berbeda antar referensi (Baileys `regular_low`, zapo `regular_high`); dibiarkan
+`regular_low` karena uji live diterima dan rantai hash cocok dengan snapshot.

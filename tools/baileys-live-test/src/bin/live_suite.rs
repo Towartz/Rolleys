@@ -1268,6 +1268,7 @@ async fn run_appstate(s: &mut Suite) {
         return;
     }
     s.step("appstate", "forced snapshot resync", |c| async move {
+        let mut rx = c.events();
         let sum = c
             .resync_app_state(
                 &[
@@ -1287,9 +1288,39 @@ async fn run_appstate(s: &mut Suite) {
                 sum.collections_synced, sum.collections_failed
             ));
         }
+        // Report which app-state events the snapshot produced (informational; depends on the account).
+        let mut seen: std::collections::BTreeMap<&'static str, usize> = Default::default();
+        let mut dropped = 0u64;
+        loop {
+            let ev = match rx.try_recv() {
+                Ok(ev) => ev,
+                Err(broadcast::error::TryRecvError::Lagged(n)) => {
+                    dropped += n;
+                    continue;
+                }
+                Err(_) => break,
+            };
+            let name = match ev {
+                BaileysEvent::ChatUpdate { .. } => "chats.update",
+                BaileysEvent::ContactUpdate { .. } => "contacts.update",
+                BaileysEvent::ContactsUpsert { .. } => "contacts.upsert",
+                BaileysEvent::SettingsUpdate { .. } => "settings.update",
+                BaileysEvent::ChatsLock { .. } => "chats.lock",
+                BaileysEvent::LidMappingUpdate { .. } => "lid-mapping.update",
+                BaileysEvent::MessageStarred { .. } => "messages.update(starred)",
+                BaileysEvent::ChatsDelete { .. } => "chats.delete",
+                BaileysEvent::MessagesDelete { .. } => "messages.delete",
+                BaileysEvent::LabelEdit { .. } => "labels.edit",
+                BaileysEvent::ChatLabelUpdate { .. } | BaileysEvent::MessageLabelUpdate { .. } => {
+                    "labels.association"
+                }
+                _ => continue,
+            };
+            *seen.entry(name).or_default() += 1;
+        }
         Ok(format!(
-            "{} collections, {} mutations",
-            sum.collections_synced, sum.mutations_applied
+            "{} collections, {} mutations; events: {:?}; dropped by a full event channel: {}",
+            sum.collections_synced, sum.mutations_applied, seen, dropped
         ))
     })
     .await;
