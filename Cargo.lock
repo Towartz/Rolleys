@@ -330,6 +330,7 @@ dependencies = [
  "baileys-proto",
  "baileys-store",
  "chrono",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

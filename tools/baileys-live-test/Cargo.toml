@@ -21,6 +21,11 @@ name = "live-newsletter-test"
 path = "src/bin/live_newsletter_test.rs"
 test = false
 
+[[bin]]
+name = "live-suite"
+path = "src/bin/live_suite.rs"
+test = false
+
 [dependencies]
 baileys-core.workspace = true
 baileys-store.workspace = true
@@ -29,3 +34,4 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 chrono.workspace = true
+serde_json.workspace = true
