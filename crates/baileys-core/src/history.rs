@@ -140,6 +140,61 @@ pub fn process_history_sync(history: &mut HistorySync) -> ProcessedHistory {
     out
 }
 
+/// No new RECENT chunk for this long means the phone paused the sync (Baileys
+/// `HISTORY_SYNC_PAUSED_TIMEOUT_MS`).
+pub const HISTORY_SYNC_PAUSED_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+
+/// Per-connection state behind `messaging-history.status` (Baileys `historySyncStatus`).
+///
+/// Pure: the caller arms a timer for the generation returned by [`Self::on_chunk`] and calls
+/// [`Self::on_pause_timeout`] when it fires.
+#[derive(Debug, Default)]
+pub struct HistorySyncStatusTracker {
+    initial_bootstrap_complete: bool,
+    recent_sync_complete: bool,
+    recent_generation: u64,
+}
+
+/// A `messaging-history.status` emission: `(sync_type, status, explicit)`.
+pub type HistoryStatus = (i32, &'static str, bool);
+
+impl HistorySyncStatusTracker {
+    /// Handles one history notification. Returns the statuses to emit and, for an unfinished
+    /// RECENT sync, the generation a pause timer should be armed for (older timers are stale).
+    pub fn on_chunk(
+        &mut self,
+        sync_type: i32,
+        progress: Option<u32>,
+    ) -> (Vec<HistoryStatus>, Option<u64>) {
+        let mut out = Vec::new();
+        let bootstrap = HistorySyncType::InitialBootstrap as i32;
+        let recent = HistorySyncType::Recent as i32;
+        if sync_type == bootstrap && !self.initial_bootstrap_complete {
+            self.initial_bootstrap_complete = true;
+            out.push((sync_type, "complete", true));
+        }
+        if sync_type == recent && progress == Some(100) && !self.recent_sync_complete {
+            self.recent_sync_complete = true;
+            self.recent_generation += 1; // cancels any armed timer
+            out.push((sync_type, "complete", true));
+        }
+        let arm = (sync_type == recent && !self.recent_sync_complete).then(|| {
+            self.recent_generation += 1;
+            self.recent_generation
+        });
+        (out, arm)
+    }
+
+    /// Called when a pause timer armed for `generation` fires.
+    pub fn on_pause_timeout(&mut self, generation: u64) -> Option<HistoryStatus> {
+        if generation != self.recent_generation || self.recent_sync_complete {
+            return None;
+        }
+        self.recent_sync_complete = true;
+        Some((HistorySyncType::Recent as i32, "paused", false))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -245,5 +300,39 @@ mod tests {
         assert_eq!(out.contacts.len(), 1);
         assert_eq!(out.contacts[0].notify.as_deref(), Some("Four"));
         assert!(out.messages.is_empty());
+    }
+
+    #[test]
+    fn status_tracker_follows_baileys() {
+        let boot = HistorySyncType::InitialBootstrap as i32;
+        let recent = HistorySyncType::Recent as i32;
+        let mut t = HistorySyncStatusTracker::default();
+
+        assert_eq!(t.on_chunk(boot, None).0, vec![(boot, "complete", true)]);
+        assert!(
+            t.on_chunk(boot, None).0.is_empty(),
+            "bootstrap completes once"
+        );
+
+        // Unfinished RECENT chunks arm a timer; only the newest one may fire.
+        let (_, g1) = t.on_chunk(recent, Some(40));
+        let (_, g2) = t.on_chunk(recent, Some(60));
+        assert!(t.on_pause_timeout(g1.unwrap()).is_none(), "stale timer");
+        assert_eq!(
+            t.on_pause_timeout(g2.unwrap()),
+            Some((recent, "paused", false))
+        );
+        assert!(
+            t.on_chunk(recent, Some(100)).0.is_empty(),
+            "already finished"
+        );
+
+        // RECENT reaching 100 completes explicitly and cancels a pending timer.
+        let mut t = HistorySyncStatusTracker::default();
+        let (_, g) = t.on_chunk(recent, Some(10));
+        let (ev, arm) = t.on_chunk(recent, Some(100));
+        assert_eq!(ev, vec![(recent, "complete", true)]);
+        assert!(arm.is_none());
+        assert!(t.on_pause_timeout(g.unwrap()).is_none());
     }
 }

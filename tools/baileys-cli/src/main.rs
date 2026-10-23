@@ -531,6 +531,42 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                         ),
                     );
                 }
+                BaileysEvent::MessagingHistoryStatus {
+                    sync_type,
+                    status,
+                    explicit,
+                } => {
+                    print_comfy_event(
+                        "SYNC",
+                        ANSI_BRIGHT_CYAN,
+                        &format!(
+                            "History sync type={} {} (explicit={})",
+                            sync_type, status, explicit
+                        ),
+                    );
+                }
+                BaileysEvent::MessageCappingUpdate { info } => {
+                    print_comfy_event(
+                        "CAP",
+                        ANSI_YELLOW,
+                        &format!(
+                            "New-chat message cap: used {:?} of {:?} ({:?})",
+                            info.used_quota, info.total_quota, info.capping_status
+                        ),
+                    );
+                }
+                BaileysEvent::GroupMemberTagUpdate {
+                    group_jid,
+                    participant,
+                    label,
+                    ..
+                } => {
+                    print_comfy_event(
+                        "GROUP",
+                        ANSI_CYAN,
+                        &format!("{} label of {}: {}", group_jid, participant, label),
+                    );
+                }
                 BaileysEvent::BlocklistUpdate { added, removed } => {
                     let filter = CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed);
                     if filter <= 1 {

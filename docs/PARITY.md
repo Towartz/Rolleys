@@ -15,7 +15,7 @@ assertion `message TestChild {` pada parser nested message).
 | `connection.update` | `Connecting`/`Connected`/`Disconnected`/`QrCode`/`PairingCode` | done | |
 | `creds.update` | `CredsUpdate` | partial | |
 | `messaging-history.set` | `HistorySync` | done (live: on-demand) | `history --chat-group DXT`: 10 pesan, `is_latest=None`, session id |
-| `messaging-history.status` | - | missing | |
+| `messaging-history.status` | `MessagingHistoryStatus` | done (unit) | hanya terjadi saat pairing |
 | `chats.upsert` | `ChatsUpsert` | done (live) | `groups`: dipancarkan saat grup dibuat (satu-satunya pemicu di Baileys) |
 | `chats.update` | `ChatUpdate` | done | |
 | `lid-mapping.update` | `LidMappingUpdate` (dari syncd) | partial (unit) | |
@@ -33,7 +33,7 @@ assertion `message TestChild {` pada parser nested message).
 | `groups.update` | `GroupsUpdate` | done (live) | live-suite `groups` (2026-10-23) |
 | `group-participants.update` | `GroupParticipantsUpdate` | done (unit) | |
 | `group.join-request` | `GroupJoinRequest` | done (unit) | |
-| `group.member-tag.update` | - | missing | |
+| `group.member-tag.update` | `GroupMemberTagUpdate` | done (unit) | `participant_alt` belum diisi |
 | `blocklist.set` / `blocklist.update` | `BlocklistUpdate` | partial | |
 | `call` | `Call` | done | |
 | `labels.edit` | `LabelEdit` | done | |
@@ -42,7 +42,7 @@ assertion `message TestChild {` pada parser nested message).
 | `newsletter.view` | `NewsletterView` | done (unit) | |
 | `newsletter-participants.update` | `NewsletterParticipantsUpdate` | done (unit) | |
 | `newsletter-settings.update` | `NewsletterSettingsUpdate` | done (unit) | |
-| `message-capping.update` | - | missing | |
+| `message-capping.update` | `MessageCappingUpdate` | done (unit) | notifikasi `mex` dari server, tak bisa dipicu |
 | `chats.lock` | `ChatsLock` | done (live) | `appstate`: 23 event dari snapshot |
 | `settings.update` | `SettingsUpdate` | done (live) | `appstate`: 9 event |
 
@@ -154,3 +154,9 @@ tctoken), dienkripsi lewat sesi LID; versi awal lewat sesi PN membuat balasan HP
 Belum terbukti live: jalur history sync awal/RECENT/PUSH_NAME (hanya saat pairing) dan `is_latest=true`.
 **Pertanyaan terbuka:** on-demand untuk self-chat mengembalikan chat dengan 0 pesan (alamat PN maupun LID); area `history`
 melewatinya tanpa `--chat-group`.
+
+**Tiga event terakhir (2026-10-23).** Notifikasi `mex` kini ditangani (`MessageCappingInfoNotification`); op `mex` lain
+(reachout timelock, update newsletter lama) belum menghasilkan event. Status history mengikuti Baileys: `complete` untuk
+INITIAL_BOOTSTRAP pertama dan RECENT progress 100, `paused` setelah 120 dtk tanpa potongan RECENT (pelacak murni + timer
+per koneksi). Ketiganya baru teruji unit: capping didorong server, status history hanya saat pairing, dan tag anggota
+butuh perubahan label oleh seseorang di grup.

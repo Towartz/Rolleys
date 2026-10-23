@@ -209,6 +209,37 @@ pub enum BaileysEvent {
     ChatsUpsert { chats: Vec<ChatUpsert> },
     /// Reaction added or removed on a message (Baileys `messages.reaction`)
     MessagesReaction { reaction: MessageReaction },
+    /// History sync finished or stalled (Baileys `messaging-history.status`).
+    /// `status` is "complete" or "paused"; `explicit` is false for the 120 s stall timeout.
+    MessagingHistoryStatus {
+        sync_type: i32,
+        status: String,
+        explicit: bool,
+    },
+    /// New-chat message cap changed (Baileys `message-capping.update`)
+    MessageCappingUpdate { info: MessageCapInfo },
+    /// A group member's label changed (Baileys `group.member-tag.update`)
+    GroupMemberTagUpdate {
+        group_jid: String,
+        participant: String,
+        participant_alt: Option<String>,
+        label: String,
+        message_timestamp: u64,
+    },
+}
+
+/// Payload of [`BaileysEvent::MessageCappingUpdate`] (Baileys `NewChatMessageCapInfo`).
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct MessageCapInfo {
+    pub total_quota: Option<i64>,
+    pub used_quota: Option<i64>,
+    pub cycle_start_timestamp: Option<String>,
+    pub cycle_end_timestamp: Option<String>,
+    pub server_sent_timestamp: Option<String>,
+    pub ote_status: Option<String>,
+    pub mv_status: Option<String>,
+    pub capping_status: Option<String>,
 }
 
 /// A chat carried by [`BaileysEvent::ChatsUpsert`].

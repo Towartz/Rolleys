@@ -984,7 +984,10 @@ impl RoseBaileysClient {
                     | BaileysEvent::MessagesDelete { .. }
                     | BaileysEvent::MessageStarred { .. }
                     | BaileysEvent::ChatsUpsert { .. }
-                    | BaileysEvent::MessagesReaction { .. } => {
+                    | BaileysEvent::MessagesReaction { .. }
+                    | BaileysEvent::MessagingHistoryStatus { .. }
+                    | BaileysEvent::MessageCappingUpdate { .. }
+                    | BaileysEvent::GroupMemberTagUpdate { .. } => {
                         NapiEventPayload::Raw(serde_json::to_value(&event).unwrap_or_default())
                     }
                 };

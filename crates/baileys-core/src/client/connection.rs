@@ -94,6 +94,10 @@ impl BaileysClient {
             let mut consecutive_connect_failures: u32 = 0;
 
             while is_running_clone.load(Ordering::SeqCst) {
+                // messaging-history.status state lives per socket, as in Baileys.
+                let history_status = Arc::new(tokio::sync::Mutex::new(
+                    crate::history::HistorySyncStatusTracker::default(),
+                ));
                 let mut creds = match store_clone.get_creds().await {
                     Ok(Some(c)) => c,
                     Ok(None) => {
@@ -338,6 +342,11 @@ impl BaileysClient {
                                                 }
                                                 "newsletter" => {
                                                     for ev in crate::notifications::parse_newsletter_notification(&node) {
+                                                        events_clone.emit(ev);
+                                                    }
+                                                }
+                                                "mex" => {
+                                                    for ev in crate::notifications::parse_mex_notification(&node) {
                                                         events_clone.emit(ev);
                                                     }
                                                 }
@@ -1132,6 +1141,38 @@ impl BaileysClient {
                                                             debug!("Received HistorySyncNotification (sync_type={:?}, chunk={:?}), downloading archive...",
                                                                 history_notif.sync_type, history_notif.chunk_order);
 
+                                                            // messaging-history.status (Baileys historySyncStatus)
+                                                            {
+                                                                let sync_type = history_notif.sync_type.unwrap_or(-1);
+                                                                let (statuses, arm) = history_status
+                                                                    .lock()
+                                                                    .await
+                                                                    .on_chunk(sync_type, history_notif.progress);
+                                                                for (sync_type, status, explicit) in statuses {
+                                                                    events_clone.emit(BaileysEvent::MessagingHistoryStatus {
+                                                                        sync_type,
+                                                                        status: status.to_string(),
+                                                                        explicit,
+                                                                    });
+                                                                }
+                                                                if let Some(generation) = arm {
+                                                                    let tracker = Arc::clone(&history_status);
+                                                                    let events_t = events_clone.clone();
+                                                                    tokio::spawn(async move {
+                                                                        tokio::time::sleep(crate::history::HISTORY_SYNC_PAUSED_TIMEOUT).await;
+                                                                        if let Some((sync_type, status, explicit)) =
+                                                                            tracker.lock().await.on_pause_timeout(generation)
+                                                                        {
+                                                                            events_t.emit(BaileysEvent::MessagingHistoryStatus {
+                                                                                sync_type,
+                                                                                status: status.to_string(),
+                                                                                explicit,
+                                                                            });
+                                                                        }
+                                                                    });
+                                                                }
+                                                            }
+
                                                             let notif_clone = history_notif.clone();
                                                             let hist_msg_id = msg_info.key.as_ref().and_then(|k| k.id.clone()).unwrap_or_default();
                                                             let events_h = events_clone.clone();
@@ -1327,6 +1368,9 @@ impl BaileysClient {
 
                                                         // Reactions are also stored and emitted as messages, like Baileys.
                                                         if let Some(ev) = crate::notifications::reaction_event(&msg_for_db) {
+                                                            events_live.emit(ev);
+                                                        }
+                                                        if let Some(ev) = crate::notifications::member_tag_event(&msg_for_db) {
                                                             events_live.emit(ev);
                                                         }
 

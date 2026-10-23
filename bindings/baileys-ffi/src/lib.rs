@@ -930,7 +930,10 @@ impl AuroraClient {
                     | BaileysEvent::MessagesDelete { .. }
                     | BaileysEvent::MessageStarred { .. }
                     | BaileysEvent::ChatsUpsert { .. }
-                    | BaileysEvent::MessagesReaction { .. } => continue,
+                    | BaileysEvent::MessagesReaction { .. }
+                    | BaileysEvent::MessagingHistoryStatus { .. }
+                    | BaileysEvent::MessageCappingUpdate { .. }
+                    | BaileysEvent::GroupMemberTagUpdate { .. } => continue,
                 };
 
                 listener.on_event(ffi_event);

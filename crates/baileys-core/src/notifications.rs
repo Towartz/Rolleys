@@ -3,7 +3,7 @@
 //! These mirror Baileys' `handleGroupNotification` / `handleNewsletterNotification`
 //! (messages-recv.ts) but have no I/O, so they can be unit-tested with hand-built nodes.
 
-use crate::events::{BaileysEvent, ChatUpsert, GroupUpdate, MessageReaction};
+use crate::events::{BaileysEvent, ChatUpsert, GroupUpdate, MessageCapInfo, MessageReaction};
 use crate::groups::{parse_group_metadata, GroupParticipant};
 use baileys_binary::BinaryNode;
 use baileys_proto::proto::{Message, WebMessageInfo};
@@ -197,6 +197,68 @@ pub fn reaction_event(info: &WebMessageInfo) -> Option<BaileysEvent> {
             text,
             sender_timestamp_ms: reaction.sender_timestamp_ms,
         },
+    })
+}
+
+/// Parses a `<notification type="mex">` stanza (Baileys `handleMexNotification`).
+///
+/// Only operations Baileys turns into events are handled; others (reachout timelock, legacy
+/// newsletter updates) yield nothing here.
+pub fn parse_mex_notification(node: &BinaryNode) -> Vec<BaileysEvent> {
+    let Some(update) = node.get_child("update") else {
+        return Vec::new();
+    };
+    let Some(op) = update.get_attr("op_name") else {
+        return Vec::new();
+    };
+    let Some(raw) = update
+        .content_as_bytes()
+        .map(|b| b.to_vec())
+        .or_else(|| update.content_as_str().map(|s| s.as_bytes().to_vec()))
+    else {
+        return Vec::new();
+    };
+    let Ok(json) = serde_json::from_slice::<serde_json::Value>(&raw) else {
+        return Vec::new();
+    };
+    if json
+        .get("errors")
+        .and_then(|e| e.as_array())
+        .is_some_and(|e| !e.is_empty())
+    {
+        return Vec::new();
+    }
+    let Some(data) = json.get("data") else {
+        return Vec::new();
+    };
+    match op {
+        "MessageCappingInfoNotification" => data
+            .get("xwa2_notify_new_chat_messages_capping_info_update")
+            .and_then(|p| serde_json::from_value::<MessageCapInfo>(p.clone()).ok())
+            .map(|info| vec![BaileysEvent::MessageCappingUpdate { info }])
+            .unwrap_or_default(),
+        _ => Vec::new(),
+    }
+}
+
+/// Builds `group.member-tag.update` for a `GROUP_MEMBER_LABEL_CHANGE` protocol message.
+pub fn member_tag_event(info: &WebMessageInfo) -> Option<BaileysEvent> {
+    use baileys_proto::proto::message::protocol_message::Type;
+    let protocol = inner_message(info.message.as_ref()?)
+        .protocol_message
+        .as_ref()?;
+    if protocol.r#type != Some(Type::GroupMemberLabelChange as i32) {
+        return None;
+    }
+    let label = protocol.member_label.as_ref()?.label.clone()?;
+    let key = info.key.as_ref()?;
+    Some(BaileysEvent::GroupMemberTagUpdate {
+        group_jid: key.remote_jid.clone()?,
+        participant: key.participant.clone().unwrap_or_default(),
+        // Baileys fills this from the stanza's participant_pn; the key does not carry it here.
+        participant_alt: None,
+        label,
+        message_timestamp: info.message_timestamp.unwrap_or(0),
     })
 }
 
@@ -531,5 +593,80 @@ mod tests {
             ..reaction_info("", false)
         };
         assert!(reaction_event(&plain).is_none());
+    }
+
+    #[test]
+    fn mex_capping_notification_emits_capping_update() {
+        let body = br#"{"data":{"xwa2_notify_new_chat_messages_capping_info_update":{"total_quota":100,"used_quota":7,"capping_status":"NONE"}}}"#;
+        let n = BinaryNode::new("notification")
+            .with_attr("type", "mex")
+            .with_child(
+                BinaryNode::new("update")
+                    .with_attr("op_name", "MessageCappingInfoNotification")
+                    .with_bytes_content(body.to_vec()),
+            );
+        match &parse_mex_notification(&n)[..] {
+            [BaileysEvent::MessageCappingUpdate { info }] => {
+                assert_eq!(info.total_quota, Some(100));
+                assert_eq!(info.used_quota, Some(7));
+                assert_eq!(info.capping_status.as_deref(), Some("NONE"));
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+        // Unknown op and GQL errors produce nothing.
+        let other_op = BinaryNode::new("notification").with_child(
+            BinaryNode::new("update")
+                .with_attr("op_name", "NotificationUserReachoutTimelockUpdate")
+                .with_bytes_content(body.to_vec()),
+        );
+        assert!(parse_mex_notification(&other_op).is_empty());
+        let errs = BinaryNode::new("notification").with_child(
+            BinaryNode::new("update")
+                .with_attr("op_name", "MessageCappingInfoNotification")
+                .with_bytes_content(br#"{"errors":[{"message":"x"}],"data":null}"#.to_vec()),
+        );
+        assert!(parse_mex_notification(&errs).is_empty());
+    }
+
+    #[test]
+    fn member_label_change_emits_member_tag_update() {
+        use baileys_proto::proto::{message, MemberLabel, MessageKey};
+        let info = WebMessageInfo {
+            key: Some(MessageKey {
+                remote_jid: Some("555@g.us".into()),
+                from_me: Some(false),
+                id: Some("X".into()),
+                participant: Some("9@lid".into()),
+            }),
+            message_timestamp: Some(1_700_000_000),
+            message: Some(Message {
+                protocol_message: Some(Box::new(message::ProtocolMessage {
+                    r#type: Some(message::protocol_message::Type::GroupMemberLabelChange as i32),
+                    member_label: Some(MemberLabel {
+                        label: Some("Moderator".into()),
+                        label_timestamp: None,
+                    }),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        match member_tag_event(&info) {
+            Some(BaileysEvent::GroupMemberTagUpdate {
+                group_jid,
+                participant,
+                label,
+                message_timestamp,
+                ..
+            }) => {
+                assert_eq!(group_jid, "555@g.us");
+                assert_eq!(participant, "9@lid");
+                assert_eq!(label, "Moderator");
+                assert_eq!(message_timestamp, 1_700_000_000);
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+        assert!(member_tag_event(&reaction_info("👍", false)).is_none());
     }
 }
