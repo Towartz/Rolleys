@@ -285,6 +285,7 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                     progress,
                     conversations,
                     status_v3_messages,
+                    ..
                 } => {
                     let filter = CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed);
                     if filter <= 1 {

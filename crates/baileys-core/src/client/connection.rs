@@ -1133,41 +1133,39 @@ impl BaileysClient {
                                                                 history_notif.sync_type, history_notif.chunk_order);
 
                                                             let notif_clone = history_notif.clone();
+                                                            let hist_msg_id = msg_info.key.as_ref().and_then(|k| k.id.clone()).unwrap_or_default();
                                                             let events_h = events_clone.clone();
                                                             let store_h = Arc::clone(store_clone);
                                                             let signal_h = Arc::clone(signal_clone);
 
                                                             tokio::spawn(async move {
+                                                                // Baileys' isLatest: no non-on-demand history notification was
+                                                                // processed before this one. Recorded before downloading, as Baileys does.
+                                                                let on_demand = notif_clone.sync_type
+                                                                    == Some(baileys_proto::proto::message::HistorySyncType::OnDemand as i32);
+                                                                let is_latest = if on_demand {
+                                                                    None
+                                                                } else {
+                                                                    let seen_before = store_h
+                                                                        .get_all_keys("history-processed")
+                                                                        .await
+                                                                        .map(|k| !k.is_empty())
+                                                                        .unwrap_or(false);
+                                                                    let _ = store_h.set_keys(vec![baileys_store::KeyEntry {
+                                                                        key_type: "history-processed".to_string(),
+                                                                        id: hist_msg_id,
+                                                                        data: Vec::new(),
+                                                                    }]).await;
+                                                                    Some(!seen_before)
+                                                                };
                                                                 match baileys_media::download_history_sync(&notif_clone).await {
-                                                                    Ok(history) => {
+                                                                    Ok(mut history) => {
                                                                         let sync_type = history.sync_type.unwrap_or(0);
                                                                         let progress = history.progress.unwrap_or(0);
                                                                         let conv_count = history.conversations.len();
                                                                         let status_count = history.status_v3_messages.len();
                                                                         debug!("Successfully decrypted HistorySync: {} conversations, {} status updates (type={}, progress={})",
                                                                             conv_count, status_count, sync_type, progress);
-
-                                                                        // Persist LID-PN mappings
-                                                                        let mut entries = Vec::new();
-                                                                        for mapping in &history.phone_number_to_lid_mappings {
-                                                                            if let (Some(ref pn), Some(ref lid)) = (&mapping.pn_jid, &mapping.lid_jid) {
-                                                                                signal_h.lid_mappings().store_mapping(pn, lid);
-                                                                                entries.push(baileys_store::KeyEntry {
-                                                                                    key_type: "lid-mapping".to_string(),
-                                                                                    id: pn.clone(),
-                                                                                    data: lid.as_bytes().to_vec(),
-                                                                                });
-                                                                                let _ = store_h.save_contact(&StoredContact {
-                                                                                    jid: pn.clone(),
-                                                                                    name: None,
-                                                                                    push_name: None,
-                                                                                    lid: Some(lid.clone()),
-                                                                                }).await;
-                                                                            }
-                                                                        }
-                                                                        if !entries.is_empty() {
-                                                                            let _ = store_h.set_keys(entries).await;
-                                                                        }
 
                                                                         // Persist Pushnames and build lookup map for chat naming
                                                                         let mut pushname_map: HashMap<String, String> = HashMap::new();
@@ -1269,11 +1267,42 @@ impl BaileysClient {
                                                                             let _ = store_h.save_chat(&stored_chat).await;
                                                                         }
 
+                                                                        // Messages are persisted above; now build the Baileys payload, which
+                                                                        // also trims each chat to its latest message.
+                                                                        let processed = crate::history::process_history_sync(&mut history);
+
+                                                                        // Persist LID-PN mappings (explicit ones plus those derived from chats)
+                                                                        let mut entries = Vec::new();
+                                                                        for m in &processed.lid_pn_mappings {
+                                                                            signal_h.lid_mappings().store_mapping(&m.pn, &m.lid);
+                                                                            entries.push(baileys_store::KeyEntry {
+                                                                                key_type: "lid-mapping".to_string(),
+                                                                                id: m.pn.clone(),
+                                                                                data: m.lid.as_bytes().to_vec(),
+                                                                            });
+                                                                            let _ = store_h.save_contact(&StoredContact {
+                                                                                jid: m.pn.clone(),
+                                                                                name: None,
+                                                                                push_name: None,
+                                                                                lid: Some(m.lid.clone()),
+                                                                            }).await;
+                                                                        }
+                                                                        if !entries.is_empty() {
+                                                                            let _ = store_h.set_keys(entries).await;
+                                                                        }
+
                                                                         events_h.emit(BaileysEvent::HistorySync {
                                                                             sync_type,
                                                                             progress,
                                                                             conversations: history.conversations,
                                                                             status_v3_messages: history.status_v3_messages,
+                                                                            contacts: processed.contacts,
+                                                                            messages: processed.messages,
+                                                                            lid_pn_mappings: processed.lid_pn_mappings,
+                                                                            past_participants: history.past_participants,
+                                                                            is_latest,
+                                                                            chunk_order: notif_clone.chunk_order,
+                                                                            peer_data_request_session_id: notif_clone.peer_data_request_session_id.clone(),
                                                                         });
                                                                     }
                                                                     Err(e) => {

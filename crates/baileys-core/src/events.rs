@@ -29,8 +29,18 @@ pub enum BaileysEvent {
     HistorySync {
         sync_type: i32,
         progress: u32,
+        /// Chats in this chunk; each keeps only its most recent message (all are in `messages`).
         conversations: Vec<baileys_proto::proto::Conversation>,
         status_v3_messages: Vec<WebMessageInfo>,
+        contacts: Vec<crate::history::HistoryContact>,
+        messages: Vec<WebMessageInfo>,
+        lid_pn_mappings: Vec<crate::history::LidPnMapping>,
+        past_participants: Vec<baileys_proto::proto::PastParticipants>,
+        /// True for the first non-on-demand history notification this session store has seen
+        /// (Baileys `isLatest`); `None` for on-demand fetches.
+        is_latest: Option<bool>,
+        chunk_order: Option<u32>,
+        peer_data_request_session_id: Option<String>,
     },
     /// Poll vote update received and tallied
     PollVote {

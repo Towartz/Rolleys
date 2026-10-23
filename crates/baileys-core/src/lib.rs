@@ -15,6 +15,7 @@ pub mod config;
 pub mod ephemeral;
 pub mod events;
 pub mod groups;
+pub mod history;
 pub mod inner;
 pub mod interactive;
 pub mod labels;
