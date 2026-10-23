@@ -20,6 +20,7 @@ pub mod interactive;
 pub mod labels;
 pub mod messages;
 pub mod newsletter;
+pub mod notifications;
 pub mod polls;
 pub mod privacy;
 pub mod proto_builders;

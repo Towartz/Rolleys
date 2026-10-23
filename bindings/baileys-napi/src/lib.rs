@@ -17,6 +17,10 @@ use baileys_store::SqliteStore;
 pub enum NapiEventPayload {
     #[serde(rename = "connecting")]
     Connecting,
+    /// Events without a dedicated payload yet (groups.*, newsletter.*, creds.update);
+    /// `data` is the serde-serialized `BaileysEvent`.
+    #[serde(rename = "raw")]
+    Raw(serde_json::Value),
     #[serde(rename = "qr")]
     QrCode { code: String },
     #[serde(rename = "pairing_code")]
@@ -962,6 +966,17 @@ impl RoseBaileysClient {
                     },
                     BaileysEvent::Disconnected { reason } => {
                         NapiEventPayload::Disconnected { reason }
+                    }
+                    BaileysEvent::CredsUpdate
+                    | BaileysEvent::GroupsUpsert { .. }
+                    | BaileysEvent::GroupsUpdate { .. }
+                    | BaileysEvent::GroupParticipantsUpdate { .. }
+                    | BaileysEvent::GroupJoinRequest { .. }
+                    | BaileysEvent::NewsletterReaction { .. }
+                    | BaileysEvent::NewsletterView { .. }
+                    | BaileysEvent::NewsletterParticipantsUpdate { .. }
+                    | BaileysEvent::NewsletterSettingsUpdate { .. } => {
+                        NapiEventPayload::Raw(serde_json::to_value(&event).unwrap_or_default())
                     }
                 };
 

@@ -315,7 +315,9 @@ impl BaileysClient {
                                                             Ok(reply) => {
                                                                 debug!("Sending companion_finish IQ reply to server!");
                                                                 let _ = socket.send_node(reply).await;
-                                                                let _ = store_clone.save_creds(&creds).await;
+                                                                if store_clone.save_creds(&creds).await.is_ok() {
+                                                                    events_clone.emit(BaileysEvent::CredsUpdate);
+                                                                }
                                                             }
                                                             Err(e) => {
                                                                 error!("Failed to handle companion notification: {}", e);
@@ -325,6 +327,21 @@ impl BaileysClient {
                                                         debug!("Received <notification> with link_code_companion_reg stage={:?}", stage);
                                                     }
                                                 }
+                                            }
+
+                                            // Group / newsletter push notifications (Baileys parity)
+                                            match node.get_attr("type").unwrap_or("") {
+                                                "w:gp2" => {
+                                                    for ev in crate::notifications::parse_group_notification(&node) {
+                                                        events_clone.emit(ev);
+                                                    }
+                                                }
+                                                "newsletter" => {
+                                                    for ev in crate::notifications::parse_newsletter_notification(&node) {
+                                                        events_clone.emit(ev);
+                                                    }
+                                                }
+                                                _ => {}
                                             }
 
                                             // Check blocklist push notification
@@ -629,6 +646,8 @@ impl BaileysClient {
                                                         }
                                                         if let Err(e) = store_clone.save_creds(&creds).await {
                                                             error!("Failed to save updated credentials: {}", e);
+                                                        } else {
+                                                            events_clone.emit(BaileysEvent::CredsUpdate);
                                                         }
 
                                                         {
@@ -661,7 +680,9 @@ impl BaileysClient {
                                                 debug!("Associated LID: {}", lid);
                                                 me_lid = Some(lid.to_string());
                                                 creds.me_lid = Some(lid.to_string());
-                                                let _ = store_clone.save_creds(&creds).await;
+                                                if store_clone.save_creds(&creds).await.is_ok() {
+                                                    events_clone.emit(BaileysEvent::CredsUpdate);
+                                                }
                                             }
 
                                             // Upload initial 30 PreKeys

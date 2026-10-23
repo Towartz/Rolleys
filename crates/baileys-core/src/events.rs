@@ -114,6 +114,82 @@ pub enum BaileysEvent {
         total_bytes: u64,
         percentage: f32,
     },
+    /// Authentication credentials were persisted (Baileys `creds.update`)
+    CredsUpdate,
+    /// Group created or we were added to a new group (Baileys `groups.upsert`)
+    GroupsUpsert {
+        groups: Vec<crate::groups::GroupMetadata>,
+    },
+    /// Partial group metadata change (Baileys `groups.update`)
+    GroupsUpdate { update: GroupUpdate },
+    /// Participants added, removed, promoted, demoted or modified
+    /// (Baileys `group-participants.update`)
+    GroupParticipantsUpdate {
+        group_jid: String,
+        author: Option<String>,
+        participants: Vec<crate::groups::GroupParticipant>,
+        /// "add" | "remove" | "leave" | "promote" | "demote" | "modify"
+        action: String,
+    },
+    /// Membership approval request created or revoked (Baileys `group.join-request`)
+    GroupJoinRequest {
+        group_jid: String,
+        author: Option<String>,
+        participant: String,
+        participant_pn: Option<String>,
+        /// "created" | "revoked" | "rejected"
+        action: String,
+        method: Option<String>,
+    },
+    /// Reaction count changed on a channel post (Baileys `newsletter.reaction`)
+    NewsletterReaction {
+        newsletter_jid: String,
+        server_id: String,
+        code: Option<String>,
+        count: Option<u32>,
+        removed: bool,
+    },
+    /// View count changed on a channel post (Baileys `newsletter.view`)
+    NewsletterView {
+        newsletter_jid: String,
+        server_id: String,
+        count: u32,
+    },
+    /// Channel admin/subscriber role change (Baileys `newsletter-participants.update`)
+    NewsletterParticipantsUpdate {
+        newsletter_jid: String,
+        author: Option<String>,
+        user: String,
+        action: String,
+        new_role: Option<String>,
+    },
+    /// Channel name/description/settings change (Baileys `newsletter-settings.update`)
+    NewsletterSettingsUpdate {
+        newsletter_jid: String,
+        name: Option<String>,
+        description: Option<String>,
+    },
+}
+
+/// Partial group metadata carried by [`BaileysEvent::GroupsUpdate`].
+/// Only the fields the notification actually changed are `Some`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct GroupUpdate {
+    pub id: String,
+    pub author: Option<String>,
+    pub subject: Option<String>,
+    pub subject_owner: Option<String>,
+    pub subject_time: Option<i64>,
+    pub description: Option<String>,
+    /// True when the description was removed (so `description` stays `None`).
+    pub description_deleted: bool,
+    pub description_id: Option<String>,
+    pub announce: Option<bool>,
+    pub restrict: Option<bool>,
+    pub join_approval_mode: Option<bool>,
+    pub member_add_mode: Option<String>,
+    pub ephemeral_duration: Option<u32>,
+    pub invite_code: Option<String>,
 }
 
 /// Details of an incoming or updated WhatsApp VoIP call.

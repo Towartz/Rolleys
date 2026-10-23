@@ -349,6 +349,117 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                         );
                     }
                 }
+                BaileysEvent::CredsUpdate => {
+                    if CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed) == 0 {
+                        print_comfy_event("CREDS", ANSI_CYAN, "Credentials saved");
+                    }
+                }
+                BaileysEvent::GroupsUpsert { groups } => {
+                    for g in groups {
+                        print_comfy_event(
+                            "GROUP",
+                            ANSI_CYAN,
+                            &format!(
+                                "Group upsert: {} \"{}\" ({} members)",
+                                g.id,
+                                g.subject,
+                                g.participants.len()
+                            ),
+                        );
+                    }
+                }
+                BaileysEvent::GroupsUpdate { update } => {
+                    print_comfy_event(
+                        "GROUP",
+                        ANSI_CYAN,
+                        &format!("Group update: {:?}", update),
+                    );
+                }
+                BaileysEvent::GroupParticipantsUpdate {
+                    group_jid,
+                    author,
+                    participants,
+                    action,
+                } => {
+                    let who: Vec<&str> = participants.iter().map(|p| p.jid.as_str()).collect();
+                    print_comfy_event(
+                        "GROUP",
+                        ANSI_CYAN,
+                        &format!(
+                            "{} {}: {} (by {})",
+                            group_jid,
+                            action,
+                            who.join(", "),
+                            author.as_deref().unwrap_or("unknown")
+                        ),
+                    );
+                }
+                BaileysEvent::GroupJoinRequest {
+                    group_jid,
+                    participant,
+                    action,
+                    ..
+                } => {
+                    print_comfy_event(
+                        "GROUP",
+                        ANSI_YELLOW,
+                        &format!("Join request {} in {}: {}", action, group_jid, participant),
+                    );
+                }
+                BaileysEvent::NewsletterReaction {
+                    newsletter_jid,
+                    server_id,
+                    code,
+                    count,
+                    removed,
+                } => {
+                    print_comfy_event(
+                        "CHANNEL",
+                        ANSI_CYAN,
+                        &format!(
+                            "{} post {} reaction {:?} count={:?} removed={}",
+                            newsletter_jid, server_id, code, count, removed
+                        ),
+                    );
+                }
+                BaileysEvent::NewsletterView {
+                    newsletter_jid,
+                    server_id,
+                    count,
+                } => {
+                    print_comfy_event(
+                        "CHANNEL",
+                        ANSI_CYAN,
+                        &format!("{} post {} views={}", newsletter_jid, server_id, count),
+                    );
+                }
+                BaileysEvent::NewsletterParticipantsUpdate {
+                    newsletter_jid,
+                    user,
+                    action,
+                    new_role,
+                    ..
+                } => {
+                    print_comfy_event(
+                        "CHANNEL",
+                        ANSI_CYAN,
+                        &format!("{} {} {} role={:?}", newsletter_jid, action, user, new_role),
+                    );
+                }
+                BaileysEvent::NewsletterSettingsUpdate {
+                    newsletter_jid,
+                    name,
+                    description,
+                } => {
+                    print_comfy_event(
+                        "CHANNEL",
+                        ANSI_CYAN,
+                        &format!(
+                            "{} settings: name={:?} description={:?}",
+                            newsletter_jid, name, description
+                        ),
+                    );
+                }
                 BaileysEvent::BlocklistUpdate { added, removed } => {
                     let filter = CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed);
                     if filter <= 1 {

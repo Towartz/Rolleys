@@ -911,6 +911,17 @@ impl AuroraClient {
                         total_bytes,
                         percentage,
                     },
+                    // TODO(parity phase 5): expose these through AuroraEvent once the
+                    // Swift/Kotlin bindings are regenerated.
+                    BaileysEvent::CredsUpdate
+                    | BaileysEvent::GroupsUpsert { .. }
+                    | BaileysEvent::GroupsUpdate { .. }
+                    | BaileysEvent::GroupParticipantsUpdate { .. }
+                    | BaileysEvent::GroupJoinRequest { .. }
+                    | BaileysEvent::NewsletterReaction { .. }
+                    | BaileysEvent::NewsletterView { .. }
+                    | BaileysEvent::NewsletterParticipantsUpdate { .. }
+                    | BaileysEvent::NewsletterSettingsUpdate { .. } => continue,
                 };
 
                 listener.on_event(ffi_event);
