@@ -1,5 +1,6 @@
 const path = require('path');
 const EventEmitter = require('events');
+const { mapRawEvent } = require('./event-map');
 
 // Locate native binary
 let nativeBinding = null;
@@ -87,8 +88,10 @@ function makeWASocket(config = {}) {
         case 'presence':
           ev.emit('presence.update', { id: data.jid, presences: { [data.jid]: { lastKnownPresence: data.presence } } });
           break;
-        case 'history_sync':
-          ev.emit('sync:resume:progress', data);
+        case 'raw':
+          for (const [name, payload] of mapRawEvent(data)) {
+            ev.emit(name, payload);
+          }
           break;
         case 'message_edited':
           ev.emit('messages.update', [{

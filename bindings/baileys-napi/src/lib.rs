@@ -17,8 +17,8 @@ use baileys_store::SqliteStore;
 pub enum NapiEventPayload {
     #[serde(rename = "connecting")]
     Connecting,
-    /// Events without a dedicated payload yet (groups.*, newsletter.*, creds.update);
-    /// `data` is the serde-serialized `BaileysEvent`.
+    /// Every event without a dedicated payload; `data` is the serde-serialized `BaileysEvent`,
+    /// which `event-map.js` translates into Baileys event names and shapes.
     #[serde(rename = "raw")]
     Raw(serde_json::Value),
     #[serde(rename = "qr")]
@@ -46,12 +46,6 @@ pub enum NapiEventPayload {
     },
     #[serde(rename = "presence")]
     Presence { jid: String, presence: String },
-    #[serde(rename = "history_sync")]
-    HistorySync {
-        sync_type: i32,
-        progress: u32,
-        conversation_count: u32,
-    },
     #[serde(rename = "poll_vote")]
     PollVote {
         poll_id: String,
@@ -810,16 +804,6 @@ impl RoseBaileysClient {
                     BaileysEvent::Presence { jid, presence } => {
                         NapiEventPayload::Presence { jid, presence }
                     }
-                    BaileysEvent::HistorySync {
-                        sync_type,
-                        progress,
-                        conversations,
-                        ..
-                    } => NapiEventPayload::HistorySync {
-                        sync_type,
-                        progress,
-                        conversation_count: conversations.len() as u32,
-                    },
                     BaileysEvent::PollVote {
                         poll_id,
                         voter_jid,
@@ -967,7 +951,9 @@ impl RoseBaileysClient {
                     BaileysEvent::Disconnected { reason } => {
                         NapiEventPayload::Disconnected { reason }
                     }
-                    BaileysEvent::CredsUpdate
+                    // Full history payload: event-map.js turns it into messaging-history.set.
+                    BaileysEvent::HistorySync { .. }
+                    | BaileysEvent::CredsUpdate
                     | BaileysEvent::GroupsUpsert { .. }
                     | BaileysEvent::GroupsUpdate { .. }
                     | BaileysEvent::GroupParticipantsUpdate { .. }
@@ -2983,5 +2969,36 @@ impl RoseBaileysClient {
                 .await
         })
         .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use baileys_core::BaileysEvent;
+    use serde_json::json;
+
+    /// `event-map.js` (and its tests) rely on this serde form of `BaileysEvent`:
+    /// unit variants are bare strings, others `{ "Variant": { snake_case fields } }`.
+    #[test]
+    fn raw_event_serde_shape() {
+        assert_eq!(
+            serde_json::to_value(&BaileysEvent::CredsUpdate).unwrap(),
+            json!("CredsUpdate")
+        );
+        assert_eq!(
+            serde_json::to_value(&BaileysEvent::ChatsLock {
+                jid: "1@s.whatsapp.net".into(),
+                locked: true,
+            })
+            .unwrap(),
+            json!({ "ChatsLock": { "jid": "1@s.whatsapp.net", "locked": true } })
+        );
+        let v = serde_json::to_value(&BaileysEvent::MessagingHistoryStatus {
+            sync_type: 3,
+            status: "complete".into(),
+            explicit: true,
+        })
+        .unwrap();
+        assert_eq!(v["MessagingHistoryStatus"]["sync_type"], json!(3));
     }
 }

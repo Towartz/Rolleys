@@ -45,6 +45,25 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
 
   # -------------------------------------------------------------
+  # Node binding: event mapping to Baileys names (no native build needed)
+  # -------------------------------------------------------------
+  napi-js-tests:
+    name: Node binding event mapping
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run tests
+        working-directory: bindings/baileys-napi
+        run: npm test
+
+  # -------------------------------------------------------------
   # Matrix Tests across Windows, Linux, and macOS Host Runners
   # -------------------------------------------------------------
   test-matrix:

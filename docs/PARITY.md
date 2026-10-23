@@ -72,7 +72,7 @@ Rincian per area ada di rencana kerja; ringkasannya:
 
 | Binding | Status | Catatan |
 |---|---|---|
-| napi | partial | ~150 method; kurang send tipe baru, status media, newsletter admin, pairing/QR |
+| napi | partial | event: semua event core muncul di `sock.ev` dengan nama/bentuk Baileys (`event-map.js`, test `node --test` + kontrak, 2026-10-23); method masih tertinggal |
 | ffi (uniffi) | done (unit) | semua event core diteruskan; setiap method core terjangkau atau dikecualikan dengan alasan, dijaga test `parity_tests` (2026-10-23). Swift/Kotlin hasil generate belum dikompilasi di sini (tanpa swiftc/kotlinc) |
 | cabi | partial | tanpa callback event; banyak fungsi grup/kirim hilang (verifikasi terhadap `bindings/c/baileys.h`) |
 
