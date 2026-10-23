@@ -95,3 +95,16 @@ Rich message types (live-suite `rich`, self-chat, semua `server_ack`): lokasi, l
 album, view-once (payload teks), forward, JSON, tombol quick-reply, list, reply/quote, comment, pin, unpin.
 `server_ack` hanya membuktikan server menerima stanza, bukan bahwa HP merender pesannya (tombol/list sering tidak
 dirender untuk akun non-bisnis). Belum dicakup: view-once media sungguhan, album dengan media anak, produk, request-payment.
+Konfirmasi visual (pengguna, 2026-10-23): seluruh pesan `rich` termasuk tombol/list muncul di HP, bukan hanya `server_ack`.
+
+**App-state sync / chatModify: BELUM BERFUNGSI (ditemukan live, 2026-10-23).** Sebelumnya `chat_modify_*` dan label selalu
+mengembalikan `Ok` karena kegagalan syncd hanya masuk log debug; sekarang `dispatch_syncd_patch` meneruskan error.
+Hasil live (`--only chat`): resync penuh mengembalikan `<collection name=.../>` kosong (tanpa `version`, snapshot, patch)
+untuk kelima koleksi, dan setiap patch (mute, pin, archive, mark unread, star) ditolak server `400 bad-request`.
+Sudah dicek: request resync dan struktur patch/MAC/versi sama dengan Baileys; `snapshot_blob_ref` memang tidak pernah
+diunduh di core, tetapi server di sini tidak mengirim snapshot sama sekali, jadi itu bukan penyebab utama.
+Belum diketahui penyebabnya. Dugaan yang belum diuji: perangkat companion ini belum dianggap "sudah sinkron" oleh
+server (mis. permintaan kunci/initial sync tidak pernah selesai), atau `index_value_map` tidak disimpan sehingga hash salah
+setelah patch pertama. Status: `chatModify`, `labels`, app-state sync = **missing**, bukan done.
+Dicoba juga pada grup sungguhan (`--chat-group DXT`, 21 anggota; tanpa kirim pesan/ubah anggota): hasil identik, semua patch
+`400 bad-request` dan resync kosong. Jadi penyebabnya bukan karena target self-chat. Tidak ada state yang berubah (semua ditolak).

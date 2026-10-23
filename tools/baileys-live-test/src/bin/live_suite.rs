@@ -47,6 +47,7 @@ struct Suite {
     client: Arc<BaileysClient>,
     only: Option<String>,
     with_community: bool,
+    chat_group: Option<String>,
     results: Vec<Outcome>,
 }
 
@@ -143,8 +144,11 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
+    println!(
+        "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
+    );
     println!("      --json            Print the report as JSON after the table");
     println!("  -h, --help");
 }
@@ -155,6 +159,7 @@ async fn main() {
     let mut phone = std::env::var("LIVE_PHONE").ok();
     let mut db_path = std::env::var("ROSE_LIVE_SESSION_DB")
         .unwrap_or_else(|_| ".sessions/live_suite.db".to_string());
+    let mut chat_group = None::<String>;
     let (mut clean, mut json, mut with_community, mut only) = (false, false, false, None::<String>);
 
     let mut i = 1;
@@ -175,6 +180,10 @@ async fn main() {
             "--clean" => clean = true,
             "--json" => json = true,
             "--community" => with_community = true,
+            "--chat-group" if i + 1 < args.len() => {
+                chat_group = Some(args[i + 1].clone());
+                i += 1;
+            }
             "--help" | "-h" => return usage(),
             other => {
                 eprintln!("unknown argument: {other}\n");
@@ -262,12 +271,14 @@ async fn main() {
         client: client.clone(),
         only,
         with_community,
+        chat_group,
         results: Vec::new(),
     };
 
     run_core(&mut suite, &phone).await;
     run_messaging(&mut suite, &self_jid).await;
     run_rich(&mut suite, &self_jid).await;
+    run_chat(&mut suite, &self_jid).await;
     run_media(&mut suite, &self_jid).await;
     run_groups(&mut suite).await;
     run_community(&mut suite).await;
@@ -1033,6 +1044,171 @@ async fn run_rich(s: &mut Suite, self_jid: &str) {
     let bid = base_id.clone();
     // Always unpin so the chat is left as we found it.
     ack_step!(s, "unpin", to, |c, t| c.pin_message(&t, &bid, false, 0));
+}
+
+/// Paired action/restore steps: the restore step always runs so the chat is left as we found it.
+macro_rules! chat_step {
+    ($s:expr, $name:expr, $to:expr, |$c:ident, $t:ident| $call:expr) => {{
+        let $t = $to.clone();
+        $s.step("chat", $name, move |client| async move {
+            let $c = &client;
+            $call.await.map_err(e)?;
+            Ok("accepted by server".to_string())
+        })
+        .await;
+    }};
+}
+
+async fn run_chat(s: &mut Suite, self_jid: &str) {
+    use baileys_core::syncd::{
+        CRITICAL_BLOCK, CRITICAL_UNBLOCK_LOW, REGULAR, REGULAR_HIGH, REGULAR_LOW,
+    };
+
+    println!("== chat modify / app-state sync (self-chat) ==");
+    if !s.selected("chat") {
+        return;
+    }
+    // Chat scenarios default to the self-chat. With --chat-group they run against an existing
+    // group instead; that path only toggles mute/pin/archive/unread (each restored) and never
+    // sends a message or touches membership.
+    let group_name = s.chat_group.clone();
+    let to = match &group_name {
+        None => self_jid.to_string(),
+        Some(name) => {
+            let wanted = name.to_lowercase();
+            let resolved: Slot<String> = slot();
+            let rs = resolved.clone();
+            s.step("chat", "resolve group", move |c| async move {
+                let all = c.group_fetch_all_participating().await.map_err(e)?;
+                // Exact (case-insensitive) match wins; otherwise a single "contains" match.
+                // Several candidates is an error: never guess which real group to touch.
+                let exact: Vec<_> = all
+                    .iter()
+                    .filter(|g| g.subject.to_lowercase() == wanted)
+                    .collect();
+                let loose: Vec<_> = all
+                    .iter()
+                    .filter(|g| g.subject.to_lowercase().contains(&wanted))
+                    .collect();
+                let cands = if exact.len() == 1 { exact } else { loose };
+                match cands.as_slice() {
+                    [g] => {
+                        *rs.lock().await = Some(g.id.clone());
+                        Ok(format!(
+                            "{:?} {} ({} members)",
+                            g.subject,
+                            g.id,
+                            g.participants.len()
+                        ))
+                    }
+                    [] => Err(format!(
+                        "no joined group matching {wanted:?} among {}",
+                        all.len()
+                    )),
+                    many => Err(format!(
+                        "{} groups match {wanted:?}, pass a more specific name: {:?}",
+                        many.len(),
+                        many.iter()
+                            .take(8)
+                            .map(|g| g.subject.as_str())
+                            .collect::<Vec<_>>()
+                    )),
+                }
+            })
+            .await;
+            let found = resolved.lock().await.clone();
+            match found {
+                Some(jid) => jid,
+                None => return,
+            }
+        }
+    };
+
+    s.step("chat", "app-state full resync", |c| async move {
+        let sum = c
+            .resync_app_state(
+                &[
+                    CRITICAL_BLOCK,
+                    CRITICAL_UNBLOCK_LOW,
+                    REGULAR_HIGH,
+                    REGULAR_LOW,
+                    REGULAR,
+                ],
+                true,
+            )
+            .await
+            .map_err(e)?;
+        if sum.collections_failed > 0 || sum.collections_synced == 0 {
+            return Err(format!(
+                "synced={} failed={}",
+                sum.collections_synced, sum.collections_failed
+            ));
+        }
+        Ok(format!(
+            "{} collections, {} mutations",
+            sum.collections_synced, sum.mutations_applied
+        ))
+    })
+    .await;
+
+    let base: Slot<String> = slot();
+    let (t, b) = (to.clone(), base.clone());
+    if group_name.is_none() {
+        s.step("chat", "base text", move |c| async move {
+            let (id, st) =
+                send_acked(&c, || c.send_text_message(&t, "live-suite: chat target")).await?;
+            *b.lock().await = Some(id.clone());
+            Ok(format!("id={id} {st}"))
+        })
+        .await;
+    }
+
+    chat_step!(s, "mute 1h", to, |c, t| c.chat_modify_mute(&t, Some(3600)));
+    chat_step!(s, "unmute (restore)", to, |c, t| c
+        .chat_modify_mute(&t, None));
+    chat_step!(s, "pin", to, |c, t| c.chat_modify_pin(&t, true));
+    chat_step!(s, "unpin (restore)", to, |c, t| c
+        .chat_modify_pin(&t, false));
+    chat_step!(s, "archive", to, |c, t| c.chat_modify_archive(&t, true));
+    chat_step!(s, "unarchive (restore)", to, |c, t| c
+        .chat_modify_archive(&t, false));
+    chat_step!(s, "mark unread", to, |c, t| c
+        .chat_modify_mark_unread(&t, true));
+    chat_step!(s, "mark read (restore)", to, |c, t| c
+        .chat_modify_mark_unread(&t, false));
+
+    if let Some(id) = base.lock().await.clone() {
+        let i = id.clone();
+        chat_step!(s, "star message", to, |c, t| c
+            .chat_modify_star(&t, &i, true, true));
+        let i = id.clone();
+        chat_step!(s, "unstar (restore)", to, |c, t| c
+            .chat_modify_star(&t, &i, true, false));
+    } else {
+        let why = "needs a message we sent (self-chat only; no messages are sent to groups)";
+        s.skip("chat", "star message", why);
+        s.skip("chat", "unstar (restore)", why);
+    }
+
+    // A malformed patch or a diverged LTHash makes the server answer with an error or the
+    // collection fail to decode here, so this catches what the individual acks cannot.
+    s.step("chat", "resync after patches", |c| async move {
+        let sum = c
+            .resync_app_state(&[REGULAR_HIGH, REGULAR_LOW], false)
+            .await
+            .map_err(e)?;
+        if sum.collections_failed > 0 {
+            return Err(format!(
+                "{} collection(s) failed to resync",
+                sum.collections_failed
+            ));
+        }
+        Ok(format!(
+            "{} collections, {} mutations",
+            sum.collections_synced, sum.mutations_applied
+        ))
+    })
+    .await;
 }
 
 async fn run_groups(s: &mut Suite) {
