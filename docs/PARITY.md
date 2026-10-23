@@ -195,3 +195,14 @@ History sync awal: lihat catatan `initial-sync` di bawah (kecuali potongan RECEN
 Baileys; `messaging-history.status` complete untuk INITIAL_BOOTSTRAP. Percobaan pertama gagal karena harness (timeout
 langkah 60 dtk dan deteksi "tenang" yang ikut menghitung event app-state), bukan karena data. Tidak ada potongan RECENT
 untuk akun ini, jadi `RECENT progress 100 -> complete` dan `paused` setelah 120 dtk hanya teruji unit.
+
+**Penyimpanan (SQLite), 2026-10-23.** Temuan dari memeriksa database sesi yang dipakai pengujian dan perbaikannya:
+(1) setiap `<success>` mengunggah 30 pre-key baru tanpa syarat (428 -> 1514 dalam ~50 koneksi); kini hanya bila stok
+di store < 20. Terverifikasi live: tiga koneksi berturut-turut tidak mengubah `next_pre_key_id` (tetap 31) dan jumlah
+pre-key hanya turun karena dipakai lawan bicara. (2) logout, 401, dan pairing baru kini menghapus kunci yang terikat identitas
+lama; pada pairing ulang database yang berisi 1514 pre-key, 145 sesi, 62 sender key dan 5 versi app-state, tersisa 29 pre-key
+baru dan 1 sesi, sedangkan 1823 `lid-mapping` dipertahankan. (3) skema berversi (`user_version` = 1), migrasi tidak lagi
+menelan error, satu jalur inisialisasi. (4) database baru memakai auto-vacuum inkremental; `SqliteStore::compact()` untuk file
+lama (contoh: 10,1 MB -> 5,0 MB, 0 halaman bebas, `integrity_check` ok). `busy_timeout` 5 dtk sudah bawaan rusqlite.
+Belum dikerjakan: pemangkasan pesan lama (tabel `messages` tumbuh tanpa batas), tabel `sync_cursors` tak terpakai,
+dan `compact()` belum punya perintah CLI. Penyebab sesi utama sempat terlepas dari server (balasan 401) belum diketahui.
