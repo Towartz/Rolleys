@@ -6,7 +6,7 @@ use baileys_crypto::{
 };
 use baileys_proto::proto::{
     sync_action_value, ExternalBlobReference, KeyId, SyncActionData, SyncActionValue, SyncdIndex,
-    SyncdMutation, SyncdPatch, SyncdRecord, SyncdSnapshot, SyncdValue, SyncdVersion,
+    SyncdMutation, SyncdPatch, SyncdRecord, SyncdSnapshot, SyncdValue,
 };
 use prost::Message;
 use std::collections::HashMap;
@@ -222,6 +222,50 @@ pub struct SyncdPatchResult {
     pub next_version: u64,
 }
 
+impl SyncdPatchResult {
+    /// `(index_mac, value_mac)` of the patch's first mutation, as tracked in `index_value_map`.
+    pub fn mutation_macs(&self) -> Option<(Vec<u8>, Vec<u8>)> {
+        let record = self.patch.mutations.first()?.record.as_ref()?;
+        let index_mac = record.index.as_ref()?.blob.clone()?;
+        let blob = record.value.as_ref()?.blob.as_ref()?;
+        // The value blob is `ciphertext || value_mac` with a 32-byte MAC.
+        let value_mac = blob.get(blob.len().checked_sub(32)?..)?.to_vec();
+        Some((index_mac, value_mac))
+    }
+}
+
+/// Builds a patch on top of `state` and returns it with the state that results from applying it.
+///
+/// `build` receives the base LTHash and current version. When `state` already holds a value for
+/// the same index (e.g. unmuting a chat that was muted), that value's MAC must be subtracted
+/// from the hash before the new one is added, otherwise the snapshot MAC is wrong and other
+/// devices reject the patch. The server cannot see this, so it accepts such patches anyway.
+pub fn apply_local_patch<F>(
+    state: &LTHashState,
+    build: F,
+) -> Result<(SyncdPatchResult, LTHashState), CoreError>
+where
+    F: Fn(&[u8], u64) -> Result<SyncdPatchResult, CoreError>,
+{
+    let no_macs = || CoreError::Protocol("Syncd patch has no mutation MACs".into());
+    let mut res = build(&state.hash, state.version)?;
+    let (index_mac, _) = res.mutation_macs().ok_or_else(no_macs)?;
+    if let Some(previous) = state.index_value_map.get(&index_mac) {
+        let base = LTHashAntiTampering::subtract_then_add(&state.hash, &[previous.as_slice()], &[])
+            .map_err(|e| CoreError::Crypto(format!("LTHash error: {}", e)))?;
+        res = build(&base, state.version)?;
+    }
+    let (index_mac, value_mac) = res.mutation_macs().ok_or_else(no_macs)?;
+    let mut index_value_map = state.index_value_map.clone();
+    index_value_map.insert(index_mac, value_mac);
+    let next = LTHashState {
+        version: res.next_version,
+        hash: res.new_hash.clone(),
+        index_value_map,
+    };
+    Ok((res, next))
+}
+
 /// Encodes an AppState Syncd patch following the WhatsApp Syncd v2 protocol.
 ///
 /// 1. Serializes `SyncActionData` with JSON index and protobuf action value.
@@ -319,9 +363,9 @@ pub fn encode_syncd_patch(
     value_blob.extend_from_slice(value_mac);
 
     let patch = SyncdPatch {
-        version: Some(SyncdVersion {
-            version: Some(next_version),
-        }),
+        // Clients must not set the patch version (Baileys leaves it unset); the server assigns it
+        // from the collection `version` attribute of the IQ.
+        version: None,
         mutations: vec![SyncdMutation {
             operation: Some(operation),
             record: Some(SyncdRecord {
@@ -1068,6 +1112,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use baileys_proto::proto::SyncdVersion;
 
     #[test]
     fn test_encode_mute_patch() {
@@ -1366,5 +1411,46 @@ mod tests {
         assert_eq!(col.version, 1);
         assert_eq!(col.patches.len(), 1);
         assert!(!col.has_more_patches);
+    }
+
+    #[test]
+    fn apply_local_patch_matches_decoder_when_index_repeats() {
+        let key_id = [1u8, 2, 3, 4, 5, 6];
+        let key_data = [7u8; 32];
+        let jid = "120363391057464982@g.us";
+        let resolver = |id: &[u8]| (id == key_id).then(|| key_data.to_vec());
+        let pin =
+            |on: bool| move |h: &[u8], v: u64| create_pin_patch(jid, on, &key_id, &key_data, h, v);
+
+        let s0 = LTHashState {
+            version: 5,
+            ..Default::default()
+        };
+        let (p1, s1) = apply_local_patch(&s0, pin(true)).expect("pin");
+        let (d1, _) = decode_syncd_patch(&p1.patch, REGULAR_LOW, &s0, resolver, true)
+            .expect("decoder must accept the first patch");
+        assert_eq!(d1.hash, s1.hash);
+        assert_eq!(d1.index_value_map, s1.index_value_map);
+
+        // Same index again (unpin): the previous value must be subtracted.
+        let (p2, s2) = apply_local_patch(&s1, pin(false)).expect("unpin");
+        let (d2, _) = decode_syncd_patch(&p2.patch, REGULAR_LOW, &s1, resolver, true)
+            .expect("decoder must accept a patch that replaces an existing index");
+        assert_eq!(d2.hash, s2.hash);
+        assert_eq!(s2.version, 7);
+        assert_eq!(s2.index_value_map.len(), 1);
+
+        // Negative control (the old behaviour): ignoring the previous value makes the hash the
+        // patch claims differ from the one a receiving device computes, which is what made other
+        // devices see a corrupt collection. The decoder does not check the snapshot MAC itself,
+        // so compare the hashes directly.
+        let naive = create_pin_patch(jid, false, &key_id, &key_data, &s1.hash, s1.version)
+            .expect("naive patch");
+        let (d_naive, _) = decode_syncd_patch(&naive.patch, REGULAR_LOW, &s1, resolver, true)
+            .expect("decoder does not reject on hash mismatch");
+        assert_ne!(
+            d_naive.hash, naive.new_hash,
+            "ignoring the existing index value must produce a hash the receiver disagrees with"
+        );
     }
 }

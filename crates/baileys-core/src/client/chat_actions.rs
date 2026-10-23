@@ -44,6 +44,12 @@ impl BaileysClient {
             }
         }
 
+        // A forced snapshot must start from an empty state: asking for the stored version makes the
+        // server answer "up to date" with nothing, so drifted hashes and index maps never heal.
+        if force_snapshot {
+            states.clear();
+        }
+
         // 2. Build wire resync IQ
         let iq = crate::syncd::build_resync_iq(collections, &states, force_snapshot);
         debug!(
@@ -258,31 +264,36 @@ impl BaileysClient {
         patch_fn: F,
     ) -> Result<(), CoreError>
     where
-        F: FnOnce(&[u8], &[u8], &[u8], u64) -> Result<crate::syncd::SyncdPatchResult, CoreError>,
+        F: Fn(&[u8], &[u8], &[u8], u64) -> Result<crate::syncd::SyncdPatchResult, CoreError>,
     {
         let version_state = self
             .store
             .get_key("app-state-sync-version", collection)
             .await
             .unwrap_or(None);
-        let (current_version, current_hash) = if let Some(v_bytes) = version_state {
-            if let Ok(stored) = serde_json::from_slice::<crate::syncd::StoredLTHashState>(&v_bytes)
-            {
-                let state: crate::syncd::LTHashState = stored.into();
-                (state.version, state.hash)
-            } else if v_bytes.len() >= 8 {
-                let ver = u64::from_be_bytes(v_bytes[0..8].try_into().unwrap_or([0; 8]));
-                let h = if v_bytes.len() >= 136 {
-                    v_bytes[8..136].to_vec()
+        let state: crate::syncd::LTHashState = match version_state {
+            Some(v_bytes) => {
+                if let Ok(stored) =
+                    serde_json::from_slice::<crate::syncd::StoredLTHashState>(&v_bytes)
+                {
+                    stored.into()
+                } else if v_bytes.len() >= 8 {
+                    // Legacy layout: 8-byte version followed by the 128-byte hash.
+                    let hash = if v_bytes.len() >= 136 {
+                        v_bytes[8..136].to_vec()
+                    } else {
+                        vec![0u8; 128]
+                    };
+                    crate::syncd::LTHashState {
+                        version: u64::from_be_bytes(v_bytes[0..8].try_into().unwrap_or([0; 8])),
+                        hash,
+                        index_value_map: HashMap::new(),
+                    }
                 } else {
-                    vec![0u8; 128]
-                };
-                (ver, h)
-            } else {
-                (0, vec![0u8; 128])
+                    crate::syncd::LTHashState::default()
+                }
             }
-        } else {
-            (0, vec![0u8; 128])
+            None => crate::syncd::LTHashState::default(),
         };
 
         let key_data_opt = self
@@ -302,18 +313,15 @@ impl BaileysClient {
             )));
         };
 
-        let res = patch_fn(&key_id, &key_data, &current_hash, current_version)?;
-        let iq = crate::syncd::build_syncd_iq(collection, current_version, &res.patch);
+        let (res, updated_state) = crate::syncd::apply_local_patch(&state, |hash, version| {
+            patch_fn(&key_id, &key_data, hash, version)
+        })?;
+        let iq = crate::syncd::build_syncd_iq(collection, state.version, &res.patch);
         self.send_iq(iq, Duration::from_secs(10)).await?;
         debug!(
             "Syncd mutation for collection '{}' acknowledged by WhatsApp gateway",
             collection
         );
-        let updated_state = crate::syncd::LTHashState {
-            version: res.next_version,
-            hash: res.new_hash,
-            index_value_map: HashMap::new(),
-        };
         let stored = crate::syncd::StoredLTHashState::from(&updated_state);
         if let Ok(json_bytes) = serde_json::to_vec(&stored) {
             let _ = self

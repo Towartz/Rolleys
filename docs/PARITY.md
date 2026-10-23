@@ -108,3 +108,14 @@ server (mis. permintaan kunci/initial sync tidak pernah selesai), atau `index_va
 setelah patch pertama. Status: `chatModify`, `labels`, app-state sync = **missing**, bukan done.
 Dicoba juga pada grup sungguhan (`--chat-group DXT`, 21 anggota; tanpa kirim pesan/ubah anggota): hasil identik, semua patch
 `400 bad-request` dan resync kosong. Jadi penyebabnya bukan karena target self-chat. Tidak ada state yang berubah (semua ditolak).
+
+**App-state sync: akar masalah ditemukan (2026-10-23).** Penyebab `400 bad-request`: encoder mengisi field `version` pada
+patch, sedangkan Baileys tidak (server yang menetapkannya). Setelah dihapus, server menerima mute/pin/archive/unread di
+grup DXT. Dua cacat lain ditemukan dari membaca sumber Baileys dan diperbaiki: (1) hash LTHash tidak mengurangi nilai lama
+untuk indeks yang sama (mute lalu unmute), sehingga snapshot MAC salah di perangkat lain; server tidak bisa mendeteksinya;
+(2) `index_value_map` dikosongkan setiap patch terkirim. Juga: `force_snapshot` memakai versi tersimpan sehingga server
+membalas kosong dan state yang menyimpang tidak pernah pulih; kini memulai dari state kosong.
+Dugaan "kunci bukan yang terbaru" diuji dan **tidak** terbukti (dibatalkan).
+Catatan: patch uji yang terkirim SEBELUM perbaikan hash (pasangan aksi/pemulihan pada indeks yang sama) membawa snapshot MAC
+yang salah; dampaknya di HP belum diverifikasi. Status chatModify: kode diperbaiki dan teruji unit melawan decoder, bukti live
+dengan hash benar masih menunggu.
