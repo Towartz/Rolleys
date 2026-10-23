@@ -2689,6 +2689,32 @@ impl AppStateStore for SqliteStore {
         Ok(list)
     }
 
+    async fn get_user_devices_with_time(
+        &self,
+        user_jid: &str,
+    ) -> Result<(Vec<u32>, Option<i64>), StoreError> {
+        let conn = self.reader();
+        let mut stmt = conn
+            .prepare_cached(
+                "SELECT device_id, updated_at FROM user_devices WHERE user_jid = ?1 ORDER BY device_id ASC",
+            )
+            .map_err(db_err)?;
+        let rows = stmt
+            .query_map(params![user_jid], |row| {
+                Ok((row.get::<_, i64>(0)? as u32, row.get::<_, i64>(1)?))
+            })
+            .map_err(db_err)?;
+        let mut list = Vec::new();
+        let mut saved_at: Option<i64> = None;
+        for r in rows {
+            let (dev, at) = r.map_err(db_err)?;
+            list.push(dev);
+            // The list is saved as a whole; the oldest row dates it.
+            saved_at = Some(saved_at.map_or(at, |s| s.min(at)));
+        }
+        Ok((list, saved_at))
+    }
+
     async fn remove_user_device(&self, user_jid: &str, device_id: u32) -> Result<(), StoreError> {
         let conn = self.writer();
         conn.execute(
@@ -3072,6 +3098,23 @@ mod tests {
             check(&reader.lock().unwrap());
         }
         assert_eq!(store.readers.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn a_device_list_reports_when_it_was_saved() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        assert_eq!(
+            store.get_user_devices_with_time("a@lid").await.unwrap(),
+            (vec![], None)
+        );
+        let before = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        store.save_user_devices("a@lid", &[3, 0]).await.unwrap();
+        let (devices, saved_at) = store.get_user_devices_with_time("a@lid").await.unwrap();
+        assert_eq!(devices, vec![0, 3]);
+        assert!(saved_at.unwrap() >= before);
     }
 
     #[tokio::test]

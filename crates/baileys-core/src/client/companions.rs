@@ -2,6 +2,15 @@
 
 use super::*;
 
+/// How long a cached device list is trusted, as Baileys' `DEFAULT_CACHE_TTLS.USER_DEVICES`.
+pub(crate) const USER_DEVICES_TTL_SECS: i64 = 5 * 60;
+
+/// Whether a device list saved at `saved_at` may still be used at `now`; a store that does not
+/// track the time keeps the old behaviour of trusting its list.
+fn device_cache_is_fresh(saved_at: Option<i64>, now: i64) -> bool {
+    saved_at.is_none_or(|at| now - at < USER_DEVICES_TTL_SECS)
+}
+
 impl BaileysClient {
     /// Queries linked companion devices for a user JID via USync protocol.
     /// Also updates local SQLite storage cache.
@@ -13,15 +22,18 @@ impl BaileysClient {
         };
         let norm_user = baileys_binary::jid::jid_normalized_user(&normalized);
 
-        // Baileys parity: Check SQLite persistent cache first!
-        if let Ok(cached) = self.store.get_user_devices(&normalized).await {
-            if !cached.is_empty() {
-                return Ok(cached);
-            }
-        }
-        if let Ok(cached) = self.store.get_user_devices(&norm_user).await {
-            if !cached.is_empty() {
-                return Ok(cached);
+        // Baileys parity: a cached list is used for USER_DEVICES_TTL_SECS, then queried again, so a
+        // device unlinked in the meantime stops being sent to (and asked for pre-keys).
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        for key in [&normalized, &norm_user] {
+            if let Ok((cached, saved_at)) = self.store.get_user_devices_with_time(key).await {
+                let fresh = device_cache_is_fresh(saved_at, now);
+                if !cached.is_empty() && fresh {
+                    return Ok(cached);
+                }
             }
         }
 
@@ -63,6 +75,22 @@ impl BaileysClient {
             Ok(cached)
         }
     }
+    /// Removes one device (`user:device@server`) from the cached device list of its user.
+    pub(crate) async fn forget_device(&self, device_jid: &str) {
+        let Some((user_part, server)) = device_jid.split_once('@') else {
+            return;
+        };
+        let Some((user, device)) = user_part.split_once(':') else {
+            return; // the primary device (0) always exists
+        };
+        let Ok(device) = device.parse::<u32>() else {
+            return;
+        };
+        let user_jid = format!("{user}@{server}");
+        debug!("Dropping unknown device {device_jid} from the device cache");
+        let _ = self.store.remove_user_device(&user_jid, device).await;
+    }
+
     /// Queries all active companion devices linked to our current account.
     pub async fn get_paired_devices(&self) -> Result<Vec<crate::usync::DeviceRecord>, CoreError> {
         let creds = self
@@ -169,5 +197,46 @@ impl BaileysClient {
         let iq = crate::usync::build_usync_username_lookup_iq(&clean, pin);
         let res = self.send_iq(iq, Duration::from_secs(15)).await?;
         crate::usync::parse_usync_username_response(&res, &clean)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use baileys_store::{AppStateStore, SqliteStore};
+
+    #[test]
+    fn a_device_list_expires_after_the_baileys_ttl() {
+        assert!(device_cache_is_fresh(Some(1_000), 1_000));
+        assert!(device_cache_is_fresh(
+            Some(1_000),
+            1_000 + USER_DEVICES_TTL_SECS - 1
+        ));
+        assert!(!device_cache_is_fresh(
+            Some(1_000),
+            1_000 + USER_DEVICES_TTL_SECS
+        ));
+        assert!(device_cache_is_fresh(None, 1_000_000));
+    }
+
+    #[tokio::test]
+    async fn a_fresh_list_is_served_and_an_unknown_device_is_forgotten() {
+        let store = std::sync::Arc::new(SqliteStore::open_in_memory().unwrap());
+        let user = "92810518745139@lid";
+        store.save_user_devices(user, &[0, 60, 72]).await.unwrap();
+        let config = crate::BaileysConfigBuilder::new()
+            .with_websocket_url("mock://devices")
+            .build();
+        let client = BaileysClient::new(store.clone(), config);
+
+        // Just saved: no network needed (the client is not even connected).
+        assert_eq!(
+            client.get_user_devices(user).await.unwrap(),
+            vec![0, 60, 72]
+        );
+
+        client.forget_device("92810518745139:72@lid").await;
+        client.forget_device("92810518745139@lid").await; // primary: kept
+        assert_eq!(store.get_user_devices(user).await.unwrap(), vec![0, 60]);
     }
 }

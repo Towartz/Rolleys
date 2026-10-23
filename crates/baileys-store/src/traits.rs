@@ -688,6 +688,14 @@ pub trait AppStateStore: Send + Sync {
     async fn get_user_devices(&self, _user_jid: &str) -> Result<Vec<u32>, StoreError> {
         Ok(Vec::new())
     }
+    /// The cached device list with the Unix time (seconds) it was saved, so callers can treat an
+    /// old list as expired. `None` when the store does not track the time.
+    async fn get_user_devices_with_time(
+        &self,
+        user_jid: &str,
+    ) -> Result<(Vec<u32>, Option<i64>), StoreError> {
+        Ok((self.get_user_devices(user_jid).await?, None))
+    }
     async fn remove_user_device(&self, _user_jid: &str, _device_id: u32) -> Result<(), StoreError> {
         Ok(())
     }

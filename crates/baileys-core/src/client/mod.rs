@@ -350,7 +350,17 @@ impl BaileysClient {
                     .with_child(BinaryNode::new("user").with_attr("jid", query_jid)),
             );
 
-        let resp = self.send_iq(query_iq, Duration::from_secs(10)).await?;
+        let resp = match self.send_iq(query_iq, Duration::from_secs(10)).await {
+            Ok(resp) => resp,
+            Err(e) => {
+                // 406: the server knows no such device (unlinked since the list was cached).
+                // Drop it so the next send does not ask again.
+                if e.to_string().contains("code 406") {
+                    self.forget_device(to_jid).await;
+                }
+                return Err(e);
+            }
+        };
 
         let list_node = resp
             .get_child("list")
