@@ -16,7 +16,7 @@ assertion `message TestChild {` pada parser nested message).
 | `creds.update` | `CredsUpdate` | partial | |
 | `messaging-history.set` | `HistorySync` | done | |
 | `messaging-history.status` | - | missing | |
-| `chats.upsert` | - | missing | |
+| `chats.upsert` | `ChatsUpsert` | done (live) | `groups`: dipancarkan saat grup dibuat (satu-satunya pemicu di Baileys) |
 | `chats.update` | `ChatUpdate` | done | |
 | `lid-mapping.update` | `LidMappingUpdate` (dari syncd) | partial (unit) | |
 | `chats.delete` | `ChatsDelete` | done (unit; live: tidak dipancarkan saat sinkronisasi awal) | |
@@ -27,7 +27,7 @@ assertion `message TestChild {` pada parser nested message).
 | `messages.update` | `MessageEdited`, `Receipt`, `MessageStarred` | partial | starred: live (`appstate`) |
 | `messages.media-update` | `MediaUpdated` | done | |
 | `messages.upsert` | `Message` | done | |
-| `messages.reaction` | - | missing | |
+| `messages.reaction` | `MessagesReaction` | done (live) | `reaction` (interaktif): reaksi dari HP via deviceSentMessage |
 | `message-receipt.update` | `Receipt` (menyatu) | partial | |
 | `groups.upsert` | `GroupsUpsert` | done (live) | live-suite `groups` (2026-10-23) |
 | `groups.update` | `GroupsUpdate` | done (live) | live-suite `groups` (2026-10-23) |
@@ -138,3 +138,7 @@ hapus-untuk-saya, dan bintang. `chats.delete`/`messages.delete` tidak dipancarka
 (~3,5 MiB per klien, 224 B per slot) dengan test. Referensi lokal: Baileys 7.0.0-rc14 `0af2386`, zapo `c02165a`.
 **Pertanyaan terbuka:** koleksi untuk `star` berbeda antar referensi (Baileys `regular_low`, zapo `regular_high`); dibiarkan
 `regular_low` karena uji live diterima dan rantai hash cocok dengan snapshot.
+
+`chats.upsert` di Baileys hanya dipancarkan pada notifikasi pembuatan grup; chat dari history sync masuk ke
+`messaging-history.set` (padanan: `HistorySync`). `messages.reaction`: pengirim bisa berupa LID (`...@lid`), sesuai yang
+dikirim server; pemetaan ke nomor belum dilakukan di event ini.

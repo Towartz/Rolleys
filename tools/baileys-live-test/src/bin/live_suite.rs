@@ -145,7 +145,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!(
         "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
@@ -282,6 +282,7 @@ async fn main() {
     run_rich(&mut suite, &self_jid).await;
     run_chat(&mut suite, &self_jid).await;
     run_appstate(&mut suite).await;
+    run_reaction(&mut suite, &self_jid).await;
     run_media(&mut suite, &self_jid).await;
     run_groups(&mut suite).await;
     run_community(&mut suite).await;
@@ -1326,6 +1327,39 @@ async fn run_appstate(s: &mut Suite) {
     .await;
 }
 
+async fn run_reaction(s: &mut Suite, self_jid: &str) {
+    println!("== reaction (interactive: react from your phone) ==");
+    if s.only.as_deref() != Some("reaction") {
+        return;
+    }
+    let to = self_jid.to_string();
+    s.step("reaction", "phone reaction → messages.reaction", move |c| async move {
+        let mut rx = c.events();
+        let (id, _) = send_acked(&c, || {
+            c.send_text_message(&to, "live-suite: react to this message from your phone")
+        })
+        .await?;
+        println!("    -> open 'Message yourself' on the phone and react to the newest message ({id})");
+        // Reactions from our own phone arrive wrapped in deviceSentMessage.
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(55);
+        loop {
+            match tokio::time::timeout_at(deadline, rx.recv()).await {
+                Err(_) => return Err("no reaction seen within 55s".into()),
+                Ok(Err(broadcast::error::RecvError::Lagged(_))) => continue,
+                Ok(Err(_)) => return Err("event channel closed".into()),
+                Ok(Ok(BaileysEvent::MessagesReaction { reaction })) if reaction.message_id == id => {
+                    return Ok(format!(
+                        "{:?} by {} (from_me={}, removed={})",
+                        reaction.text, reaction.sender, reaction.sender_from_me, reaction.removed
+                    ));
+                }
+                Ok(Ok(_)) => {}
+            }
+        }
+    })
+    .await;
+}
+
 async fn run_groups(s: &mut Suite) {
     println!("== groups (self-created) ==");
     if !s.selected("groups") {
@@ -1334,20 +1368,38 @@ async fn run_groups(s: &mut Suite) {
     let group: Arc<tokio::sync::Mutex<Option<String>>> = Arc::new(tokio::sync::Mutex::new(None));
 
     let slot = group.clone();
-    s.step("groups", "create → groups.upsert", move |c| async move {
-        let mut rx = c.events();
-        let subject = format!("live-suite {}", chrono::Local::now().format("%H:%M:%S"));
-        let gid = c.group_create(&subject, &[]).await.map_err(e)?;
-        *slot.lock().await = Some(gid.clone());
-        let seen = expect_event(&mut rx, "GroupsUpsert", |ev| match ev {
-            BaileysEvent::GroupsUpsert { groups } if groups.iter().any(|g| g.id == gid) => {
-                Some(groups.len())
+    s.step(
+        "groups",
+        "create → chats.upsert + groups.upsert",
+        move |c| async move {
+            // Subscribe both receivers before acting so neither event can be missed.
+            let mut rx = c.events();
+            let mut rx_chat = c.events();
+            let subject = format!("live-suite {}", chrono::Local::now().format("%H:%M:%S"));
+            let gid = c.group_create(&subject, &[]).await.map_err(e)?;
+            *slot.lock().await = Some(gid.clone());
+            let seen = expect_event(&mut rx, "GroupsUpsert", |ev| match ev {
+                BaileysEvent::GroupsUpsert { groups } if groups.iter().any(|g| g.id == gid) => {
+                    Some(groups.len())
+                }
+                _ => None,
+            })
+            .await?;
+            // Baileys emits chats.upsert right before groups.upsert for a new group.
+            let name = expect_event(&mut rx_chat, "ChatsUpsert", |ev| match ev {
+                BaileysEvent::ChatsUpsert { chats } => chats
+                    .iter()
+                    .find(|ch| ch.jid == gid)
+                    .map(|ch| ch.name.clone()),
+                _ => None,
+            })
+            .await?;
+            if name.as_deref() != Some(subject.as_str()) {
+                return Err(format!("chats.upsert name {name:?} != {subject:?}"));
             }
-            _ => None,
-        })
-        .await?;
-        Ok(format!("{gid} ({seen} upserted)"))
-    })
+            Ok(format!("{gid} ({seen} upserted, chat named)"))
+        },
+    )
     .await;
 
     let Some(gid) = group.lock().await.clone() else {
