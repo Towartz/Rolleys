@@ -14,7 +14,7 @@ assertion `message TestChild {` pada parser nested message).
 |---|---|---|---|
 | `connection.update` | `Connecting`/`Connected`/`Disconnected`/`QrCode`/`PairingCode` | done | |
 | `creds.update` | `CredsUpdate` | partial | |
-| `messaging-history.set` | `HistorySync` | done | |
+| `messaging-history.set` | `HistorySync` | done (live: on-demand) | `history --chat-group DXT`: 10 pesan, `is_latest=None`, session id |
 | `messaging-history.status` | - | missing | |
 | `chats.upsert` | `ChatsUpsert` | done (live) | `groups`: dipancarkan saat grup dibuat (satu-satunya pemicu di Baileys) |
 | `chats.update` | `ChatUpdate` | done | |
@@ -142,3 +142,15 @@ hapus-untuk-saya, dan bintang. `chats.delete`/`messages.delete` tidak dipancarka
 `chats.upsert` di Baileys hanya dipancarkan pada notifikasi pembuatan grup; chat dari history sync masuk ke
 `messaging-history.set` (padanan: `HistorySync`). `messages.reaction`: pengirim bisa berupa LID (`...@lid`), sesuai yang
 dikirim server; pemetaan ke nomor belum dilakukan di event ini.
+
+**messaging-history.set lengkap (2026-10-23).** `HistorySync` kini membawa payload Baileys: `contacts`, `messages` (rata),
+`lid_pn_mappings` (termasuk turunan dari chat dan fallback `userReceipt`), `past_participants`, `is_latest`, `chunk_order`,
+`peer_data_request_session_id`; setiap chat hanya menyimpan pesan terbarunya (`history.rs`, teruji unit).
+**Bug ditemukan:** `fetch_message_history` mengirim IQ `w:sync:history` yang tidak ada di Baileys, jadi riwayat on-demand
+tidak pernah berfungsi. Kini memakai pesan peer `PEER_DATA_OPERATION_REQUEST_MESSAGE` ke HP sendiri (`send_peer_message`:
+hanya device 0, dibungkus deviceSentMessage, `category=peer`, `push_priority=high_force`, `<meta appdata=default/>`, tanpa
+tctoken), dienkripsi lewat sesi LID; versi awal lewat sesi PN membuat balasan HP gagal didekripsi (MAC).
+`oldest_timestamp` = detik, dikirim sebagai milidetik.
+Belum terbukti live: jalur history sync awal/RECENT/PUSH_NAME (hanya saat pairing) dan `is_latest=true`.
+**Pertanyaan terbuka:** on-demand untuk self-chat mengembalikan chat dengan 0 pesan (alamat PN maupun LID); area `history`
+melewatinya tanpa `--chat-group`.

@@ -145,7 +145,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!(
         "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
@@ -283,6 +283,7 @@ async fn main() {
     run_chat(&mut suite, &self_jid).await;
     run_appstate(&mut suite).await;
     run_reaction(&mut suite, &self_jid).await;
+    run_history(&mut suite).await;
     run_media(&mut suite, &self_jid).await;
     run_groups(&mut suite).await;
     run_community(&mut suite).await;
@@ -1088,6 +1089,46 @@ async fn app_state_fingerprint(
     Ok(out)
 }
 
+/// Finds one joined group by name: an exact (case-insensitive) match wins, otherwise a single
+/// "contains" match. Several candidates is an error: never guess which real group to touch.
+/// Returns `(jid, description for the report)`.
+async fn resolve_group(c: &BaileysClient, wanted: &str) -> Result<(String, String), String> {
+    let wanted = wanted.to_lowercase();
+    let all = c.group_fetch_all_participating().await.map_err(e)?;
+    let exact: Vec<_> = all
+        .iter()
+        .filter(|g| g.subject.to_lowercase() == wanted)
+        .collect();
+    let loose: Vec<_> = all
+        .iter()
+        .filter(|g| g.subject.to_lowercase().contains(&wanted))
+        .collect();
+    let cands = if exact.len() == 1 { exact } else { loose };
+    match cands.as_slice() {
+        [g] => Ok((
+            g.id.clone(),
+            format!(
+                "{:?} {} ({} members)",
+                g.subject,
+                g.id,
+                g.participants.len()
+            ),
+        )),
+        [] => Err(format!(
+            "no joined group matching {wanted:?} among {}",
+            all.len()
+        )),
+        many => Err(format!(
+            "{} groups match {wanted:?}, pass a more specific name: {:?}",
+            many.len(),
+            many.iter()
+                .take(8)
+                .map(|g| g.subject.as_str())
+                .collect::<Vec<_>>()
+        )),
+    }
+}
+
 async fn run_chat(s: &mut Suite, self_jid: &str) {
     use baileys_core::syncd::{
         CRITICAL_BLOCK, CRITICAL_UNBLOCK_LOW, REGULAR, REGULAR_HIGH, REGULAR_LOW,
@@ -1108,41 +1149,9 @@ async fn run_chat(s: &mut Suite, self_jid: &str) {
             let resolved: Slot<String> = slot();
             let rs = resolved.clone();
             s.step("chat", "resolve group", move |c| async move {
-                let all = c.group_fetch_all_participating().await.map_err(e)?;
-                // Exact (case-insensitive) match wins; otherwise a single "contains" match.
-                // Several candidates is an error: never guess which real group to touch.
-                let exact: Vec<_> = all
-                    .iter()
-                    .filter(|g| g.subject.to_lowercase() == wanted)
-                    .collect();
-                let loose: Vec<_> = all
-                    .iter()
-                    .filter(|g| g.subject.to_lowercase().contains(&wanted))
-                    .collect();
-                let cands = if exact.len() == 1 { exact } else { loose };
-                match cands.as_slice() {
-                    [g] => {
-                        *rs.lock().await = Some(g.id.clone());
-                        Ok(format!(
-                            "{:?} {} ({} members)",
-                            g.subject,
-                            g.id,
-                            g.participants.len()
-                        ))
-                    }
-                    [] => Err(format!(
-                        "no joined group matching {wanted:?} among {}",
-                        all.len()
-                    )),
-                    many => Err(format!(
-                        "{} groups match {wanted:?}, pass a more specific name: {:?}",
-                        many.len(),
-                        many.iter()
-                            .take(8)
-                            .map(|g| g.subject.as_str())
-                            .collect::<Vec<_>>()
-                    )),
-                }
+                let (jid, detail) = resolve_group(&c, &wanted).await?;
+                *rs.lock().await = Some(jid);
+                Ok(detail)
             })
             .await;
             let found = resolved.lock().await.clone();
@@ -1357,6 +1366,119 @@ async fn run_reaction(s: &mut Suite, self_jid: &str) {
             }
         }
     })
+    .await;
+}
+
+async fn run_history(s: &mut Suite) {
+    println!("== history (on-demand fetch from the phone) ==");
+    if !s.selected("history") {
+        return;
+    }
+    // On-demand history for the self-chat comes back empty (chat returned with 0 messages, with
+    // either PN or LID addressing; cause unknown), so only a group anchor is a meaningful check.
+    let Some(group) = s.chat_group.clone() else {
+        s.skip(
+            "history",
+            "on-demand fetch → messaging-history.set",
+            "needs --chat-group (self-chat on-demand history returns no messages; open question)",
+        );
+        return;
+    };
+    let store = s.store.clone();
+    s.step(
+        "history",
+        "on-demand fetch → messaging-history.set",
+        move |c| async move {
+            // The phone returns messages older than the anchor: the oldest message of the group
+            // already in the local store (nothing is sent to the group).
+            let (chat, anchor, anchor_from_me, anchor_ts) = {
+                use baileys_store::ChatStore;
+                let (gid, _) = resolve_group(&c, &group).await?;
+                let local = store.get_messages(&gid, 100_000, None).await.map_err(e)?;
+                let oldest = local
+                    .iter()
+                    .min_by_key(|m| m.timestamp)
+                    .ok_or_else(|| format!("no local messages for {gid} to anchor on"))?;
+                (gid, oldest.id.clone(), oldest.from_me, oldest.timestamp)
+            };
+            let mut rx = c.events();
+            c.fetch_message_history(&chat, 10, &anchor, anchor_from_me, anchor_ts)
+                .await
+                .map_err(e)?;
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(45);
+            loop {
+                let ev = match tokio::time::timeout_at(deadline, rx.recv()).await {
+                    Err(_) => return Err("no on-demand history sync within 45s".into()),
+                    Ok(Err(broadcast::error::RecvError::Lagged(_))) => continue,
+                    Ok(Err(_)) => return Err("event channel closed".into()),
+                    Ok(Ok(ev)) => ev,
+                };
+                let BaileysEvent::HistorySync {
+                    sync_type,
+                    messages,
+                    contacts,
+                    conversations,
+                    is_latest,
+                    chunk_order,
+                    peer_data_request_session_id,
+                    ..
+                } = ev
+                else {
+                    continue;
+                };
+                // ON_DEMAND = 6 in HistorySync.HistorySyncType.
+                if sync_type != 6 {
+                    continue;
+                }
+                if is_latest.is_some() {
+                    return Err(format!(
+                        "is_latest must be None for on-demand, got {is_latest:?}"
+                    ));
+                }
+                if messages.is_empty() {
+                    let chats: Vec<_> = conversations
+                        .iter()
+                        .map(|c| (c.id.clone(), c.messages.len()))
+                        .collect();
+                    return Err(format!(
+                        "on-demand history carried no messages (chats {chats:?}, {} contacts)",
+                        contacts.len()
+                    ));
+                }
+                let user = chat.split('@').next().unwrap_or_default().to_string();
+                let foreign = messages
+                    .iter()
+                    .filter(|m| {
+                        let chat = m
+                            .key
+                            .as_ref()
+                            .and_then(|k| k.remote_jid.clone())
+                            .unwrap_or_default();
+                        // Self-chat may be addressed by phone number or by our LID.
+                        !(chat.starts_with(&user) || chat.ends_with("@lid"))
+                    })
+                    .count();
+                if foreign > 0 {
+                    return Err(format!("{foreign} message(s) from another chat"));
+                }
+                let newer = messages
+                    .iter()
+                    .filter(|m| m.message_timestamp.unwrap_or(0) > anchor_ts)
+                    .count();
+                if newer > 0 {
+                    return Err(format!("{newer} message(s) newer than the anchor"));
+                }
+                return Ok(format!(
+                    "{} messages, {} chats, {} contacts, chunk {:?}, session {:?}",
+                    messages.len(),
+                    conversations.len(),
+                    contacts.len(),
+                    chunk_order,
+                    peer_data_request_session_id
+                ));
+            }
+        },
+    )
     .await;
 }
 
