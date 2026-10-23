@@ -14,8 +14,8 @@ assertion `message TestChild {` pada parser nested message).
 |---|---|---|---|
 | `connection.update` | `Connecting`/`Connected`/`Disconnected`/`QrCode`/`PairingCode` | done | |
 | `creds.update` | `CredsUpdate` | partial | |
-| `messaging-history.set` | `HistorySync` | done (live: on-demand) | `history --chat-group DXT`: 10 pesan, `is_latest=None`, session id |
-| `messaging-history.status` | `MessagingHistoryStatus` | done (unit) | hanya terjadi saat pairing |
+| `messaging-history.set` | `HistorySync` | done (live) | on-demand: `history --chat-group`; awal: `initial-sync` (pairing baru) |
+| `messaging-history.status` | `MessagingHistoryStatus` | done (live: complete untuk INITIAL_BOOTSTRAP) | `initial-sync`; RECENT complete/paused belum terjadi |
 | `chats.upsert` | `ChatsUpsert` | done (live) | `groups`: dipancarkan saat grup dibuat (satu-satunya pemicu di Baileys) |
 | `chats.update` | `ChatUpdate` | done | |
 | `lid-mapping.update` | `LidMappingUpdate` (dari syncd) | partial (unit) | |
@@ -187,5 +187,11 @@ bekerja live, jadi tidak diubah.
 
 **Regresi penuh (2026-10-23):** `live-suite` tanpa filter area, akun 6283162498175: 77 lulus, 0 gagal, 3 dilewati
 (`history` butuh `--chat-group`; peserta grup butuh akun kedua; komunitas opt-in karena tak bisa dihapus lewat API).
-Belum terbukti live: history sync awal (`INITIAL_BOOTSTRAP`/`RECENT`/`PUSH_NAME`, `is_latest=true`,
-`messaging-history.status`), karena hanya terjadi saat pairing perangkat baru.
+History sync awal: lihat catatan `initial-sync` di bawah (kecuali potongan RECENT).
+
+**History sync awal terbukti live (2026-10-23, pairing perangkat uji lalu logout).** Potongan yang tiba: INITIAL_BOOTSTRAP
+(164 chat, 164 kontak, 328 pesan, tiap chat dipangkas ke pesan terbarunya), INITIAL_STATUS_V3 (kosong), PUSH_NAME
+(1000 kontak), NON_BLOCKING_DATA (14 chat); 1633 pemetaan LID; `is_latest` = [true, false, false, false] persis seperti
+Baileys; `messaging-history.status` complete untuk INITIAL_BOOTSTRAP. Percobaan pertama gagal karena harness (timeout
+langkah 60 dtk dan deteksi "tenang" yang ikut menghitung event app-state), bukan karena data. Tidak ada potongan RECENT
+untuk akun ini, jadi `RECENT progress 100 -> complete` dan `paused` setelah 120 dtk hanya teruji unit.

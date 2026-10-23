@@ -49,6 +49,8 @@ struct Suite {
     only: Option<String>,
     with_community: bool,
     chat_group: Option<String>,
+    /// Every event since before connecting, so history that arrives right after pairing is not lost.
+    recorder: Arc<std::sync::Mutex<Vec<BaileysEvent>>>,
     results: Vec<Outcome>,
 }
 
@@ -63,13 +65,27 @@ impl Suite {
         F: FnOnce(Arc<BaileysClient>) -> Fut,
         Fut: Future<Output = Result<String, String>>,
     {
+        self.step_with_timeout(area, name, STEP_TIMEOUT, f).await
+    }
+
+    /// Like `step`, for scenarios that legitimately wait longer than `STEP_TIMEOUT`.
+    async fn step_with_timeout<F, Fut>(
+        &mut self,
+        area: &'static str,
+        name: &str,
+        timeout: Duration,
+        f: F,
+    ) where
+        F: FnOnce(Arc<BaileysClient>) -> Fut,
+        Fut: Future<Output = Result<String, String>>,
+    {
         if !self.selected(area) {
             return;
         }
         let started = Instant::now();
-        let res = match tokio::time::timeout(STEP_TIMEOUT, f(self.client.clone())).await {
+        let res = match tokio::time::timeout(timeout, f(self.client.clone())).await {
             Ok(r) => r,
-            Err(_) => Err(format!("timed out after {}s", STEP_TIMEOUT.as_secs())),
+            Err(_) => Err(format!("timed out after {}s", timeout.as_secs())),
         };
         let (status, detail) = match res {
             Ok(d) => (Status::Pass, d),
@@ -145,7 +161,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, account, status, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, account, status, initial-sync, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!(
         "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
@@ -234,6 +250,20 @@ async fn main() {
         .build();
     let client = Arc::new(BaileysClient::new(store.clone(), config));
 
+    // Record everything from the very start: history sync arrives right after pairing.
+    let recorder: Arc<std::sync::Mutex<Vec<BaileysEvent>>> = Default::default();
+    {
+        let (mut rec_rx, sink) = (client.events(), recorder.clone());
+        tokio::spawn(async move {
+            loop {
+                match rec_rx.recv().await {
+                    Ok(ev) => sink.lock().unwrap().push(ev),
+                    Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                    Err(broadcast::error::RecvError::Closed) => break,
+                }
+            }
+        });
+    }
     // Subscribe before connecting so neither the pairing code nor `Connected` is missed.
     let mut rx = client.events();
     println!("[*] Connecting (session: {db_path}, phone: +{phone})...");
@@ -274,6 +304,7 @@ async fn main() {
         only,
         with_community,
         chat_group,
+        recorder,
         results: Vec::new(),
     };
 
@@ -291,6 +322,7 @@ async fn main() {
     run_privacy(&mut suite, &self_jid).await;
     run_account(&mut suite, &self_jid).await;
     run_status(&mut suite, &self_jid).await;
+    run_initial_sync(&mut suite).await;
 
     report(&suite.results, json);
     let failed = suite.results.iter().any(|r| r.status == Status::Fail);
@@ -1754,6 +1786,150 @@ async fn run_status(s: &mut Suite, self_jid: &str) {
         }
         Ok(format!("{revoked} revoked"))
     })
+    .await;
+}
+
+/// Initial history sync, which only happens right after pairing a new device. Run it on a fresh
+/// session (`--clean --db <new file> --only initial-sync`); the test device is logged out afterwards
+/// so no extra linked device is left on the account.
+async fn run_initial_sync(s: &mut Suite) {
+    println!("== initial history sync (fresh pairing only) ==");
+    if s.only.as_deref() != Some("initial-sync") {
+        return;
+    }
+    let recorder = s.recorder.clone();
+    s.step_with_timeout(
+        "initial-sync",
+        "history chunks match the Baileys payload",
+        Duration::from_secs(300),
+        move |c| async move {
+        // Wait until chunks stop arriving (or a generous cap), since the phone sends them over time.
+        let deadline = Instant::now() + Duration::from_secs(180);
+        let mut last_len = 0usize;
+        let mut quiet_since = Instant::now();
+        loop {
+            // Count only history events: app-state sync floods chat/contact events meanwhile.
+            let n = recorder
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|ev| {
+                    matches!(
+                        ev,
+                        BaileysEvent::HistorySync { .. } | BaileysEvent::MessagingHistoryStatus { .. }
+                    )
+                })
+                .count();
+            if n != last_len {
+                last_len = n;
+                quiet_since = Instant::now();
+            }
+            let have_history = n > 0;
+            if have_history && quiet_since.elapsed() > Duration::from_secs(25) {
+                break;
+            }
+            if Instant::now() > deadline {
+                break;
+            }
+            tokio::time::sleep(Duration::from_secs(2)).await;
+        }
+
+        let events = recorder.lock().unwrap().clone();
+        let mut by_type: std::collections::BTreeMap<i32, (usize, usize, usize, usize)> = Default::default();
+        let mut latest_flags = Vec::new();
+        let mut untrimmed = 0usize;
+        let mut mappings = 0usize;
+        for ev in &events {
+            if let BaileysEvent::HistorySync {
+                sync_type,
+                conversations,
+                contacts,
+                messages,
+                lid_pn_mappings,
+                is_latest,
+                ..
+            } = ev
+            {
+                let e = by_type.entry(*sync_type).or_default();
+                e.0 += 1;
+                e.1 += conversations.len();
+                e.2 += contacts.len();
+                e.3 += messages.len();
+                mappings += lid_pn_mappings.len();
+                if *sync_type != 6 {
+                    latest_flags.push(*is_latest);
+                }
+                untrimmed += conversations.iter().filter(|c| c.messages.len() > 1).count();
+            }
+        }
+        let summary = by_type
+            .iter()
+            .map(|(t, (n, ch, co, m))| format!("type {t}: {n} chunk(s), {ch} chats, {co} contacts, {m} msgs"))
+            .collect::<Vec<_>>()
+            .join("; ");
+        if by_type.is_empty() {
+            return Err("no HistorySync event arrived after pairing".into());
+        }
+        if untrimmed > 0 {
+            return Err(format!("{untrimmed} chat(s) kept more than their latest message ({summary})"));
+        }
+        if latest_flags.first() != Some(&Some(true)) {
+            return Err(format!("first chunk must have is_latest=Some(true), got {latest_flags:?}"));
+        }
+        if latest_flags.iter().skip(1).any(|f| *f != Some(false)) {
+            return Err(format!("later chunks must have is_latest=Some(false), got {latest_flags:?}"));
+        }
+        let statuses: Vec<_> = events
+            .iter()
+            .filter_map(|ev| match ev {
+                BaileysEvent::MessagingHistoryStatus { sync_type, status, explicit } => {
+                    Some(format!("type {sync_type} {status} explicit={explicit}"))
+                }
+                _ => None,
+            })
+            .collect();
+        let chats = c.get_chats().await.map_err(e)?.len();
+        Ok(format!(
+            "{summary}; {mappings} LID mappings; is_latest {latest_flags:?}; statuses {statuses:?}; {chats} chats stored"
+        ))
+    })
+    .await;
+
+    let recorder = s.recorder.clone();
+    s.step("initial-sync", "completion status for the sync types seen", move |_c| async move {
+        let events = recorder.lock().unwrap().clone();
+        let saw = |t: i32| {
+            events.iter().any(|ev| matches!(ev, BaileysEvent::HistorySync { sync_type, .. } if *sync_type == t))
+        };
+        let complete = |t: i32| {
+            events.iter().any(|ev| {
+                matches!(ev, BaileysEvent::MessagingHistoryStatus { sync_type, status, .. }
+                    if *sync_type == t && status == "complete")
+            })
+        };
+        // Baileys completes INITIAL_BOOTSTRAP on its first chunk.
+        if saw(0) && !complete(0) {
+            return Err("INITIAL_BOOTSTRAP arrived but no 'complete' messaging-history.status".into());
+        }
+        let finished_recent = events.iter().any(|ev| {
+            matches!(ev, BaileysEvent::HistorySync { sync_type: 3, progress: 100, .. })
+        });
+        if finished_recent && !complete(3) {
+            return Err("RECENT reached progress 100 but no 'complete' status".into());
+        }
+        Ok(format!("bootstrap seen={} complete={}; recent finished={} complete={}", saw(0), complete(0), finished_recent, complete(3)))
+    })
+    .await;
+
+    // Cleanup always runs: unlink this test device again.
+    s.step(
+        "initial-sync",
+        "log out the test device (cleanup)",
+        |c| async move {
+            c.logout().await.map_err(e)?;
+            Ok("device unlinked".to_string())
+        },
+    )
     .await;
 }
 
