@@ -287,6 +287,8 @@ impl BaileysClient {
         self.disconnect().await;
         let fresh = AuthCreds::init();
         let _ = self.store.save_creds(&fresh).await;
+        // Sessions, pre-keys and app-state versions belong to the identity just given up.
+        crate::registration::clear_identity_bound_keys(self.store.as_ref()).await?;
         Ok(())
     }
 
@@ -502,5 +504,53 @@ pub(crate) fn normalize_user_jid(jid: &str) -> String {
     match jid.split_once('@') {
         Some((user, server)) => format!("{}@{}", user.split(':').next().unwrap_or(user), server),
         None => jid.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod logout_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn logout_resets_credentials_and_clears_identity_bound_keys() {
+        use baileys_store::{KeyEntry, MemoryStore, SessionStore, SignalKeysStore};
+        let store = std::sync::Arc::new(MemoryStore::new());
+        let entry = |t: &str, id: &str| KeyEntry {
+            key_type: t.into(),
+            id: id.into(),
+            data: vec![1],
+        };
+        store
+            .set_keys(vec![
+                entry("session", "628111:5@s.whatsapp.net"),
+                entry("pre-key", "1"),
+                entry("app-state-sync-version", "regular_low"),
+                entry("lid-mapping", "628111@s.whatsapp.net"),
+            ])
+            .await
+            .unwrap();
+        let mut creds = AuthCreds::init();
+        creds.me_jid = Some("628111:5@s.whatsapp.net".into());
+        store.save_creds(&creds).await.unwrap();
+
+        let config = crate::BaileysConfigBuilder::new()
+            .with_websocket_url("mock://logout")
+            .build();
+        let client = BaileysClient::new(store.clone(), config);
+        client.logout().await.unwrap();
+
+        assert_eq!(
+            store.get_creds().await.unwrap().unwrap().me_jid,
+            None,
+            "credentials reset"
+        );
+        for gone in ["session", "pre-key", "app-state-sync-version"] {
+            assert_eq!(store.get_key_count(gone).await.unwrap(), 0, "{gone}");
+        }
+        assert_eq!(
+            store.get_key_count("lid-mapping").await.unwrap(),
+            1,
+            "contact facts stay"
+        );
     }
 }

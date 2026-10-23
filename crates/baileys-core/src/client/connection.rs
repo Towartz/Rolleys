@@ -203,10 +203,11 @@ impl BaileysClient {
                                 ticks_since_prekey_check = 0;
                                 if is_connected_clone.load(Ordering::SeqCst) {
                                     if let Ok(count) = store_clone.get_key_count("pre-key").await {
-                                        if count < 20 {
+                                        if crate::registration::needs_prekey_upload(count) {
                                             info!(
-                                                "Available one-time prekeys low (count: {} < 20). Automatically uploading 50 new prekeys to ensure uninterrupted message delivery...",
-                                                count
+                                                "Available one-time prekeys low (count: {} < {}). Automatically uploading 50 new prekeys to ensure uninterrupted message delivery...",
+                                                count,
+                                                crate::registration::MIN_UNUSED_PREKEYS
                                             );
                                             if let Err(e) = upload_pre_keys(&mut creds, store_clone, &socket, 50).await {
                                                 warn!("Failed to auto-replenish prekeys: {}", e);
@@ -646,6 +647,13 @@ impl BaileysClient {
                                                         }
 
                                                         creds.me_jid = Some(updated.me_jid.clone());
+                                                        // A new pairing is a new identity, so anything left from a previous one
+                                                        // (sessions, pre-keys, app-state versions) is wrong for it.
+                                                        match crate::registration::clear_identity_bound_keys(store_clone.as_ref()).await {
+                                                            Ok(0) => {}
+                                                            Ok(n) => info!("Cleared {} keys left over from a previous identity.", n),
+                                                            Err(e) => warn!("Failed to clear keys of the previous identity: {}", e),
+                                                        }
                                                         if let Some(ref lid) = updated.lid {
                                                             creds.me_lid = Some(lid.clone());
                                                             me_lid = Some(lid.clone());
@@ -694,10 +702,16 @@ impl BaileysClient {
                                                 }
                                             }
 
-                                            // Upload initial 30 PreKeys
-                                            debug!("Uploading initial PreKey bundle to WhatsApp server...");
-                                            if let Err(e) = upload_pre_keys(&mut creds, store_clone, &socket, 30).await {
-                                                warn!("Failed to upload PreKeys: {}", e);
+                                            // Top up pre-keys only when the stock is low (always true right after
+                                            // pairing). Uploading on every connection leaked 30 keys each time.
+                                            let unused_prekeys = store_clone.get_key_count("pre-key").await.unwrap_or(0);
+                                            if crate::registration::needs_prekey_upload(unused_prekeys) {
+                                                debug!("Uploading PreKey bundle to WhatsApp server ({} unused in store)...", unused_prekeys);
+                                                if let Err(e) = upload_pre_keys(&mut creds, store_clone, &socket, 30).await {
+                                                    warn!("Failed to upload PreKeys: {}", e);
+                                                }
+                                            } else {
+                                                debug!("{} unused PreKeys in store; skipping upload.", unused_prekeys);
                                             }
 
                                             // Send passive active IQ
@@ -1761,6 +1775,11 @@ impl BaileysClient {
                                                 warn!("Authentication failed (401 Unauthorized): resetting invalid stored session.");
                                                 let reset_creds = AuthCreds::init();
                                                 let _ = store_clone.save_creds(&reset_creds).await;
+                                                // The next pairing is a new identity: drop what belonged to the old one.
+                                                match crate::registration::clear_identity_bound_keys(store_clone.as_ref()).await {
+                                                    Ok(n) => debug!("Cleared {} keys bound to the rejected session.", n),
+                                                    Err(e) => warn!("Failed to clear keys of the rejected session: {}", e),
+                                                }
                                                 events_clone.emit(BaileysEvent::Disconnected {
                                                     reason: "Logged out: invalid session credentials (401)".into(),
                                                 });

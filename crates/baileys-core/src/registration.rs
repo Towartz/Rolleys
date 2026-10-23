@@ -325,6 +325,53 @@ pub fn configure_successful_pairing(
     Ok((reply, updated_creds))
 }
 
+/// Upload more one-time pre-keys when fewer than this many unused ones are left in the store.
+pub const MIN_UNUSED_PREKEYS: usize = 20;
+
+/// Whether the pre-key stock is low enough to upload a new batch. A pre-key leaves the store once a
+/// peer consumes it, so the store count tracks what is left on the server. Baileys likewise uploads
+/// only when the server runs low, not on every connection.
+pub fn needs_prekey_upload(unused_in_store: usize) -> bool {
+    unused_in_store < MIN_UNUSED_PREKEYS
+}
+
+/// Key families that belong to the identity of the device that was just unlinked: Signal sessions
+/// and sender keys, our pre-keys, app-state keys with their sync versions, and trust tokens.
+/// Contact facts such as `lid-mapping`, `device-list` and peers' `identity` records are kept.
+pub const IDENTITY_BOUND_KEY_TYPES: &[&str] = &[
+    "session",
+    "sender-key",
+    "pre-key",
+    "app-state-sync-key",
+    "app-state-sync-version",
+    "tctoken",
+];
+
+/// Deletes everything bound to the old device identity; returns how many keys were removed.
+/// After a logout or a rejected session the next pairing creates a new identity, and sessions or
+/// app-state versions left over from the old one would be wrong for it.
+pub async fn clear_identity_bound_keys(store: &dyn BaileysStore) -> Result<usize, CoreError> {
+    let mut removed = 0;
+    for key_type in IDENTITY_BOUND_KEY_TYPES {
+        let ids: Vec<String> = store
+            .get_all_keys(key_type)
+            .await
+            .map_err(|e| CoreError::Store(e.to_string()))?
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        if ids.is_empty() {
+            continue;
+        }
+        store
+            .remove_keys(key_type, &ids)
+            .await
+            .map_err(|e| CoreError::Store(e.to_string()))?;
+        removed += ids.len();
+    }
+    Ok(removed)
+}
+
 /// Generates and uploads a batch of one-time PreKeys to the WhatsApp server.
 pub async fn upload_pre_keys(
     creds: &mut AuthCreds,
@@ -584,4 +631,71 @@ pub async fn create_retry_keys_node(
     }
 
     Ok(BinaryNode::new("keys").with_children(keys_children))
+}
+
+#[cfg(test)]
+mod key_hygiene_tests {
+    use super::*;
+    use baileys_store::{MemoryStore, SignalKeysStore};
+
+    fn entry(t: &str, id: &str) -> KeyEntry {
+        KeyEntry {
+            key_type: t.into(),
+            id: id.into(),
+            data: vec![1],
+        }
+    }
+
+    #[test]
+    fn prekeys_are_uploaded_only_when_stock_is_low() {
+        assert!(needs_prekey_upload(0), "fresh pairing");
+        assert!(needs_prekey_upload(MIN_UNUSED_PREKEYS - 1));
+        assert!(!needs_prekey_upload(MIN_UNUSED_PREKEYS));
+        assert!(
+            !needs_prekey_upload(1514),
+            "a reconnect must not add 30 more"
+        );
+    }
+
+    #[tokio::test]
+    async fn clearing_removes_identity_bound_keys_and_keeps_contact_facts() {
+        let store = MemoryStore::new();
+        store
+            .set_keys(vec![
+                entry("session", "628111:5@s.whatsapp.net"),
+                entry("sender-key", "g@g.us::628111::0"),
+                entry("pre-key", "1"),
+                entry("pre-key", "2"),
+                entry("app-state-sync-key", "AAAA"),
+                entry("app-state-sync-version", "regular_low"),
+                entry("tctoken", "628111@s.whatsapp.net"),
+                entry("lid-mapping", "628111@s.whatsapp.net"),
+                entry("device-list", "628111@s.whatsapp.net"),
+                entry("identity", "628111.0"),
+                entry("wa_version", "version"),
+            ])
+            .await
+            .unwrap();
+
+        assert_eq!(clear_identity_bound_keys(&store).await.unwrap(), 7);
+        for gone in IDENTITY_BOUND_KEY_TYPES {
+            assert_eq!(
+                store.get_key_count(gone).await.unwrap(),
+                0,
+                "{gone} should be empty"
+            );
+        }
+        for kept in ["lid-mapping", "device-list", "identity", "wa_version"] {
+            assert_eq!(
+                store.get_key_count(kept).await.unwrap(),
+                1,
+                "{kept} must survive"
+            );
+        }
+        assert_eq!(
+            clear_identity_bound_keys(&store).await.unwrap(),
+            0,
+            "idempotent"
+        );
+    }
 }
