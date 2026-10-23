@@ -535,17 +535,55 @@ impl BaileysClient {
     }
     /// Archives or unarchives a chat.
     pub async fn chat_modify_archive(&self, jid: &str, archive: bool) -> Result<(), CoreError> {
+        let jid = jid.trim();
         let normalized = if !jid.contains('@') {
             format!("{}@s.whatsapp.net", jid.trim_start_matches('+'))
         } else {
-            jid.to_string()
+            normalize_user_jid(jid)
         };
 
         // 1. Update local database immediately
-        self.store
-            .update_chat_archive(&normalized, archive)
+        // PN and LID records represent the same conversation; archiving only one leaves a duplicate
+        // unarchived record that can make merged chat lists appear unchanged.
+        let mut aliases = vec![normalized.clone()];
+        for contact in self
+            .store
+            .get_contacts()
             .await
-            .map_err(|e| CoreError::Store(e.to_string()))?;
+            .map_err(|e| CoreError::Store(e.to_string()))?
+        {
+            if contact.jid == normalized || contact.lid.as_deref() == Some(normalized.as_str()) {
+                aliases.push(contact.jid);
+                aliases.extend(contact.lid);
+            }
+        }
+        aliases.sort();
+        aliases.dedup();
+        for alias in &aliases {
+            if alias != &normalized
+                && self
+                    .store
+                    .get_chat(alias)
+                    .await
+                    .map_err(|e| CoreError::Store(e.to_string()))?
+                    .is_none()
+            {
+                continue;
+            }
+            self.store
+                .update_chat_archive(alias, archive)
+                .await
+                .map_err(|e| CoreError::Store(e.to_string()))?;
+        }
+
+        // Notify linked UIs immediately, even when the following remote sync needs a retry.
+        self.events.emit(BaileysEvent::ChatUpdate {
+            jid: normalized.clone(),
+            pinned: None,
+            archived: Some(archive),
+            mute_until: None,
+            unread_count: None,
+        });
 
         // 2. Dispatch wire-level Syncd patch
         self.dispatch_syncd_patch(
@@ -881,5 +919,53 @@ impl BaileysClient {
         .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod archive_tests {
+    use super::*;
+    use baileys_store::{ChatStore, SqliteStore, StoredContact};
+
+    #[tokio::test]
+    async fn archive_and_unarchive_keep_pn_lid_aliases_consistent_when_sync_fails() {
+        let store = Arc::new(SqliteStore::open_in_memory().unwrap());
+        let pn = "123@s.whatsapp.net";
+        let lid = "456@lid";
+        store
+            .save_contact(&StoredContact {
+                jid: pn.into(),
+                lid: Some(lid.into()),
+                name: None,
+                push_name: None,
+            })
+            .await
+            .unwrap();
+        store.update_chat_archive(pn, false).await.unwrap();
+        store.update_chat_archive(lid, false).await.unwrap();
+        let client = BaileysClient::new(
+            store.clone(),
+            crate::BaileysConfigBuilder::new()
+                .with_websocket_url("mock://archive")
+                .build(),
+        );
+        let mut events = client.events();
+        // There is no app-state key: wire sync fails, but both local aliases must still change.
+        assert!(client
+            .chat_modify_archive("123:7@s.whatsapp.net", true)
+            .await
+            .is_err());
+        assert!(store.get_chat(pn).await.unwrap().unwrap().archived);
+        assert!(store.get_chat(lid).await.unwrap().unwrap().archived);
+        assert!(matches!(
+            events.try_recv().unwrap(),
+            BaileysEvent::ChatUpdate {
+                archived: Some(true),
+                ..
+            }
+        ));
+        assert!(client.chat_modify_archive(lid, false).await.is_err());
+        assert!(!store.get_chat(pn).await.unwrap().unwrap().archived);
+        assert!(!store.get_chat(lid).await.unwrap().unwrap().archived);
     }
 }

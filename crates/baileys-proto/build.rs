@@ -13,6 +13,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = prost_build::Config::new();
     config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
+    // JSON clients omit unset protobuf fields, including repeated fields such as mentioned_jid.
+    config.message_attribute(".", "#[serde(default)]");
     config.compile_protos(&["proto/WAProto.proto"], &["proto/"])?;
 
     Ok(())

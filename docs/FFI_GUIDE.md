@@ -194,3 +194,67 @@ client.on('message', (msg) => {
 await client.connect();
 await client.messages.sendText('1234567890@s.whatsapp.net', 'Hello from Node.js!');
 ```
+
+
+## JSON message context and Android plugin exports
+
+The Android client maintains a generated [complete UniFFI/plugin method catalog](https://github.com/Towartz/Rolleys_Android/blob/main/docs/PLUGIN_API.md)
+from `bindings/kotlin/uniffi/baileys_ffi/baileys_ffi.kt`, checked against the Rust export names in
+`bindings/baileys-ffi/src/lib.rs`. It lists every client export, all send methods, Kotlin argument and
+return types, nullable values, and record schemas. Native callers use the ordinary typed exports;
+Android JSON plugins use the typed action dispatcher. Client construction and the event listener
+remain owned by the Android service.
+
+`send_message_json(to_jid, message_json)` accepts a JSON-encoded string containing a message
+shorthand or camelCase/snake_case protobuf fields. Unset protobuf fields may be omitted; repeated
+fields default to empty arrays. Empty or wholly unsupported message payloads return an error,
+including malformed quoted payloads. Root context is applied alongside the message payload:
+
+```json
+{
+  "text": "A reply with context",
+  "forwardingScore": 12,
+  "mentions": ["123@s.whatsapp.net"],
+  "quoted": {
+    "key": {"id": "previous-message", "participant": "456@s.whatsapp.net"},
+    "message": {"text": "Previous message"}
+  },
+  "externalAdReply": {
+    "title": "Example",
+    "body": "Preview description",
+    "sourceUrl": "https://example.com",
+    "mediaType": 1
+  }
+}
+```
+
+- `isForwarded` must be boolean; `forwardingScore` must be an unsigned 32-bit integer. A positive
+  shorthand score sets the forwarded flag. Invalid values return a protocol error.
+- `contextInfo` / `context_info` accepts protobuf ContextInfo fields. Root fields override the
+  corresponding existing fields, while other nested context (such as expiration) is retained.
+- Mentions, quotes, forwarding and external-ad metadata can coexist with interactive messages.
+  Context is propagated into ephemeral/view-once/document-caption wrappers. Quoted JSON errors
+  are surfaced instead of silently removing the quote.
+- `externalAdReply.mediaType`: 0 none, 1 image, 2 video. URLs are metadata; local thumbnails/media
+  are not automatically uploaded by a raw JSON descriptor. Use typed `send_image`, `send_video`,
+  `send_audio`, `send_document`, `send_media_file`, etc. for encryption and upload of actual bytes.
+- Raw protobuf JSON byte fields use integer arrays. The Android action bridge separately accepts
+  standard base64 strings or 0..255 arrays for typed ByteArray arguments.
+- Synthetic quoting/forwarding metadata does not authenticate an identity or guarantee how the
+  recipient client will render the message. Success returns a message id, not a delivery receipt.
+
+### Archive state and sync failure
+
+`chat_modify_archive(jid, archive)` updates local chat state and emits ChatUpdate before attempting
+WhatsApp app-state sync. Known phone-number/LID aliases for the conversation are kept consistent;
+existing alias rows are updated without inventing additional alias conversations. Device suffixes
+are removed from the input JID. A wire-sync failure is returned to the caller even though local
+archive state has changed. Refresh local state after an error and retry sync when app-state keys or
+connectivity are available. Passing false unarchives the same records.
+
+### Focused regression tests
+
+CI runs `cargo test -p baileys-core --lib messages::tests` and
+`cargo test -p baileys-core --lib archive_tests`. The archive regression uses in-memory SQLite and
+an unconnected client; it verifies local alias state and the event on sync failure without contacting
+WhatsApp. Message tests cover combined context, omitted proto fields, validation, and wrappers.
