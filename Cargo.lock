@@ -317,6 +317,8 @@ dependencies = [
  "baileys-core",
  "baileys-media",
  "baileys-store",
+ "prost",
+ "serde_json",
  "thiserror 2.0.21",
  "tokio",
  "uniffi",

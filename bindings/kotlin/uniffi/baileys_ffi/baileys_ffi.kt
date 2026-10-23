@@ -1045,6 +1045,84 @@ internal open class UniffiVTableCallbackInterfaceRolleysEventListener(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -1071,6 +1149,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_baileys_ffi_fn_constructor_rolleysclient_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_accept_tos(`ptr`: Pointer,`noticeIds`: RustBuffer.ByValue,`stage`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_add_chat_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_add_message_label(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`labelId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1151,6 +1231,8 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_fetch_url_preview(`ptr`: Pointer,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_forward_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_get_blocked_contacts(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_get_bot_list_v2(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
@@ -1187,7 +1269,11 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_get_labels(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_last_qr(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_get_lid_for_pn(`ptr`: Pointer,`pnJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_get_linked_email(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_get_me_jid(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1227,6 +1313,8 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_code(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_info(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_group_join_approval_mode(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_group_leave(`ptr`: Pointer,`groupJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1253,12 +1341,22 @@ internal interface UniffiLib : Library {
     ): Byte
     fun uniffi_baileys_ffi_fn_method_rolleysclient_is_connected(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_is_ghost_mode(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_logout(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_lookup_username(`ptr`: Pointer,`username`: RustBuffer.ByValue,`pin`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_me_lid(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_admin_count(`ptr`: Pointer,`channelJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_change_owner(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`newOwnerJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_create(`ptr`: Pointer,`name`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_delete(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_demote(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`userJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_fetch_messages(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`count`: Int,`before`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1275,17 +1373,35 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_react(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`serverId`: Long,`reaction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_image(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_image_status_story(`ptr`: Pointer,`imageBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,`newsletterJid`: RustBuffer.ByValue,`serverMsgId`: Int,`newsletterName`: RustBuffer.ByValue,`statusRecipients`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_post(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_status_story(`ptr`: Pointer,`newsletterJid`: RustBuffer.ByValue,`serverMsgId`: Int,`newsletterName`: RustBuffer.ByValue,`captionOrText`: RustBuffer.ByValue,`statusRecipients`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_unfollow(`ptr`: Pointer,`jid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_update_name(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_view_receipt(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`serverIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_pin_message(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`pin`: Byte,`durationSecs`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_ping(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     fun uniffi_baileys_ffi_fn_method_rolleysclient_presence_subscribe(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_product_create(`ptr`: Pointer,`product`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_product_delete(`ptr`: Pointer,`productIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_product_update(`ptr`: Pointer,`productId`: RustBuffer.ByValue,`product`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_profile_picture_url(`ptr`: Pointer,`jid`: RustBuffer.ByValue,`pictureType`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_query_tos(`ptr`: Pointer,`noticeIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_reject_call(`ptr`: Pointer,`callId`: RustBuffer.ByValue,`callFrom`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1299,21 +1415,41 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_remove_profile_picture(`ptr`: Pointer,`jidOpt`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_request_email_code(`ptr`: Pointer,`lang`: RustBuffer.ByValue,`locale`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_request_pairing_code(`ptr`: Pointer,`phone`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_resync_app_state(`ptr`: Pointer,`collections`: RustBuffer.ByValue,`forceSnapshot`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_revoke_message(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`targetMessageId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_album(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`expectedImageCount`: Int,`expectedVideoCount`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_audio(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`audioBytes`: RustBuffer.ByValue,`ptt`: Byte,`seconds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_bot_prompt(`ptr`: Pointer,`prompt`: RustBuffer.ByValue,`targetChat`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_comment(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`targetMessageId`: RustBuffer.ByValue,`targetFromMe`: Byte,`targetParticipant`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_contact(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`displayName`: RustBuffer.ByValue,`phoneNumber`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_contacts_array(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`displayName`: RustBuffer.ByValue,`contacts`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_document(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`documentBytes`: RustBuffer.ByValue,`fileName`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_document_attachment(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`docBytes`: RustBuffer.ByValue,`filename`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`pageCount`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_event(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,`startTime`: Long,`endTime`: RustBuffer.ByValue,`locationName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_fake_quoted_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`replyText`: RustBuffer.ByValue,`fakeSenderJid`: RustBuffer.ByValue,`fakeQuotedText`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_group_invite(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`groupJid`: RustBuffer.ByValue,`inviteCode`: RustBuffer.ByValue,`inviteExpiration`: Long,`groupName`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_image(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_interactive_buttons(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,`buttons`: RustBuffer.ByValue,`header`: RustBuffer.ByValue,`footer`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_link_status(`ptr`: Pointer,`url`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,`customText`: RustBuffer.ByValue,`backgroundColor`: RustBuffer.ByValue,`font`: RustBuffer.ByValue,`thumbnailBytes`: RustBuffer.ByValue,`audience`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_list_message(`ptr`: Pointer,`targetJid`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,`buttonText`: RustBuffer.ByValue,`sections`: RustBuffer.ByValue,`footer`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1322,6 +1458,8 @@ internal interface UniffiLib : Library {
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_location(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`latitude`: Double,`longitude`: Double,`name`: RustBuffer.ByValue,`address`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_media_file(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`filePath`: RustBuffer.ByValue,`mediaType`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_message_json(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`messageJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_order_message(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`sellerJid`: RustBuffer.ByValue,`orderId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,`itemCount`: Int,`totalAmount1000`: Long,`currency`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1339,8 +1477,14 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_revoke(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`targetMsgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_status_audio(`ptr`: Pointer,`audioBytes`: RustBuffer.ByValue,`seconds`: Int,`mimetype`: RustBuffer.ByValue,`audience`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_status_image(`ptr`: Pointer,`imageBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`audience`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_status_read_receipt(`ptr`: Pointer,`msgId`: RustBuffer.ByValue,`authorJid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_status_video(`ptr`: Pointer,`videoBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,`mimetype`: RustBuffer.ByValue,`audience`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_sticker(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`stickerBytes`: RustBuffer.ByValue,`isAnimated`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_text(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1351,13 +1495,21 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_text_with_quote(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,`quotedId`: RustBuffer.ByValue,`quotedParticipant`: RustBuffer.ByValue,`quotedText`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_vcard(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`displayName`: RustBuffer.ByValue,`vcard`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_video(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`videoBytes`: RustBuffer.ByValue,`caption`: RustBuffer.ByValue,`seconds`: RustBuffer.ByValue,`gifPlayback`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_send_view_once(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`messageJson`: RustBuffer.ByValue,`v2`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_send_voice_note(`ptr`: Pointer,`toJid`: RustBuffer.ByValue,`audioBytes`: RustBuffer.ByValue,`seconds`: Int,`waveform`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_baileys_ffi_fn_method_rolleysclient_set_auto_download(`ptr`: Pointer,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_set_chat_ephemeral(`ptr`: Pointer,`chatJid`: RustBuffer.ByValue,`expirationSeconds`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_set_ghost_mode(`ptr`: Pointer,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_set_linked_email(`ptr`: Pointer,`email`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_start(`ptr`: Pointer,`listener`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1373,12 +1525,16 @@ internal interface UniffiLib : Library {
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_update_privacy_setting(`ptr`: Pointer,`category`: RustBuffer.ByValue,`value`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_name(`ptr`: Pointer,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_picture(`ptr`: Pointer,`jidOpt`: RustBuffer.ByValue,`imageBytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_status(`ptr`: Pointer,`status`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_baileys_ffi_fn_method_rolleysclient_upsert_label(`ptr`: Pointer,`id`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,`color`: Int,`predefinedId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_baileys_ffi_fn_method_rolleysclient_verify_email_code(`ptr`: Pointer,`code`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     fun uniffi_baileys_ffi_fn_init_callback_vtable_rolleyseventlistener(`vtable`: UniffiVTableCallbackInterfaceRolleysEventListener,
     ): Unit
     fun ffi_baileys_ffi_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1493,6 +1649,8 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_baileys_ffi_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_accept_tos(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_add_chat_label(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_add_message_label(
@@ -1573,6 +1731,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_url_preview(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_forward_message(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_blocked_contacts(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_bot_list_v2(
@@ -1609,7 +1769,11 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_labels(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_last_qr(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_lid_for_pn(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_linked_email(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_get_me_jid(
     ): Short
@@ -1649,6 +1813,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_code(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_info(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_join_approval_mode(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_group_leave(
@@ -1675,11 +1841,21 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_is_connected(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_is_ghost_mode(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_logout(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_lookup_username(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_me_lid(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_admin_count(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_change_owner(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_create(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_delete(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_demote(
     ): Short
@@ -1697,17 +1873,35 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_react(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_image(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_image_status_story(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_post(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_status_story(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_unfollow(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_update_name(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_view_receipt(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_pin_message(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_ping(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_presence_subscribe(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_product_create(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_product_delete(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_product_update(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_profile_picture_url(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_query_tos(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_reject_call(
     ): Short
@@ -1721,21 +1915,41 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_remove_profile_picture(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_request_email_code(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_request_pairing_code(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_resync_app_state(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_revoke_message(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_album(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_audio(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_bot_prompt(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_comment(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_contact(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_contacts_array(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_document(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_document_attachment(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_event(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_fake_quoted_message(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_group_invite(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_image(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_interactive_buttons(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_link_status(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_list_message(
     ): Short
@@ -1744,6 +1958,8 @@ internal interface UniffiLib : Library {
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_location(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_media_file(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_message_json(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_order_message(
     ): Short
@@ -1761,7 +1977,13 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_revoke(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_audio(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_image(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_read_receipt(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_video(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_sticker(
     ): Short
@@ -1773,13 +1995,21 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_quote(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_vcard(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_video(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_view_once(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_send_voice_note(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_set_auto_download(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_set_chat_ephemeral(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_set_ghost_mode(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_set_linked_email(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_start(
     ): Short
@@ -1795,11 +2025,15 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_privacy_setting(
     ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_name(
+    ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_picture(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_status(
     ): Short
     fun uniffi_baileys_ffi_checksum_method_rolleysclient_upsert_label(
+    ): Short
+    fun uniffi_baileys_ffi_checksum_method_rolleysclient_verify_email_code(
     ): Short
     fun uniffi_baileys_ffi_checksum_constructor_rolleysclient_new(
     ): Short
@@ -1822,6 +2056,9 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_accept_tos() != 21012.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_add_chat_label() != 20666.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1942,6 +2179,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_url_preview() != 17996.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_forward_message() != 47397.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_blocked_contacts() != 1849.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1996,7 +2236,13 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_labels() != 46724.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_last_qr() != 23237.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_lid_for_pn() != 42509.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_linked_email() != 57814.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_get_me_jid() != 24239.toShort()) {
@@ -2056,6 +2302,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_code() != 54537.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_info() != 39185.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_group_join_approval_mode() != 17372.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2095,6 +2344,18 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_is_connected() != 37466.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_is_ghost_mode() != 31100.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_logout() != 49310.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_lookup_username() != 35338.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_me_lid() != 41093.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_admin_count() != 28366.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2102,6 +2363,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_create() != 15811.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_delete() != 47882.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_demote() != 33965.toShort()) {
@@ -2128,10 +2392,28 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_react() != 31618.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_image() != 34261.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_image_status_story() != 53694.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_post() != 62567.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_status_story() != 60725.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_unfollow() != 18500.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_update_name() != 54529.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_view_receipt() != 61999.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_pin_message() != 3741.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_ping() != 37054.toShort()) {
@@ -2140,10 +2422,19 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_presence_subscribe() != 12248.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_product_create() != 46612.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_product_delete() != 30730.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_product_update() != 24132.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_profile_picture_url() != 6503.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_query_tos() != 39203.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_reject_call() != 42728.toShort()) {
@@ -2164,19 +2455,46 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_remove_profile_picture() != 60441.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_request_email_code() != 26988.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_request_pairing_code() != 20528.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_resync_app_state() != 57241.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_revoke_message() != 64592.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_album() != 36811.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_audio() != 19309.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_bot_prompt() != 42271.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_comment() != 17157.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_contact() != 41165.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_contacts_array() != 46935.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_document() != 40425.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_document_attachment() != 45719.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_event() != 46190.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_fake_quoted_message() != 20096.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_group_invite() != 20524.toShort()) {
@@ -2186,6 +2504,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_interactive_buttons() != 24656.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_link_status() != 46987.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_list_message() != 55884.toShort()) {
@@ -2198,6 +2519,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_media_file() != 3707.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_message_json() != 33286.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_order_message() != 21230.toShort()) {
@@ -2224,7 +2548,16 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_revoke() != 15489.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_audio() != 48447.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_image() != 4764.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_read_receipt() != 20310.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_video() != 29724.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_sticker() != 50321.toShort()) {
@@ -2242,7 +2575,13 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_quote() != 17178.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_vcard() != 18036.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_video() != 9139.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_view_once() != 28636.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_send_voice_note() != 16097.toShort()) {
@@ -2252,6 +2591,12 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_set_chat_ephemeral() != 41979.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_set_ghost_mode() != 14870.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_set_linked_email() != 48745.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_start() != 19242.toShort()) {
@@ -2275,6 +2620,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_privacy_setting() != 31032.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_name() != 42880.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_picture() != 15024.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2282,6 +2630,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_upsert_label() != 37799.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_baileys_ffi_checksum_method_rolleysclient_verify_email_code() != 8228.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_baileys_ffi_checksum_constructor_rolleysclient_new() != 56112.toShort()) {
@@ -2738,6 +3089,8 @@ private class JavaLangRefCleanable(
 }
 public interface RolleysClientInterface {
     
+    fun `acceptTos`(`noticeIds`: List<kotlin.String>, `stage`: kotlin.String?)
+    
     fun `addChatLabel`(`chatJid`: kotlin.String, `labelId`: kotlin.String)
     
     fun `addMessageLabel`(`chatJid`: kotlin.String, `messageId`: kotlin.String, `labelId`: kotlin.String)
@@ -2889,6 +3242,11 @@ public interface RolleysClientInterface {
     fun `fetchUrlPreview`(`text`: kotlin.String): RolleysUrlPreview?
     
     /**
+     * Forwards a message this client has seen (recent cache or store) by its id.
+     */
+    fun `forwardMessage`(`toJid`: kotlin.String, `messageId`: kotlin.String): kotlin.String
+    
+    /**
      * Reads all locally stored blocked contacts from SQLite.
      */
     fun `getBlockedContacts`(): List<kotlin.String>
@@ -2945,7 +3303,14 @@ public interface RolleysClientInterface {
     
     fun `getLabels`(): List<RolleysLabel>
     
+    /**
+     * The most recent QR string, if one was issued.
+     */
+    fun `getLastQr`(): kotlin.String?
+    
     fun `getLidForPn`(`pnJid`: kotlin.String): kotlin.String?
+    
+    fun `getLinkedEmail`(): kotlin.String?
     
     /**
      * Returns the currently authenticated JID if paired/connected.
@@ -3022,6 +3387,11 @@ public interface RolleysClientInterface {
     fun `groupGetInviteCode`(`groupJid`: kotlin.String): kotlin.String
     
     /**
+     * Metadata of the group behind an invite code, without joining it.
+     */
+    fun `groupGetInviteInfo`(`code`: kotlin.String): RolleysGroupMetadata
+    
+    /**
      * Configures membership approval mode for a group ("on" or "off").
      */
     fun `groupJoinApprovalMode`(`groupJid`: kotlin.String, `mode`: kotlin.String)
@@ -3086,6 +3456,20 @@ public interface RolleysClientInterface {
      */
     fun `isConnected`(): kotlin.Boolean
     
+    fun `isGhostMode`(): kotlin.Boolean
+    
+    /**
+     * Logs this device out and clears the session.
+     */
+    fun `logout`()
+    
+    /**
+     * Resolves a WhatsApp username (with its PIN when it has one).
+     */
+    fun `lookupUsername`(`username`: kotlin.String, `pin`: kotlin.String?): RolleysResolvedUsername?
+    
+    fun `meLid`(): kotlin.String?
+    
     fun `newsletterAdminCount`(`channelJid`: kotlin.String): kotlin.UInt
     
     /**
@@ -3097,6 +3481,8 @@ public interface RolleysClientInterface {
      * Creates a new WhatsApp Channel.
      */
     fun `newsletterCreate`(`name`: kotlin.String, `description`: kotlin.String?): RolleysNewsletter
+    
+    fun `newsletterDelete`(`jid`: kotlin.String)
     
     /**
      * Demotes a channel admin back to subscriber.
@@ -3138,15 +3524,30 @@ public interface RolleysClientInterface {
      */
     fun `newsletterReact`(`jid`: kotlin.String, `serverId`: kotlin.ULong, `reaction`: kotlin.String)
     
+    fun `newsletterSendImage`(`jid`: kotlin.String, `imageBytes`: kotlin.ByteArray, `caption`: kotlin.String?): kotlin.String
+    
+    fun `newsletterSendImageStatusStory`(`imageBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `newsletterJid`: kotlin.String, `serverMsgId`: kotlin.Int, `newsletterName`: kotlin.String, `statusRecipients`: List<kotlin.String>?): kotlin.String
+    
     /**
      * Broadcasts a text message to an owned WhatsApp Channel.
      */
     fun `newsletterSendPost`(`jid`: kotlin.String, `text`: kotlin.String): kotlin.String
     
+    fun `newsletterSendStatusStory`(`newsletterJid`: kotlin.String, `serverMsgId`: kotlin.Int, `newsletterName`: kotlin.String, `captionOrText`: kotlin.String, `statusRecipients`: List<kotlin.String>?): kotlin.String
+    
     /**
      * Unfollows a WhatsApp Channel.
      */
     fun `newsletterUnfollow`(`jid`: kotlin.String)
+    
+    fun `newsletterUpdateName`(`jid`: kotlin.String, `name`: kotlin.String)
+    
+    fun `newsletterViewReceipt`(`jid`: kotlin.String, `serverIds`: List<kotlin.ULong>)
+    
+    /**
+     * Pins (`pin = true`) or unpins a message in a chat.
+     */
+    fun `pinMessage`(`chatJid`: kotlin.String, `messageId`: kotlin.String, `pin`: kotlin.Boolean, `durationSecs`: kotlin.UInt): kotlin.String
     
     /**
      * Returns round-trip gateway ping latency in milliseconds.
@@ -3158,12 +3559,18 @@ public interface RolleysClientInterface {
      */
     fun `presenceSubscribe`(`toJid`: kotlin.String)
     
+    fun `productCreate`(`product`: RolleysCatalogProduct): kotlin.String
+    
     fun `productDelete`(`productIds`: List<kotlin.String>)
+    
+    fun `productUpdate`(`productId`: kotlin.String, `product`: RolleysCatalogProduct)
     
     /**
      * Fetches profile picture URL for a user or group.
      */
     fun `profilePictureUrl`(`jid`: kotlin.String, `pictureType`: kotlin.String): kotlin.String?
+    
+    fun `queryTos`(`noticeIds`: List<kotlin.String>): List<RolleysTosNotice>
     
     /**
      * Rejects an incoming WhatsApp voice or video call.
@@ -3183,14 +3590,40 @@ public interface RolleysClientInterface {
      */
     fun `removeProfilePicture`(`jidOpt`: kotlin.String?)
     
+    fun `requestEmailCode`(`lang`: kotlin.String, `locale`: kotlin.String)
+    
+    /**
+     * Asks the server for an 8-character pairing code for `phone` (link with phone number).
+     */
+    fun `requestPairingCode`(`phone`: kotlin.String): kotlin.String
+    
+    /**
+     * Re-synchronises app-state collections (`force_snapshot` rebuilds them from scratch).
+     */
+    fun `resyncAppState`(`collections`: List<kotlin.String>, `forceSnapshot`: kotlin.Boolean): RolleysAppStateSyncSummary
+    
     fun `revokeMessage`(`chatJid`: kotlin.String, `targetMessageId`: kotlin.String): kotlin.String
+    
+    fun `sendAlbum`(`toJid`: kotlin.String, `expectedImageCount`: kotlin.UInt, `expectedVideoCount`: kotlin.UInt): kotlin.String
     
     /**
      * Encrypts, uploads, and sends an audio message or voice note (PTT).
      */
     fun `sendAudio`(`toJid`: kotlin.String, `audioBytes`: kotlin.ByteArray, `ptt`: kotlin.Boolean, `seconds`: kotlin.UInt?): kotlin.String
     
+    /**
+     * Sends a prompt to Meta AI, optionally inside an existing chat.
+     */
+    fun `sendBotPrompt`(`prompt`: kotlin.String, `targetChat`: kotlin.String?): kotlin.String
+    
+    /**
+     * Comments on a message (e.g. a channel or community post).
+     */
+    fun `sendComment`(`toJid`: kotlin.String, `targetMessageId`: kotlin.String, `targetFromMe`: kotlin.Boolean, `targetParticipant`: kotlin.String?, `text`: kotlin.String): kotlin.String
+    
     fun `sendContact`(`toJid`: kotlin.String, `displayName`: kotlin.String, `phoneNumber`: kotlin.String): kotlin.String
+    
+    fun `sendContactsArray`(`toJid`: kotlin.String, `displayName`: kotlin.String, `contacts`: List<RolleysContactCard>): kotlin.String
     
     /**
      * Encrypts, uploads, and sends a document/file message.
@@ -3201,6 +3634,10 @@ public interface RolleysClientInterface {
      * Sends a document attachment with title, page count, and caption.
      */
     fun `sendDocumentAttachment`(`toJid`: kotlin.String, `docBytes`: kotlin.ByteArray, `filename`: kotlin.String, `mimetype`: kotlin.String, `title`: kotlin.String?, `pageCount`: kotlin.UInt?, `caption`: kotlin.String?): kotlin.String
+    
+    fun `sendEvent`(`toJid`: kotlin.String, `name`: kotlin.String, `description`: kotlin.String?, `startTime`: kotlin.Long, `endTime`: kotlin.Long?, `locationName`: kotlin.String?): kotlin.String
+    
+    fun `sendFakeQuotedMessage`(`toJid`: kotlin.String, `replyText`: kotlin.String, `fakeSenderJid`: kotlin.String, `fakeQuotedText`: kotlin.String): kotlin.String
     
     fun `sendGroupInvite`(`toJid`: kotlin.String, `groupJid`: kotlin.String, `inviteCode`: kotlin.String, `inviteExpiration`: kotlin.Long, `groupName`: kotlin.String, `caption`: kotlin.String?): kotlin.String
     
@@ -3213,6 +3650,8 @@ public interface RolleysClientInterface {
      * Sends native flow interactive action buttons (quick reply, cta_url, etc.).
      */
     fun `sendInteractiveButtons`(`targetJid`: kotlin.String, `body`: kotlin.String, `buttons`: List<RolleysInteractiveButton>, `header`: kotlin.String?, `footer`: kotlin.String?): kotlin.String
+    
+    fun `sendLinkStatus`(`url`: kotlin.String, `title`: kotlin.String?, `description`: kotlin.String?, `customText`: kotlin.String?, `backgroundColor`: kotlin.String?, `font`: kotlin.Int?, `thumbnailBytes`: kotlin.ByteArray?, `audience`: List<kotlin.String>?): kotlin.String
     
     /**
      * Sends an interactive single-selection list message.
@@ -3228,6 +3667,11 @@ public interface RolleysClientInterface {
      * and emits real-time RolleysEvent::MediaProgress events.
      */
     fun `sendMediaFile`(`chatJid`: kotlin.String, `filePath`: kotlin.String, `mediaType`: kotlin.String, `caption`: kotlin.String?): kotlin.String
+    
+    /**
+     * Sends any message described as JSON (same shorthands as the core `send_message_json`).
+     */
+    fun `sendMessageJson`(`toJid`: kotlin.String, `messageJson`: kotlin.String): kotlin.String
     
     fun `sendOrderMessage`(`toJid`: kotlin.String, `sellerJid`: kotlin.String, `orderId`: kotlin.String, `title`: kotlin.String, `itemCount`: kotlin.Int, `totalAmount1000`: kotlin.Long, `currency`: kotlin.String, `message`: kotlin.String?): kotlin.String
     
@@ -3263,10 +3707,16 @@ public interface RolleysClientInterface {
      */
     fun `sendRevoke`(`toJid`: kotlin.String, `targetMsgId`: kotlin.String): kotlin.String
     
+    fun `sendStatusAudio`(`audioBytes`: kotlin.ByteArray, `seconds`: kotlin.UInt, `mimetype`: kotlin.String?, `audience`: List<kotlin.String>?): kotlin.String
+    
+    fun `sendStatusImage`(`imageBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `mimetype`: kotlin.String?, `audience`: List<kotlin.String>?): kotlin.String
+    
     /**
      * Sends a status read receipt to mark a story as viewed.
      */
     fun `sendStatusReadReceipt`(`msgId`: kotlin.String, `authorJid`: kotlin.String)
+    
+    fun `sendStatusVideo`(`videoBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `mimetype`: kotlin.String?, `audience`: List<kotlin.String>?): kotlin.String
     
     /**
      * Encrypts, uploads, and sends a sticker message.
@@ -3290,10 +3740,17 @@ public interface RolleysClientInterface {
      */
     fun `sendTextWithQuote`(`toJid`: kotlin.String, `text`: kotlin.String, `quotedId`: kotlin.String, `quotedParticipant`: kotlin.String?, `quotedText`: kotlin.String?): kotlin.String
     
+    fun `sendVcard`(`toJid`: kotlin.String, `displayName`: kotlin.String, `vcard`: kotlin.String): kotlin.String
+    
     /**
      * Encrypts, uploads, and sends a video message.
      */
     fun `sendVideo`(`toJid`: kotlin.String, `videoBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `seconds`: kotlin.UInt?, `gifPlayback`: kotlin.Boolean): kotlin.String
+    
+    /**
+     * Wraps a JSON-described message in view-once (`v2` uses viewOnceMessageV2).
+     */
+    fun `sendViewOnce`(`toJid`: kotlin.String, `messageJson`: kotlin.String, `v2`: kotlin.Boolean): kotlin.String
     
     /**
      * Sends a voice note / PTT audio message (Opus format, waveform).
@@ -3306,6 +3763,13 @@ public interface RolleysClientInterface {
     fun `setAutoDownload`(`enabled`: kotlin.Boolean)
     
     fun `setChatEphemeral`(`chatJid`: kotlin.String, `expirationSeconds`: kotlin.UInt)
+    
+    /**
+     * When enabled, read receipts and presence are not sent.
+     */
+    fun `setGhostMode`(`enabled`: kotlin.Boolean)
+    
+    fun `setLinkedEmail`(`email`: kotlin.String)
     
     /**
      * Starts the client connection and forwards real-time events to the native Kotlin listener.
@@ -3330,6 +3794,8 @@ public interface RolleysClientInterface {
      */
     fun `updatePrivacySetting`(`category`: kotlin.String, `value`: kotlin.String)
     
+    fun `updateProfileName`(`name`: kotlin.String)
+    
     /**
      * Updates profile picture for self or a group using image bytes.
      */
@@ -3341,6 +3807,8 @@ public interface RolleysClientInterface {
     fun `updateProfileStatus`(`status`: kotlin.String)
     
     fun `upsertLabel`(`id`: kotlin.String?, `name`: kotlin.String, `color`: kotlin.Int, `predefinedId`: kotlin.Int?): kotlin.String
+    
+    fun `verifyEmailCode`(`code`: kotlin.String)
     
     companion object
 }
@@ -3432,6 +3900,18 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
             UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_clone_rolleysclient(pointer!!, status)
         }
     }
+
+    
+    @Throws(FfiException::class)override fun `acceptTos`(`noticeIds`: List<kotlin.String>, `stage`: kotlin.String?)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_accept_tos(
+        it, FfiConverterSequenceString.lower(`noticeIds`),FfiConverterOptionalString.lower(`stage`),_status)
+}
+    }
+    
+    
 
     
     @Throws(FfiException::class)override fun `addChatLabel`(`chatJid`: kotlin.String, `labelId`: kotlin.String)
@@ -4005,6 +4485,22 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
 
     
     /**
+     * Forwards a message this client has seen (recent cache or store) by its id.
+     */
+    @Throws(FfiException::class)override fun `forwardMessage`(`toJid`: kotlin.String, `messageId`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_forward_message(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`messageId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Reads all locally stored blocked contacts from SQLite.
      */
     @Throws(FfiException::class)override fun `getBlockedContacts`(): List<kotlin.String> {
@@ -4258,12 +4754,40 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    /**
+     * The most recent QR string, if one was issued.
+     */override fun `getLastQr`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_last_qr(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(FfiException::class)override fun `getLidForPn`(`pnJid`: kotlin.String): kotlin.String? {
             return FfiConverterOptionalString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_lid_for_pn(
         it, FfiConverterString.lower(`pnJid`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `getLinkedEmail`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_get_linked_email(
+        it, _status)
 }
     }
     )
@@ -4553,6 +5077,22 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
 
     
     /**
+     * Metadata of the group behind an invite code, without joining it.
+     */
+    @Throws(FfiException::class)override fun `groupGetInviteInfo`(`code`: kotlin.String): RolleysGroupMetadata {
+            return FfiConverterTypeRolleysGroupMetadata.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_info(
+        it, FfiConverterString.lower(`code`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Configures membership approval mode for a group ("on" or "off").
      */
     @Throws(FfiException::class)override fun `groupJoinApprovalMode`(`groupJid`: kotlin.String, `mode`: kotlin.String)
@@ -4750,6 +5290,62 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     }
     
 
+    override fun `isGhostMode`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_is_ghost_mode(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Logs this device out and clears the session.
+     */
+    @Throws(FfiException::class)override fun `logout`()
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_logout(
+        it, _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Resolves a WhatsApp username (with its PIN when it has one).
+     */
+    @Throws(FfiException::class)override fun `lookupUsername`(`username`: kotlin.String, `pin`: kotlin.String?): RolleysResolvedUsername? {
+            return FfiConverterOptionalTypeRolleysResolvedUsername.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_lookup_username(
+        it, FfiConverterString.lower(`username`),FfiConverterOptionalString.lower(`pin`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `meLid`(): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_me_lid(
+        it, _status)
+}
+    }
+    )
+    }
+    
+
     
     @Throws(FfiException::class)override fun `newsletterAdminCount`(`channelJid`: kotlin.String): kotlin.UInt {
             return FfiConverterUInt.lift(
@@ -4792,6 +5388,18 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     }
     )
     }
+    
+
+    
+    @Throws(FfiException::class)override fun `newsletterDelete`(`jid`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_delete(
+        it, FfiConverterString.lower(`jid`),_status)
+}
+    }
+    
     
 
     
@@ -4918,6 +5526,32 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `newsletterSendImage`(`jid`: kotlin.String, `imageBytes`: kotlin.ByteArray, `caption`: kotlin.String?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_image(
+        it, FfiConverterString.lower(`jid`),FfiConverterByteArray.lower(`imageBytes`),FfiConverterOptionalString.lower(`caption`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `newsletterSendImageStatusStory`(`imageBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `newsletterJid`: kotlin.String, `serverMsgId`: kotlin.Int, `newsletterName`: kotlin.String, `statusRecipients`: List<kotlin.String>?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_image_status_story(
+        it, FfiConverterByteArray.lower(`imageBytes`),FfiConverterOptionalString.lower(`caption`),FfiConverterString.lower(`newsletterJid`),FfiConverterInt.lower(`serverMsgId`),FfiConverterString.lower(`newsletterName`),FfiConverterOptionalSequenceString.lower(`statusRecipients`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     /**
      * Broadcasts a text message to an owned WhatsApp Channel.
      */
@@ -4927,6 +5561,19 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_post(
         it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`text`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `newsletterSendStatusStory`(`newsletterJid`: kotlin.String, `serverMsgId`: kotlin.Int, `newsletterName`: kotlin.String, `captionOrText`: kotlin.String, `statusRecipients`: List<kotlin.String>?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_status_story(
+        it, FfiConverterString.lower(`newsletterJid`),FfiConverterInt.lower(`serverMsgId`),FfiConverterString.lower(`newsletterName`),FfiConverterString.lower(`captionOrText`),FfiConverterOptionalSequenceString.lower(`statusRecipients`),_status)
 }
     }
     )
@@ -4946,6 +5593,46 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
 }
     }
     
+    
+
+    
+    @Throws(FfiException::class)override fun `newsletterUpdateName`(`jid`: kotlin.String, `name`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_update_name(
+        it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`name`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `newsletterViewReceipt`(`jid`: kotlin.String, `serverIds`: List<kotlin.ULong>)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_view_receipt(
+        it, FfiConverterString.lower(`jid`),FfiConverterSequenceULong.lower(`serverIds`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Pins (`pin = true`) or unpins a message in a chat.
+     */
+    @Throws(FfiException::class)override fun `pinMessage`(`chatJid`: kotlin.String, `messageId`: kotlin.String, `pin`: kotlin.Boolean, `durationSecs`: kotlin.UInt): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_pin_message(
+        it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`messageId`),FfiConverterBoolean.lower(`pin`),FfiConverterUInt.lower(`durationSecs`),_status)
+}
+    }
+    )
+    }
     
 
     
@@ -4980,12 +5667,37 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `productCreate`(`product`: RolleysCatalogProduct): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_product_create(
+        it, FfiConverterTypeRolleysCatalogProduct.lower(`product`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(FfiException::class)override fun `productDelete`(`productIds`: List<kotlin.String>)
         = 
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_product_delete(
         it, FfiConverterSequenceString.lower(`productIds`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `productUpdate`(`productId`: kotlin.String, `product`: RolleysCatalogProduct)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_product_update(
+        it, FfiConverterString.lower(`productId`),FfiConverterTypeRolleysCatalogProduct.lower(`product`),_status)
 }
     }
     
@@ -5001,6 +5713,19 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_profile_picture_url(
         it, FfiConverterString.lower(`jid`),FfiConverterString.lower(`pictureType`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `queryTos`(`noticeIds`: List<kotlin.String>): List<RolleysTosNotice> {
+            return FfiConverterSequenceTypeRolleysTosNotice.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_query_tos(
+        it, FfiConverterSequenceString.lower(`noticeIds`),_status)
 }
     }
     )
@@ -5086,12 +5811,69 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `requestEmailCode`(`lang`: kotlin.String, `locale`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_request_email_code(
+        it, FfiConverterString.lower(`lang`),FfiConverterString.lower(`locale`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Asks the server for an 8-character pairing code for `phone` (link with phone number).
+     */
+    @Throws(FfiException::class)override fun `requestPairingCode`(`phone`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_request_pairing_code(
+        it, FfiConverterString.lower(`phone`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Re-synchronises app-state collections (`force_snapshot` rebuilds them from scratch).
+     */
+    @Throws(FfiException::class)override fun `resyncAppState`(`collections`: List<kotlin.String>, `forceSnapshot`: kotlin.Boolean): RolleysAppStateSyncSummary {
+            return FfiConverterTypeRolleysAppStateSyncSummary.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_resync_app_state(
+        it, FfiConverterSequenceString.lower(`collections`),FfiConverterBoolean.lower(`forceSnapshot`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(FfiException::class)override fun `revokeMessage`(`chatJid`: kotlin.String, `targetMessageId`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_revoke_message(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`targetMessageId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendAlbum`(`toJid`: kotlin.String, `expectedImageCount`: kotlin.UInt, `expectedVideoCount`: kotlin.UInt): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_album(
+        it, FfiConverterString.lower(`toJid`),FfiConverterUInt.lower(`expectedImageCount`),FfiConverterUInt.lower(`expectedVideoCount`),_status)
 }
     }
     )
@@ -5115,12 +5897,57 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    /**
+     * Sends a prompt to Meta AI, optionally inside an existing chat.
+     */
+    @Throws(FfiException::class)override fun `sendBotPrompt`(`prompt`: kotlin.String, `targetChat`: kotlin.String?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_bot_prompt(
+        it, FfiConverterString.lower(`prompt`),FfiConverterOptionalString.lower(`targetChat`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Comments on a message (e.g. a channel or community post).
+     */
+    @Throws(FfiException::class)override fun `sendComment`(`toJid`: kotlin.String, `targetMessageId`: kotlin.String, `targetFromMe`: kotlin.Boolean, `targetParticipant`: kotlin.String?, `text`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_comment(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`targetMessageId`),FfiConverterBoolean.lower(`targetFromMe`),FfiConverterOptionalString.lower(`targetParticipant`),FfiConverterString.lower(`text`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(FfiException::class)override fun `sendContact`(`toJid`: kotlin.String, `displayName`: kotlin.String, `phoneNumber`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_contact(
         it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`displayName`),FfiConverterString.lower(`phoneNumber`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendContactsArray`(`toJid`: kotlin.String, `displayName`: kotlin.String, `contacts`: List<RolleysContactCard>): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_contacts_array(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`displayName`),FfiConverterSequenceTypeRolleysContactCard.lower(`contacts`),_status)
 }
     }
     )
@@ -5153,6 +5980,32 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_document_attachment(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`docBytes`),FfiConverterString.lower(`filename`),FfiConverterString.lower(`mimetype`),FfiConverterOptionalString.lower(`title`),FfiConverterOptionalUInt.lower(`pageCount`),FfiConverterOptionalString.lower(`caption`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendEvent`(`toJid`: kotlin.String, `name`: kotlin.String, `description`: kotlin.String?, `startTime`: kotlin.Long, `endTime`: kotlin.Long?, `locationName`: kotlin.String?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_event(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`name`),FfiConverterOptionalString.lower(`description`),FfiConverterLong.lower(`startTime`),FfiConverterOptionalLong.lower(`endTime`),FfiConverterOptionalString.lower(`locationName`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendFakeQuotedMessage`(`toJid`: kotlin.String, `replyText`: kotlin.String, `fakeSenderJid`: kotlin.String, `fakeQuotedText`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_fake_quoted_message(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`replyText`),FfiConverterString.lower(`fakeSenderJid`),FfiConverterString.lower(`fakeQuotedText`),_status)
 }
     }
     )
@@ -5198,6 +6051,19 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_interactive_buttons(
         it, FfiConverterString.lower(`targetJid`),FfiConverterString.lower(`body`),FfiConverterSequenceTypeRolleysInteractiveButton.lower(`buttons`),FfiConverterOptionalString.lower(`header`),FfiConverterOptionalString.lower(`footer`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendLinkStatus`(`url`: kotlin.String, `title`: kotlin.String?, `description`: kotlin.String?, `customText`: kotlin.String?, `backgroundColor`: kotlin.String?, `font`: kotlin.Int?, `thumbnailBytes`: kotlin.ByteArray?, `audience`: List<kotlin.String>?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_link_status(
+        it, FfiConverterString.lower(`url`),FfiConverterOptionalString.lower(`title`),FfiConverterOptionalString.lower(`description`),FfiConverterOptionalString.lower(`customText`),FfiConverterOptionalString.lower(`backgroundColor`),FfiConverterOptionalInt.lower(`font`),FfiConverterOptionalByteArray.lower(`thumbnailBytes`),FfiConverterOptionalSequenceString.lower(`audience`),_status)
 }
     }
     )
@@ -5257,6 +6123,22 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_media_file(
         it, FfiConverterString.lower(`chatJid`),FfiConverterString.lower(`filePath`),FfiConverterString.lower(`mediaType`),FfiConverterOptionalString.lower(`caption`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Sends any message described as JSON (same shorthands as the core `send_message_json`).
+     */
+    @Throws(FfiException::class)override fun `sendMessageJson`(`toJid`: kotlin.String, `messageJson`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_message_json(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`messageJson`),_status)
 }
     }
     )
@@ -5384,6 +6266,32 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `sendStatusAudio`(`audioBytes`: kotlin.ByteArray, `seconds`: kotlin.UInt, `mimetype`: kotlin.String?, `audience`: List<kotlin.String>?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_status_audio(
+        it, FfiConverterByteArray.lower(`audioBytes`),FfiConverterUInt.lower(`seconds`),FfiConverterOptionalString.lower(`mimetype`),FfiConverterOptionalSequenceString.lower(`audience`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(FfiException::class)override fun `sendStatusImage`(`imageBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `mimetype`: kotlin.String?, `audience`: List<kotlin.String>?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_status_image(
+        it, FfiConverterByteArray.lower(`imageBytes`),FfiConverterOptionalString.lower(`caption`),FfiConverterOptionalString.lower(`mimetype`),FfiConverterOptionalSequenceString.lower(`audience`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     /**
      * Sends a status read receipt to mark a story as viewed.
      */
@@ -5396,6 +6304,19 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
 }
     }
     
+    
+
+    
+    @Throws(FfiException::class)override fun `sendStatusVideo`(`videoBytes`: kotlin.ByteArray, `caption`: kotlin.String?, `mimetype`: kotlin.String?, `audience`: List<kotlin.String>?): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_status_video(
+        it, FfiConverterByteArray.lower(`videoBytes`),FfiConverterOptionalString.lower(`caption`),FfiConverterOptionalString.lower(`mimetype`),FfiConverterOptionalSequenceString.lower(`audience`),_status)
+}
+    }
+    )
+    }
     
 
     
@@ -5476,6 +6397,19 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `sendVcard`(`toJid`: kotlin.String, `displayName`: kotlin.String, `vcard`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_vcard(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`displayName`),FfiConverterString.lower(`vcard`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     /**
      * Encrypts, uploads, and sends a video message.
      */
@@ -5485,6 +6419,22 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_video(
         it, FfiConverterString.lower(`toJid`),FfiConverterByteArray.lower(`videoBytes`),FfiConverterOptionalString.lower(`caption`),FfiConverterOptionalUInt.lower(`seconds`),FfiConverterBoolean.lower(`gifPlayback`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Wraps a JSON-described message in view-once (`v2` uses viewOnceMessageV2).
+     */
+    @Throws(FfiException::class)override fun `sendViewOnce`(`toJid`: kotlin.String, `messageJson`: kotlin.String, `v2`: kotlin.Boolean): kotlin.String {
+            return FfiConverterString.lift(
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_send_view_once(
+        it, FfiConverterString.lower(`toJid`),FfiConverterString.lower(`messageJson`),FfiConverterBoolean.lower(`v2`),_status)
 }
     }
     )
@@ -5528,6 +6478,32 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_set_chat_ephemeral(
         it, FfiConverterString.lower(`chatJid`),FfiConverterUInt.lower(`expirationSeconds`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * When enabled, read receipts and presence are not sent.
+     */override fun `setGhostMode`(`enabled`: kotlin.Boolean)
+        = 
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_set_ghost_mode(
+        it, FfiConverterBoolean.lower(`enabled`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(FfiException::class)override fun `setLinkedEmail`(`email`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_set_linked_email(
+        it, FfiConverterString.lower(`email`),_status)
 }
     }
     
@@ -5628,6 +6604,18 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     
 
     
+    @Throws(FfiException::class)override fun `updateProfileName`(`name`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_name(
+        it, FfiConverterString.lower(`name`),_status)
+}
+    }
+    
+    
+
+    
     /**
      * Updates profile picture for self or a group using image bytes.
      */
@@ -5668,6 +6656,18 @@ open class RolleysClient: Disposable, AutoCloseable, RolleysClientInterface {
     }
     )
     }
+    
+
+    
+    @Throws(FfiException::class)override fun `verifyEmailCode`(`code`: kotlin.String)
+        = 
+    callWithPointer {
+    uniffiRustCallWithError(FfiException) { _status ->
+    UniffiLib.INSTANCE.uniffi_baileys_ffi_fn_method_rolleysclient_verify_email_code(
+        it, FfiConverterString.lower(`code`),_status)
+}
+    }
+    
     
 
     
@@ -5739,6 +6739,42 @@ public object FfiConverterTypeRolleysAccountReachoutTimelock: FfiConverterRustBu
             FfiConverterBoolean.write(value.`isActive`, buf)
             FfiConverterOptionalString.write(value.`enforcementType`, buf)
             FfiConverterOptionalULong.write(value.`timeEnforcementEnds`, buf)
+    }
+}
+
+
+
+data class RolleysAppStateSyncSummary (
+    var `collectionsSynced`: kotlin.UInt, 
+    var `mutationsApplied`: kotlin.UInt, 
+    var `collectionsFailed`: kotlin.UInt
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysAppStateSyncSummary: FfiConverterRustBuffer<RolleysAppStateSyncSummary> {
+    override fun read(buf: ByteBuffer): RolleysAppStateSyncSummary {
+        return RolleysAppStateSyncSummary(
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysAppStateSyncSummary) = (
+            FfiConverterUInt.allocationSize(value.`collectionsSynced`) +
+            FfiConverterUInt.allocationSize(value.`mutationsApplied`) +
+            FfiConverterUInt.allocationSize(value.`collectionsFailed`)
+    )
+
+    override fun write(value: RolleysAppStateSyncSummary, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`collectionsSynced`, buf)
+            FfiConverterUInt.write(value.`mutationsApplied`, buf)
+            FfiConverterUInt.write(value.`collectionsFailed`, buf)
     }
 }
 
@@ -6443,6 +7479,41 @@ public object FfiConverterTypeRolleysContact: FfiConverterRustBuffer<RolleysCont
             FfiConverterOptionalString.write(value.`name`, buf)
             FfiConverterOptionalString.write(value.`pushName`, buf)
             FfiConverterOptionalString.write(value.`lid`, buf)
+    }
+}
+
+
+
+/**
+ * One entry of a multi-contact card message.
+ */
+data class RolleysContactCard (
+    var `displayName`: kotlin.String, 
+    var `phoneNumber`: kotlin.String
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysContactCard: FfiConverterRustBuffer<RolleysContactCard> {
+    override fun read(buf: ByteBuffer): RolleysContactCard {
+        return RolleysContactCard(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysContactCard) = (
+            FfiConverterString.allocationSize(value.`displayName`) +
+            FfiConverterString.allocationSize(value.`phoneNumber`)
+    )
+
+    override fun write(value: RolleysContactCard, buf: ByteBuffer) {
+            FfiConverterString.write(value.`displayName`, buf)
+            FfiConverterString.write(value.`phoneNumber`, buf)
     }
 }
 
@@ -7515,6 +8586,46 @@ public object FfiConverterTypeRolleysProfileStatus: FfiConverterRustBuffer<Rolle
 
 
 
+data class RolleysResolvedUsername (
+    var `username`: kotlin.String, 
+    var `jid`: kotlin.String, 
+    var `phoneJid`: kotlin.String?, 
+    var `verifiedName`: kotlin.String?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysResolvedUsername: FfiConverterRustBuffer<RolleysResolvedUsername> {
+    override fun read(buf: ByteBuffer): RolleysResolvedUsername {
+        return RolleysResolvedUsername(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysResolvedUsername) = (
+            FfiConverterString.allocationSize(value.`username`) +
+            FfiConverterString.allocationSize(value.`jid`) +
+            FfiConverterOptionalString.allocationSize(value.`phoneJid`) +
+            FfiConverterOptionalString.allocationSize(value.`verifiedName`)
+    )
+
+    override fun write(value: RolleysResolvedUsername, buf: ByteBuffer) {
+            FfiConverterString.write(value.`username`, buf)
+            FfiConverterString.write(value.`jid`, buf)
+            FfiConverterOptionalString.write(value.`phoneJid`, buf)
+            FfiConverterOptionalString.write(value.`verifiedName`, buf)
+    }
+}
+
+
+
 data class RolleysStoredCall (
     var `callId`: kotlin.String, 
     var `chatJid`: kotlin.String, 
@@ -7674,6 +8785,42 @@ public object FfiConverterTypeRolleysTelemetrySnapshot: FfiConverterRustBuffer<R
             FfiConverterULong.write(value.`lastPingLatencyMs`, buf)
             FfiConverterDouble.write(value.`signalCacheHitRatePct`, buf)
             FfiConverterULong.write(value.`reconnectCount`, buf)
+    }
+}
+
+
+
+data class RolleysTosNotice (
+    var `id`: kotlin.String, 
+    var `stage`: kotlin.String?, 
+    var `state`: kotlin.String?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysTosNotice: FfiConverterRustBuffer<RolleysTosNotice> {
+    override fun read(buf: ByteBuffer): RolleysTosNotice {
+        return RolleysTosNotice(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysTosNotice) = (
+            FfiConverterString.allocationSize(value.`id`) +
+            FfiConverterOptionalString.allocationSize(value.`stage`) +
+            FfiConverterOptionalString.allocationSize(value.`state`)
+    )
+
+    override fun write(value: RolleysTosNotice, buf: ByteBuffer) {
+            FfiConverterString.write(value.`id`, buf)
+            FfiConverterOptionalString.write(value.`stage`, buf)
+            FfiConverterOptionalString.write(value.`state`, buf)
     }
 }
 
@@ -9632,6 +10779,38 @@ public object FfiConverterOptionalTypeRolleysProfileStatus: FfiConverterRustBuff
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeRolleysResolvedUsername: FfiConverterRustBuffer<RolleysResolvedUsername?> {
+    override fun read(buf: ByteBuffer): RolleysResolvedUsername? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeRolleysResolvedUsername.read(buf)
+    }
+
+    override fun allocationSize(value: RolleysResolvedUsername?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeRolleysResolvedUsername.allocationSize(value)
+        }
+    }
+
+    override fun write(value: RolleysResolvedUsername?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeRolleysResolvedUsername.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalTypeRolleysUrlPreview: FfiConverterRustBuffer<RolleysUrlPreview?> {
     override fun read(buf: ByteBuffer): RolleysUrlPreview? {
         if (buf.get().toInt() == 0) {
@@ -9746,6 +10925,34 @@ public object FfiConverterSequenceUInt: FfiConverterRustBuffer<List<kotlin.UInt>
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterUInt.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceULong: FfiConverterRustBuffer<List<kotlin.ULong>> {
+    override fun read(buf: ByteBuffer): List<kotlin.ULong> {
+        val len = buf.getInt()
+        return List<kotlin.ULong>(len) {
+            FfiConverterULong.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<kotlin.ULong>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterULong.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<kotlin.ULong>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterULong.write(it, buf)
         }
     }
 }
@@ -9998,6 +11205,34 @@ public object FfiConverterSequenceTypeRolleysContact: FfiConverterRustBuffer<Lis
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeRolleysContact.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeRolleysContactCard: FfiConverterRustBuffer<List<RolleysContactCard>> {
+    override fun read(buf: ByteBuffer): List<RolleysContactCard> {
+        val len = buf.getInt()
+        return List<RolleysContactCard>(len) {
+            FfiConverterTypeRolleysContactCard.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<RolleysContactCard>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeRolleysContactCard.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<RolleysContactCard>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeRolleysContactCard.write(it, buf)
         }
     }
 }
@@ -10446,6 +11681,34 @@ public object FfiConverterSequenceTypeRolleysStoredStory: FfiConverterRustBuffer
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeRolleysStoredStory.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeRolleysTosNotice: FfiConverterRustBuffer<List<RolleysTosNotice>> {
+    override fun read(buf: ByteBuffer): List<RolleysTosNotice> {
+        val len = buf.getInt()
+        return List<RolleysTosNotice>(len) {
+            FfiConverterTypeRolleysTosNotice.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<RolleysTosNotice>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeRolleysTosNotice.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<RolleysTosNotice>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeRolleysTosNotice.write(it, buf)
         }
     }
 }

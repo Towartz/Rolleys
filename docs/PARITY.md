@@ -73,7 +73,7 @@ Rincian per area ada di rencana kerja; ringkasannya:
 | Binding | Status | Catatan |
 |---|---|---|
 | napi | partial | ~150 method; kurang send tipe baru, status media, newsletter admin, pairing/QR |
-| ffi (uniffi) | partial | semua event core diteruskan (`RolleysEvent`, 2026-10-23); method masih tertinggal |
+| ffi (uniffi) | done (unit) | semua event core diteruskan; setiap method core terjangkau atau dikecualikan dengan alasan, dijaga test `parity_tests` (2026-10-23). Swift/Kotlin hasil generate belum dikompilasi di sini (tanpa swiftc/kotlinc) |
 | cabi | partial | tanpa callback event; banyak fungsi grup/kirim hilang (verifikasi terhadap `bindings/c/baileys.h`) |
 
 `CredsUpdate` baru dipancarkan dari loop koneksi (pairing, LID, companion finish); jalur `save_creds` lain di `client/` belum.

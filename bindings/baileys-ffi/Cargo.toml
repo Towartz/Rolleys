@@ -16,6 +16,8 @@ baileys-store.workspace = true
 tokio.workspace = true
 thiserror.workspace = true
 uniffi = { workspace = true, features = ["cli"] }
+serde_json.workspace = true
+prost.workspace = true
 
 [[bin]]
 name = "uniffi-bindgen"

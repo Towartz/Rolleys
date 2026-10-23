@@ -580,6 +580,8 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
 
 public protocol RolleysClientProtocol : AnyObject {
     
+    func acceptTos(noticeIds: [String], stage: String?) throws 
+    
     func addChatLabel(chatJid: String, labelId: String) throws 
     
     func addMessageLabel(chatJid: String, messageId: String, labelId: String) throws 
@@ -731,6 +733,11 @@ public protocol RolleysClientProtocol : AnyObject {
     func fetchUrlPreview(text: String) throws  -> RolleysUrlPreview?
     
     /**
+     * Forwards a message this client has seen (recent cache or store) by its id.
+     */
+    func forwardMessage(toJid: String, messageId: String) throws  -> String
+    
+    /**
      * Reads all locally stored blocked contacts from SQLite.
      */
     func getBlockedContacts() throws  -> [String]
@@ -787,7 +794,14 @@ public protocol RolleysClientProtocol : AnyObject {
     
     func getLabels() throws  -> [RolleysLabel]
     
+    /**
+     * The most recent QR string, if one was issued.
+     */
+    func getLastQr()  -> String?
+    
     func getLidForPn(pnJid: String) throws  -> String?
+    
+    func getLinkedEmail() throws  -> String?
     
     /**
      * Returns the currently authenticated JID if paired/connected.
@@ -864,6 +878,11 @@ public protocol RolleysClientProtocol : AnyObject {
     func groupGetInviteCode(groupJid: String) throws  -> String
     
     /**
+     * Metadata of the group behind an invite code, without joining it.
+     */
+    func groupGetInviteInfo(code: String) throws  -> RolleysGroupMetadata
+    
+    /**
      * Configures membership approval mode for a group ("on" or "off").
      */
     func groupJoinApprovalMode(groupJid: String, mode: String) throws 
@@ -928,6 +947,20 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func isConnected()  -> Bool
     
+    func isGhostMode()  -> Bool
+    
+    /**
+     * Logs this device out and clears the session.
+     */
+    func logout() throws 
+    
+    /**
+     * Resolves a WhatsApp username (with its PIN when it has one).
+     */
+    func lookupUsername(username: String, pin: String?) throws  -> RolleysResolvedUsername?
+    
+    func meLid() throws  -> String?
+    
     func newsletterAdminCount(channelJid: String) throws  -> UInt32
     
     /**
@@ -939,6 +972,8 @@ public protocol RolleysClientProtocol : AnyObject {
      * Creates a new WhatsApp Channel.
      */
     func newsletterCreate(name: String, description: String?) throws  -> RolleysNewsletter
+    
+    func newsletterDelete(jid: String) throws 
     
     /**
      * Demotes a channel admin back to subscriber.
@@ -980,15 +1015,30 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func newsletterReact(jid: String, serverId: UInt64, reaction: String) throws 
     
+    func newsletterSendImage(jid: String, imageBytes: Data, caption: String?) throws  -> String
+    
+    func newsletterSendImageStatusStory(imageBytes: Data, caption: String?, newsletterJid: String, serverMsgId: Int32, newsletterName: String, statusRecipients: [String]?) throws  -> String
+    
     /**
      * Broadcasts a text message to an owned WhatsApp Channel.
      */
     func newsletterSendPost(jid: String, text: String) throws  -> String
     
+    func newsletterSendStatusStory(newsletterJid: String, serverMsgId: Int32, newsletterName: String, captionOrText: String, statusRecipients: [String]?) throws  -> String
+    
     /**
      * Unfollows a WhatsApp Channel.
      */
     func newsletterUnfollow(jid: String) throws 
+    
+    func newsletterUpdateName(jid: String, name: String) throws 
+    
+    func newsletterViewReceipt(jid: String, serverIds: [UInt64]) throws 
+    
+    /**
+     * Pins (`pin = true`) or unpins a message in a chat.
+     */
+    func pinMessage(chatJid: String, messageId: String, pin: Bool, durationSecs: UInt32) throws  -> String
     
     /**
      * Returns round-trip gateway ping latency in milliseconds.
@@ -1000,12 +1050,18 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func presenceSubscribe(toJid: String) throws 
     
+    func productCreate(product: RolleysCatalogProduct) throws  -> String
+    
     func productDelete(productIds: [String]) throws 
+    
+    func productUpdate(productId: String, product: RolleysCatalogProduct) throws 
     
     /**
      * Fetches profile picture URL for a user or group.
      */
     func profilePictureUrl(jid: String, pictureType: String) throws  -> String?
+    
+    func queryTos(noticeIds: [String]) throws  -> [RolleysTosNotice]
     
     /**
      * Rejects an incoming WhatsApp voice or video call.
@@ -1025,14 +1081,40 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func removeProfilePicture(jidOpt: String?) throws 
     
+    func requestEmailCode(lang: String, locale: String) throws 
+    
+    /**
+     * Asks the server for an 8-character pairing code for `phone` (link with phone number).
+     */
+    func requestPairingCode(phone: String) throws  -> String
+    
+    /**
+     * Re-synchronises app-state collections (`force_snapshot` rebuilds them from scratch).
+     */
+    func resyncAppState(collections: [String], forceSnapshot: Bool) throws  -> RolleysAppStateSyncSummary
+    
     func revokeMessage(chatJid: String, targetMessageId: String) throws  -> String
+    
+    func sendAlbum(toJid: String, expectedImageCount: UInt32, expectedVideoCount: UInt32) throws  -> String
     
     /**
      * Encrypts, uploads, and sends an audio message or voice note (PTT).
      */
     func sendAudio(toJid: String, audioBytes: Data, ptt: Bool, seconds: UInt32?) throws  -> String
     
+    /**
+     * Sends a prompt to Meta AI, optionally inside an existing chat.
+     */
+    func sendBotPrompt(prompt: String, targetChat: String?) throws  -> String
+    
+    /**
+     * Comments on a message (e.g. a channel or community post).
+     */
+    func sendComment(toJid: String, targetMessageId: String, targetFromMe: Bool, targetParticipant: String?, text: String) throws  -> String
+    
     func sendContact(toJid: String, displayName: String, phoneNumber: String) throws  -> String
+    
+    func sendContactsArray(toJid: String, displayName: String, contacts: [RolleysContactCard]) throws  -> String
     
     /**
      * Encrypts, uploads, and sends a document/file message.
@@ -1043,6 +1125,10 @@ public protocol RolleysClientProtocol : AnyObject {
      * Sends a document attachment with title, page count, and caption.
      */
     func sendDocumentAttachment(toJid: String, docBytes: Data, filename: String, mimetype: String, title: String?, pageCount: UInt32?, caption: String?) throws  -> String
+    
+    func sendEvent(toJid: String, name: String, description: String?, startTime: Int64, endTime: Int64?, locationName: String?) throws  -> String
+    
+    func sendFakeQuotedMessage(toJid: String, replyText: String, fakeSenderJid: String, fakeQuotedText: String) throws  -> String
     
     func sendGroupInvite(toJid: String, groupJid: String, inviteCode: String, inviteExpiration: Int64, groupName: String, caption: String?) throws  -> String
     
@@ -1055,6 +1141,8 @@ public protocol RolleysClientProtocol : AnyObject {
      * Sends native flow interactive action buttons (quick reply, cta_url, etc.).
      */
     func sendInteractiveButtons(targetJid: String, body: String, buttons: [RolleysInteractiveButton], header: String?, footer: String?) throws  -> String
+    
+    func sendLinkStatus(url: String, title: String?, description: String?, customText: String?, backgroundColor: String?, font: Int32?, thumbnailBytes: Data?, audience: [String]?) throws  -> String
     
     /**
      * Sends an interactive single-selection list message.
@@ -1070,6 +1158,11 @@ public protocol RolleysClientProtocol : AnyObject {
      * and emits real-time RolleysEvent::MediaProgress events.
      */
     func sendMediaFile(chatJid: String, filePath: String, mediaType: String, caption: String?) throws  -> String
+    
+    /**
+     * Sends any message described as JSON (same shorthands as the core `send_message_json`).
+     */
+    func sendMessageJson(toJid: String, messageJson: String) throws  -> String
     
     func sendOrderMessage(toJid: String, sellerJid: String, orderId: String, title: String, itemCount: Int32, totalAmount1000: Int64, currency: String, message: String?) throws  -> String
     
@@ -1105,10 +1198,16 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func sendRevoke(toJid: String, targetMsgId: String) throws  -> String
     
+    func sendStatusAudio(audioBytes: Data, seconds: UInt32, mimetype: String?, audience: [String]?) throws  -> String
+    
+    func sendStatusImage(imageBytes: Data, caption: String?, mimetype: String?, audience: [String]?) throws  -> String
+    
     /**
      * Sends a status read receipt to mark a story as viewed.
      */
     func sendStatusReadReceipt(msgId: String, authorJid: String) throws 
+    
+    func sendStatusVideo(videoBytes: Data, caption: String?, mimetype: String?, audience: [String]?) throws  -> String
     
     /**
      * Encrypts, uploads, and sends a sticker message.
@@ -1132,10 +1231,17 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func sendTextWithQuote(toJid: String, text: String, quotedId: String, quotedParticipant: String?, quotedText: String?) throws  -> String
     
+    func sendVcard(toJid: String, displayName: String, vcard: String) throws  -> String
+    
     /**
      * Encrypts, uploads, and sends a video message.
      */
     func sendVideo(toJid: String, videoBytes: Data, caption: String?, seconds: UInt32?, gifPlayback: Bool) throws  -> String
+    
+    /**
+     * Wraps a JSON-described message in view-once (`v2` uses viewOnceMessageV2).
+     */
+    func sendViewOnce(toJid: String, messageJson: String, v2: Bool) throws  -> String
     
     /**
      * Sends a voice note / PTT audio message (Opus format, waveform).
@@ -1148,6 +1254,13 @@ public protocol RolleysClientProtocol : AnyObject {
     func setAutoDownload(enabled: Bool) 
     
     func setChatEphemeral(chatJid: String, expirationSeconds: UInt32) throws 
+    
+    /**
+     * When enabled, read receipts and presence are not sent.
+     */
+    func setGhostMode(enabled: Bool) 
+    
+    func setLinkedEmail(email: String) throws 
     
     /**
      * Starts the client connection and forwards real-time events to the native Kotlin listener.
@@ -1172,6 +1285,8 @@ public protocol RolleysClientProtocol : AnyObject {
      */
     func updatePrivacySetting(category: String, value: String) throws 
     
+    func updateProfileName(name: String) throws 
+    
     /**
      * Updates profile picture for self or a group using image bytes.
      */
@@ -1183,6 +1298,8 @@ public protocol RolleysClientProtocol : AnyObject {
     func updateProfileStatus(status: String) throws 
     
     func upsertLabel(id: String?, name: String, color: Int32, predefinedId: Int32?) throws  -> String
+    
+    func verifyEmailCode(code: String) throws 
     
 }
 
@@ -1243,6 +1360,14 @@ public convenience init(config: RolleysClientConfig)throws  {
 
     
 
+    
+open func acceptTos(noticeIds: [String], stage: String?)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_accept_tos(self.uniffiClonePointer(),
+        FfiConverterSequenceString.lower(noticeIds),
+        FfiConverterOptionString.lower(stage),$0
+    )
+}
+}
     
 open func addChatLabel(chatJid: String, labelId: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
     uniffi_baileys_ffi_fn_method_rolleysclient_add_chat_label(self.uniffiClonePointer(),
@@ -1639,6 +1764,18 @@ open func fetchUrlPreview(text: String)throws  -> RolleysUrlPreview? {
 }
     
     /**
+     * Forwards a message this client has seen (recent cache or store) by its id.
+     */
+open func forwardMessage(toJid: String, messageId: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_forward_message(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(messageId),$0
+    )
+})
+}
+    
+    /**
      * Reads all locally stored blocked contacts from SQLite.
      */
 open func getBlockedContacts()throws  -> [String] {
@@ -1803,10 +1940,27 @@ open func getLabels()throws  -> [RolleysLabel] {
 })
 }
     
+    /**
+     * The most recent QR string, if one was issued.
+     */
+open func getLastQr() -> String? {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_last_qr(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func getLidForPn(pnJid: String)throws  -> String? {
     return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
     uniffi_baileys_ffi_fn_method_rolleysclient_get_lid_for_pn(self.uniffiClonePointer(),
         FfiConverterString.lower(pnJid),$0
+    )
+})
+}
+    
+open func getLinkedEmail()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_get_linked_email(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -2005,6 +2159,17 @@ open func groupGetInviteCode(groupJid: String)throws  -> String {
 }
     
     /**
+     * Metadata of the group behind an invite code, without joining it.
+     */
+open func groupGetInviteInfo(code: String)throws  -> RolleysGroupMetadata {
+    return try  FfiConverterTypeRolleysGroupMetadata.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_group_get_invite_info(self.uniffiClonePointer(),
+        FfiConverterString.lower(code),$0
+    )
+})
+}
+    
+    /**
      * Configures membership approval mode for a group ("on" or "off").
      */
 open func groupJoinApprovalMode(groupJid: String, mode: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
@@ -2148,6 +2313,41 @@ open func isConnected() -> Bool {
 })
 }
     
+open func isGhostMode() -> Bool {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_baileys_ffi_fn_method_rolleysclient_is_ghost_mode(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+    /**
+     * Logs this device out and clears the session.
+     */
+open func logout()throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_logout(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+    /**
+     * Resolves a WhatsApp username (with its PIN when it has one).
+     */
+open func lookupUsername(username: String, pin: String?)throws  -> RolleysResolvedUsername? {
+    return try  FfiConverterOptionTypeRolleysResolvedUsername.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_lookup_username(self.uniffiClonePointer(),
+        FfiConverterString.lower(username),
+        FfiConverterOptionString.lower(pin),$0
+    )
+})
+}
+    
+open func meLid()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_me_lid(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func newsletterAdminCount(channelJid: String)throws  -> UInt32 {
     return try  FfiConverterUInt32.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
     uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_admin_count(self.uniffiClonePointer(),
@@ -2177,6 +2377,13 @@ open func newsletterCreate(name: String, description: String?)throws  -> Rolleys
         FfiConverterOptionString.lower(description),$0
     )
 })
+}
+    
+open func newsletterDelete(jid: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_delete(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),$0
+    )
+}
 }
     
     /**
@@ -2268,6 +2475,29 @@ open func newsletterReact(jid: String, serverId: UInt64, reaction: String)throws
 }
 }
     
+open func newsletterSendImage(jid: String, imageBytes: Data, caption: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_image(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),
+        FfiConverterData.lower(imageBytes),
+        FfiConverterOptionString.lower(caption),$0
+    )
+})
+}
+    
+open func newsletterSendImageStatusStory(imageBytes: Data, caption: String?, newsletterJid: String, serverMsgId: Int32, newsletterName: String, statusRecipients: [String]?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_image_status_story(self.uniffiClonePointer(),
+        FfiConverterData.lower(imageBytes),
+        FfiConverterOptionString.lower(caption),
+        FfiConverterString.lower(newsletterJid),
+        FfiConverterInt32.lower(serverMsgId),
+        FfiConverterString.lower(newsletterName),
+        FfiConverterOptionSequenceString.lower(statusRecipients),$0
+    )
+})
+}
+    
     /**
      * Broadcasts a text message to an owned WhatsApp Channel.
      */
@@ -2280,6 +2510,18 @@ open func newsletterSendPost(jid: String, text: String)throws  -> String {
 })
 }
     
+open func newsletterSendStatusStory(newsletterJid: String, serverMsgId: Int32, newsletterName: String, captionOrText: String, statusRecipients: [String]?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_send_status_story(self.uniffiClonePointer(),
+        FfiConverterString.lower(newsletterJid),
+        FfiConverterInt32.lower(serverMsgId),
+        FfiConverterString.lower(newsletterName),
+        FfiConverterString.lower(captionOrText),
+        FfiConverterOptionSequenceString.lower(statusRecipients),$0
+    )
+})
+}
+    
     /**
      * Unfollows a WhatsApp Channel.
      */
@@ -2288,6 +2530,36 @@ open func newsletterUnfollow(jid: String)throws  {try rustCallWithError(FfiConve
         FfiConverterString.lower(jid),$0
     )
 }
+}
+    
+open func newsletterUpdateName(jid: String, name: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_update_name(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),
+        FfiConverterString.lower(name),$0
+    )
+}
+}
+    
+open func newsletterViewReceipt(jid: String, serverIds: [UInt64])throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_newsletter_view_receipt(self.uniffiClonePointer(),
+        FfiConverterString.lower(jid),
+        FfiConverterSequenceUInt64.lower(serverIds),$0
+    )
+}
+}
+    
+    /**
+     * Pins (`pin = true`) or unpins a message in a chat.
+     */
+open func pinMessage(chatJid: String, messageId: String, pin: Bool, durationSecs: UInt32)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_pin_message(self.uniffiClonePointer(),
+        FfiConverterString.lower(chatJid),
+        FfiConverterString.lower(messageId),
+        FfiConverterBool.lower(pin),
+        FfiConverterUInt32.lower(durationSecs),$0
+    )
+})
 }
     
     /**
@@ -2310,9 +2582,25 @@ open func presenceSubscribe(toJid: String)throws  {try rustCallWithError(FfiConv
 }
 }
     
+open func productCreate(product: RolleysCatalogProduct)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_product_create(self.uniffiClonePointer(),
+        FfiConverterTypeRolleysCatalogProduct.lower(product),$0
+    )
+})
+}
+    
 open func productDelete(productIds: [String])throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
     uniffi_baileys_ffi_fn_method_rolleysclient_product_delete(self.uniffiClonePointer(),
         FfiConverterSequenceString.lower(productIds),$0
+    )
+}
+}
+    
+open func productUpdate(productId: String, product: RolleysCatalogProduct)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_product_update(self.uniffiClonePointer(),
+        FfiConverterString.lower(productId),
+        FfiConverterTypeRolleysCatalogProduct.lower(product),$0
     )
 }
 }
@@ -2325,6 +2613,14 @@ open func profilePictureUrl(jid: String, pictureType: String)throws  -> String? 
     uniffi_baileys_ffi_fn_method_rolleysclient_profile_picture_url(self.uniffiClonePointer(),
         FfiConverterString.lower(jid),
         FfiConverterString.lower(pictureType),$0
+    )
+})
+}
+    
+open func queryTos(noticeIds: [String])throws  -> [RolleysTosNotice] {
+    return try  FfiConverterSequenceTypeRolleysTosNotice.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_query_tos(self.uniffiClonePointer(),
+        FfiConverterSequenceString.lower(noticeIds),$0
     )
 })
 }
@@ -2381,11 +2677,52 @@ open func removeProfilePicture(jidOpt: String?)throws  {try rustCallWithError(Ff
 }
 }
     
+open func requestEmailCode(lang: String, locale: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_request_email_code(self.uniffiClonePointer(),
+        FfiConverterString.lower(lang),
+        FfiConverterString.lower(locale),$0
+    )
+}
+}
+    
+    /**
+     * Asks the server for an 8-character pairing code for `phone` (link with phone number).
+     */
+open func requestPairingCode(phone: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_request_pairing_code(self.uniffiClonePointer(),
+        FfiConverterString.lower(phone),$0
+    )
+})
+}
+    
+    /**
+     * Re-synchronises app-state collections (`force_snapshot` rebuilds them from scratch).
+     */
+open func resyncAppState(collections: [String], forceSnapshot: Bool)throws  -> RolleysAppStateSyncSummary {
+    return try  FfiConverterTypeRolleysAppStateSyncSummary.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_resync_app_state(self.uniffiClonePointer(),
+        FfiConverterSequenceString.lower(collections),
+        FfiConverterBool.lower(forceSnapshot),$0
+    )
+})
+}
+    
 open func revokeMessage(chatJid: String, targetMessageId: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
     uniffi_baileys_ffi_fn_method_rolleysclient_revoke_message(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterString.lower(targetMessageId),$0
+    )
+})
+}
+    
+open func sendAlbum(toJid: String, expectedImageCount: UInt32, expectedVideoCount: UInt32)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_album(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterUInt32.lower(expectedImageCount),
+        FfiConverterUInt32.lower(expectedVideoCount),$0
     )
 })
 }
@@ -2404,12 +2741,49 @@ open func sendAudio(toJid: String, audioBytes: Data, ptt: Bool, seconds: UInt32?
 })
 }
     
+    /**
+     * Sends a prompt to Meta AI, optionally inside an existing chat.
+     */
+open func sendBotPrompt(prompt: String, targetChat: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_bot_prompt(self.uniffiClonePointer(),
+        FfiConverterString.lower(prompt),
+        FfiConverterOptionString.lower(targetChat),$0
+    )
+})
+}
+    
+    /**
+     * Comments on a message (e.g. a channel or community post).
+     */
+open func sendComment(toJid: String, targetMessageId: String, targetFromMe: Bool, targetParticipant: String?, text: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_comment(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(targetMessageId),
+        FfiConverterBool.lower(targetFromMe),
+        FfiConverterOptionString.lower(targetParticipant),
+        FfiConverterString.lower(text),$0
+    )
+})
+}
+    
 open func sendContact(toJid: String, displayName: String, phoneNumber: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
     uniffi_baileys_ffi_fn_method_rolleysclient_send_contact(self.uniffiClonePointer(),
         FfiConverterString.lower(toJid),
         FfiConverterString.lower(displayName),
         FfiConverterString.lower(phoneNumber),$0
+    )
+})
+}
+    
+open func sendContactsArray(toJid: String, displayName: String, contacts: [RolleysContactCard])throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_contacts_array(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(displayName),
+        FfiConverterSequenceTypeRolleysContactCard.lower(contacts),$0
     )
 })
 }
@@ -2442,6 +2816,30 @@ open func sendDocumentAttachment(toJid: String, docBytes: Data, filename: String
         FfiConverterOptionString.lower(title),
         FfiConverterOptionUInt32.lower(pageCount),
         FfiConverterOptionString.lower(caption),$0
+    )
+})
+}
+    
+open func sendEvent(toJid: String, name: String, description: String?, startTime: Int64, endTime: Int64?, locationName: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_event(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(name),
+        FfiConverterOptionString.lower(description),
+        FfiConverterInt64.lower(startTime),
+        FfiConverterOptionInt64.lower(endTime),
+        FfiConverterOptionString.lower(locationName),$0
+    )
+})
+}
+    
+open func sendFakeQuotedMessage(toJid: String, replyText: String, fakeSenderJid: String, fakeQuotedText: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_fake_quoted_message(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(replyText),
+        FfiConverterString.lower(fakeSenderJid),
+        FfiConverterString.lower(fakeQuotedText),$0
     )
 })
 }
@@ -2483,6 +2881,21 @@ open func sendInteractiveButtons(targetJid: String, body: String, buttons: [Roll
         FfiConverterSequenceTypeRolleysInteractiveButton.lower(buttons),
         FfiConverterOptionString.lower(header),
         FfiConverterOptionString.lower(footer),$0
+    )
+})
+}
+    
+open func sendLinkStatus(url: String, title: String?, description: String?, customText: String?, backgroundColor: String?, font: Int32?, thumbnailBytes: Data?, audience: [String]?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_link_status(self.uniffiClonePointer(),
+        FfiConverterString.lower(url),
+        FfiConverterOptionString.lower(title),
+        FfiConverterOptionString.lower(description),
+        FfiConverterOptionString.lower(customText),
+        FfiConverterOptionString.lower(backgroundColor),
+        FfiConverterOptionInt32.lower(font),
+        FfiConverterOptionData.lower(thumbnailBytes),
+        FfiConverterOptionSequenceString.lower(audience),$0
     )
 })
 }
@@ -2538,6 +2951,18 @@ open func sendMediaFile(chatJid: String, filePath: String, mediaType: String, ca
         FfiConverterString.lower(filePath),
         FfiConverterString.lower(mediaType),
         FfiConverterOptionString.lower(caption),$0
+    )
+})
+}
+    
+    /**
+     * Sends any message described as JSON (same shorthands as the core `send_message_json`).
+     */
+open func sendMessageJson(toJid: String, messageJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_message_json(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(messageJson),$0
     )
 })
 }
@@ -2646,6 +3071,28 @@ open func sendRevoke(toJid: String, targetMsgId: String)throws  -> String {
 })
 }
     
+open func sendStatusAudio(audioBytes: Data, seconds: UInt32, mimetype: String?, audience: [String]?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_status_audio(self.uniffiClonePointer(),
+        FfiConverterData.lower(audioBytes),
+        FfiConverterUInt32.lower(seconds),
+        FfiConverterOptionString.lower(mimetype),
+        FfiConverterOptionSequenceString.lower(audience),$0
+    )
+})
+}
+    
+open func sendStatusImage(imageBytes: Data, caption: String?, mimetype: String?, audience: [String]?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_status_image(self.uniffiClonePointer(),
+        FfiConverterData.lower(imageBytes),
+        FfiConverterOptionString.lower(caption),
+        FfiConverterOptionString.lower(mimetype),
+        FfiConverterOptionSequenceString.lower(audience),$0
+    )
+})
+}
+    
     /**
      * Sends a status read receipt to mark a story as viewed.
      */
@@ -2655,6 +3102,17 @@ open func sendStatusReadReceipt(msgId: String, authorJid: String)throws  {try ru
         FfiConverterString.lower(authorJid),$0
     )
 }
+}
+    
+open func sendStatusVideo(videoBytes: Data, caption: String?, mimetype: String?, audience: [String]?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_status_video(self.uniffiClonePointer(),
+        FfiConverterData.lower(videoBytes),
+        FfiConverterOptionString.lower(caption),
+        FfiConverterOptionString.lower(mimetype),
+        FfiConverterOptionSequenceString.lower(audience),$0
+    )
+})
 }
     
     /**
@@ -2720,6 +3178,16 @@ open func sendTextWithQuote(toJid: String, text: String, quotedId: String, quote
 })
 }
     
+open func sendVcard(toJid: String, displayName: String, vcard: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_vcard(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(displayName),
+        FfiConverterString.lower(vcard),$0
+    )
+})
+}
+    
     /**
      * Encrypts, uploads, and sends a video message.
      */
@@ -2731,6 +3199,19 @@ open func sendVideo(toJid: String, videoBytes: Data, caption: String?, seconds: 
         FfiConverterOptionString.lower(caption),
         FfiConverterOptionUInt32.lower(seconds),
         FfiConverterBool.lower(gifPlayback),$0
+    )
+})
+}
+    
+    /**
+     * Wraps a JSON-described message in view-once (`v2` uses viewOnceMessageV2).
+     */
+open func sendViewOnce(toJid: String, messageJson: String, v2: Bool)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_send_view_once(self.uniffiClonePointer(),
+        FfiConverterString.lower(toJid),
+        FfiConverterString.lower(messageJson),
+        FfiConverterBool.lower(v2),$0
     )
 })
 }
@@ -2763,6 +3244,23 @@ open func setChatEphemeral(chatJid: String, expirationSeconds: UInt32)throws  {t
     uniffi_baileys_ffi_fn_method_rolleysclient_set_chat_ephemeral(self.uniffiClonePointer(),
         FfiConverterString.lower(chatJid),
         FfiConverterUInt32.lower(expirationSeconds),$0
+    )
+}
+}
+    
+    /**
+     * When enabled, read receipts and presence are not sent.
+     */
+open func setGhostMode(enabled: Bool) {try! rustCall() {
+    uniffi_baileys_ffi_fn_method_rolleysclient_set_ghost_mode(self.uniffiClonePointer(),
+        FfiConverterBool.lower(enabled),$0
+    )
+}
+}
+    
+open func setLinkedEmail(email: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_set_linked_email(self.uniffiClonePointer(),
+        FfiConverterString.lower(email),$0
     )
 }
 }
@@ -2830,6 +3328,13 @@ open func updatePrivacySetting(category: String, value: String)throws  {try rust
 }
 }
     
+open func updateProfileName(name: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_update_profile_name(self.uniffiClonePointer(),
+        FfiConverterString.lower(name),$0
+    )
+}
+}
+    
     /**
      * Updates profile picture for self or a group using image bytes.
      */
@@ -2860,6 +3365,13 @@ open func upsertLabel(id: String?, name: String, color: Int32, predefinedId: Int
         FfiConverterOptionInt32.lower(predefinedId),$0
     )
 })
+}
+    
+open func verifyEmailCode(code: String)throws  {try rustCallWithError(FfiConverterTypeFfiError.lift) {
+    uniffi_baileys_ffi_fn_method_rolleysclient_verify_email_code(self.uniffiClonePointer(),
+        FfiConverterString.lower(code),$0
+    )
+}
 }
     
 
@@ -2988,6 +3500,80 @@ public func FfiConverterTypeRolleysAccountReachoutTimelock_lift(_ buf: RustBuffe
 #endif
 public func FfiConverterTypeRolleysAccountReachoutTimelock_lower(_ value: RolleysAccountReachoutTimelock) -> RustBuffer {
     return FfiConverterTypeRolleysAccountReachoutTimelock.lower(value)
+}
+
+
+public struct RolleysAppStateSyncSummary {
+    public var collectionsSynced: UInt32
+    public var mutationsApplied: UInt32
+    public var collectionsFailed: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(collectionsSynced: UInt32, mutationsApplied: UInt32, collectionsFailed: UInt32) {
+        self.collectionsSynced = collectionsSynced
+        self.mutationsApplied = mutationsApplied
+        self.collectionsFailed = collectionsFailed
+    }
+}
+
+
+
+extension RolleysAppStateSyncSummary: Equatable, Hashable {
+    public static func ==(lhs: RolleysAppStateSyncSummary, rhs: RolleysAppStateSyncSummary) -> Bool {
+        if lhs.collectionsSynced != rhs.collectionsSynced {
+            return false
+        }
+        if lhs.mutationsApplied != rhs.mutationsApplied {
+            return false
+        }
+        if lhs.collectionsFailed != rhs.collectionsFailed {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(collectionsSynced)
+        hasher.combine(mutationsApplied)
+        hasher.combine(collectionsFailed)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysAppStateSyncSummary: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysAppStateSyncSummary {
+        return
+            try RolleysAppStateSyncSummary(
+                collectionsSynced: FfiConverterUInt32.read(from: &buf), 
+                mutationsApplied: FfiConverterUInt32.read(from: &buf), 
+                collectionsFailed: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysAppStateSyncSummary, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.collectionsSynced, into: &buf)
+        FfiConverterUInt32.write(value.mutationsApplied, into: &buf)
+        FfiConverterUInt32.write(value.collectionsFailed, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysAppStateSyncSummary_lift(_ buf: RustBuffer) throws -> RolleysAppStateSyncSummary {
+    return try FfiConverterTypeRolleysAppStateSyncSummary.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysAppStateSyncSummary_lower(_ value: RolleysAppStateSyncSummary) -> RustBuffer {
+    return FfiConverterTypeRolleysAppStateSyncSummary.lower(value)
 }
 
 
@@ -4426,6 +5012,75 @@ public func FfiConverterTypeRolleysContact_lift(_ buf: RustBuffer) throws -> Rol
 #endif
 public func FfiConverterTypeRolleysContact_lower(_ value: RolleysContact) -> RustBuffer {
     return FfiConverterTypeRolleysContact.lower(value)
+}
+
+
+/**
+ * One entry of a multi-contact card message.
+ */
+public struct RolleysContactCard {
+    public var displayName: String
+    public var phoneNumber: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(displayName: String, phoneNumber: String) {
+        self.displayName = displayName
+        self.phoneNumber = phoneNumber
+    }
+}
+
+
+
+extension RolleysContactCard: Equatable, Hashable {
+    public static func ==(lhs: RolleysContactCard, rhs: RolleysContactCard) -> Bool {
+        if lhs.displayName != rhs.displayName {
+            return false
+        }
+        if lhs.phoneNumber != rhs.phoneNumber {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(displayName)
+        hasher.combine(phoneNumber)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysContactCard: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysContactCard {
+        return
+            try RolleysContactCard(
+                displayName: FfiConverterString.read(from: &buf), 
+                phoneNumber: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysContactCard, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.displayName, into: &buf)
+        FfiConverterString.write(value.phoneNumber, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysContactCard_lift(_ buf: RustBuffer) throws -> RolleysContactCard {
+    return try FfiConverterTypeRolleysContactCard.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysContactCard_lower(_ value: RolleysContactCard) -> RustBuffer {
+    return FfiConverterTypeRolleysContactCard.lower(value)
 }
 
 
@@ -6607,6 +7262,88 @@ public func FfiConverterTypeRolleysProfileStatus_lower(_ value: RolleysProfileSt
 }
 
 
+public struct RolleysResolvedUsername {
+    public var username: String
+    public var jid: String
+    public var phoneJid: String?
+    public var verifiedName: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(username: String, jid: String, phoneJid: String?, verifiedName: String?) {
+        self.username = username
+        self.jid = jid
+        self.phoneJid = phoneJid
+        self.verifiedName = verifiedName
+    }
+}
+
+
+
+extension RolleysResolvedUsername: Equatable, Hashable {
+    public static func ==(lhs: RolleysResolvedUsername, rhs: RolleysResolvedUsername) -> Bool {
+        if lhs.username != rhs.username {
+            return false
+        }
+        if lhs.jid != rhs.jid {
+            return false
+        }
+        if lhs.phoneJid != rhs.phoneJid {
+            return false
+        }
+        if lhs.verifiedName != rhs.verifiedName {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(username)
+        hasher.combine(jid)
+        hasher.combine(phoneJid)
+        hasher.combine(verifiedName)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysResolvedUsername: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysResolvedUsername {
+        return
+            try RolleysResolvedUsername(
+                username: FfiConverterString.read(from: &buf), 
+                jid: FfiConverterString.read(from: &buf), 
+                phoneJid: FfiConverterOptionString.read(from: &buf), 
+                verifiedName: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysResolvedUsername, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.username, into: &buf)
+        FfiConverterString.write(value.jid, into: &buf)
+        FfiConverterOptionString.write(value.phoneJid, into: &buf)
+        FfiConverterOptionString.write(value.verifiedName, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysResolvedUsername_lift(_ buf: RustBuffer) throws -> RolleysResolvedUsername {
+    return try FfiConverterTypeRolleysResolvedUsername.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysResolvedUsername_lower(_ value: RolleysResolvedUsername) -> RustBuffer {
+    return FfiConverterTypeRolleysResolvedUsername.lower(value)
+}
+
+
 public struct RolleysStoredCall {
     public var callId: String
     public var chatJid: String
@@ -6938,6 +7675,80 @@ public func FfiConverterTypeRolleysTelemetrySnapshot_lift(_ buf: RustBuffer) thr
 #endif
 public func FfiConverterTypeRolleysTelemetrySnapshot_lower(_ value: RolleysTelemetrySnapshot) -> RustBuffer {
     return FfiConverterTypeRolleysTelemetrySnapshot.lower(value)
+}
+
+
+public struct RolleysTosNotice {
+    public var id: String
+    public var stage: String?
+    public var state: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: String, stage: String?, state: String?) {
+        self.id = id
+        self.stage = stage
+        self.state = state
+    }
+}
+
+
+
+extension RolleysTosNotice: Equatable, Hashable {
+    public static func ==(lhs: RolleysTosNotice, rhs: RolleysTosNotice) -> Bool {
+        if lhs.id != rhs.id {
+            return false
+        }
+        if lhs.stage != rhs.stage {
+            return false
+        }
+        if lhs.state != rhs.state {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(stage)
+        hasher.combine(state)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysTosNotice: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysTosNotice {
+        return
+            try RolleysTosNotice(
+                id: FfiConverterString.read(from: &buf), 
+                stage: FfiConverterOptionString.read(from: &buf), 
+                state: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysTosNotice, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.id, into: &buf)
+        FfiConverterOptionString.write(value.stage, into: &buf)
+        FfiConverterOptionString.write(value.state, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysTosNotice_lift(_ buf: RustBuffer) throws -> RolleysTosNotice {
+    return try FfiConverterTypeRolleysTosNotice.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysTosNotice_lower(_ value: RolleysTosNotice) -> RustBuffer {
+    return FfiConverterTypeRolleysTosNotice.lower(value)
 }
 
 
@@ -8233,6 +9044,30 @@ fileprivate struct FfiConverterOptionTypeRolleysProfileStatus: FfiConverterRustB
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeRolleysResolvedUsername: FfiConverterRustBuffer {
+    typealias SwiftType = RolleysResolvedUsername?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRolleysResolvedUsername.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRolleysResolvedUsername.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeRolleysUrlPreview: FfiConverterRustBuffer {
     typealias SwiftType = RolleysUrlPreview?
 
@@ -8322,6 +9157,31 @@ fileprivate struct FfiConverterSequenceUInt32: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterUInt32.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceUInt64: FfiConverterRustBuffer {
+    typealias SwiftType = [UInt64]
+
+    public static func write(_ value: [UInt64], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterUInt64.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt64] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [UInt64]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterUInt64.read(from: &buf))
         }
         return seq
     }
@@ -8547,6 +9407,31 @@ fileprivate struct FfiConverterSequenceTypeRolleysContact: FfiConverterRustBuffe
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeRolleysContact.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeRolleysContactCard: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysContactCard]
+
+    public static func write(_ value: [RolleysContactCard], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRolleysContactCard.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysContactCard] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RolleysContactCard]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRolleysContactCard.read(from: &buf))
         }
         return seq
     }
@@ -8955,6 +9840,31 @@ fileprivate struct FfiConverterSequenceTypeRolleysStoredStory: FfiConverterRustB
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeRolleysTosNotice: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysTosNotice]
+
+    public static func write(_ value: [RolleysTosNotice], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRolleysTosNotice.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysTosNotice] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RolleysTosNotice]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRolleysTosNotice.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterDictionaryStringUInt32: FfiConverterRustBuffer {
     public static func write(_ value: [String: UInt32], into buf: inout [UInt8]) {
         let len = Int32(value.count)
@@ -9018,6 +9928,9 @@ private var initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_baileys_ffi_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_accept_tos() != 21012) {
+        return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_add_chat_label() != 20666) {
         return InitializationResult.apiChecksumMismatch
@@ -9139,6 +10052,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_fetch_url_preview() != 17996) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_forward_message() != 47397) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_blocked_contacts() != 1849) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9193,7 +10109,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_labels() != 46724) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_last_qr() != 23237) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_lid_for_pn() != 42509) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_linked_email() != 57814) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_get_me_jid() != 24239) {
@@ -9253,6 +10175,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_code() != 54537) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_get_invite_info() != 39185) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_group_join_approval_mode() != 17372) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9292,6 +10217,18 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_is_connected() != 37466) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_is_ghost_mode() != 31100) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_logout() != 49310) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_lookup_username() != 35338) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_me_lid() != 41093) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_admin_count() != 28366) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9299,6 +10236,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_create() != 15811) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_delete() != 47882) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_demote() != 33965) {
@@ -9325,10 +10265,28 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_react() != 31618) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_image() != 34261) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_image_status_story() != 53694) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_post() != 62567) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_send_status_story() != 60725) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_unfollow() != 18500) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_update_name() != 54529) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_newsletter_view_receipt() != 61999) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_pin_message() != 3741) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_ping() != 37054) {
@@ -9337,10 +10295,19 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_presence_subscribe() != 12248) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_product_create() != 46612) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_product_delete() != 30730) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_product_update() != 24132) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_profile_picture_url() != 6503) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_query_tos() != 39203) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_reject_call() != 42728) {
@@ -9361,19 +10328,46 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_remove_profile_picture() != 60441) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_request_email_code() != 26988) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_request_pairing_code() != 20528) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_resync_app_state() != 57241) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_revoke_message() != 64592) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_album() != 36811) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_audio() != 19309) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_bot_prompt() != 42271) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_comment() != 17157) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_contact() != 41165) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_contacts_array() != 46935) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_document() != 40425) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_document_attachment() != 45719) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_event() != 46190) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_fake_quoted_message() != 20096) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_group_invite() != 20524) {
@@ -9383,6 +10377,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_interactive_buttons() != 24656) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_link_status() != 46987) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_list_message() != 55884) {
@@ -9395,6 +10392,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_media_file() != 3707) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_message_json() != 33286) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_order_message() != 21230) {
@@ -9421,7 +10421,16 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_revoke() != 15489) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_audio() != 48447) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_image() != 4764) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_read_receipt() != 20310) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_status_video() != 29724) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_sticker() != 50321) {
@@ -9439,7 +10448,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_text_with_quote() != 17178) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_vcard() != 18036) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_video() != 9139) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_view_once() != 28636) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_send_voice_note() != 16097) {
@@ -9449,6 +10464,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_set_chat_ephemeral() != 41979) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_set_ghost_mode() != 14870) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_set_linked_email() != 48745) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_start() != 19242) {
@@ -9472,6 +10493,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_privacy_setting() != 31032) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_name() != 42880) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_update_profile_picture() != 15024) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -9479,6 +10503,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_method_rolleysclient_upsert_label() != 37799) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_baileys_ffi_checksum_method_rolleysclient_verify_email_code() != 8228) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_baileys_ffi_checksum_constructor_rolleysclient_new() != 56112) {
