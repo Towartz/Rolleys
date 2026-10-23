@@ -72,7 +72,7 @@ Rincian per area ada di rencana kerja; ringkasannya:
 
 | Binding | Status | Catatan |
 |---|---|---|
-| napi | partial | event: semua event core muncul di `sock.ev` dengan nama/bentuk Baileys (`event-map.js`, test `node --test` + kontrak, 2026-10-23); method masih tertinggal |
+| napi | done (unit) | event: semua event core muncul di `sock.ev` dengan nama/bentuk Baileys. Native: setiap method core terjangkau (test Rust). Socket JS: setiap kunci `makeWASocket` Baileys 7.0.0-rc14 ada di `sock` atau dikecualikan dengan alasan (test `node --test`); 162 kunci. `index.d.ts` belum diperiksa `tsc` |
 | ffi (uniffi) | done (unit) | semua event core diteruskan; setiap method core terjangkau atau dikecualikan dengan alasan, dijaga test `parity_tests` (2026-10-23). Swift/Kotlin hasil generate belum dikompilasi di sini (tanpa swiftc/kotlinc) |
 | cabi | partial | tanpa callback event; banyak fungsi grup/kirim hilang (verifikasi terhadap `bindings/c/baileys.h`) |
 
@@ -160,3 +160,9 @@ melewatinya tanpa `--chat-group`.
 INITIAL_BOOTSTRAP pertama dan RECENT progress 100, `paused` setelah 120 dtk tanpa potongan RECENT (pelacak murni + timer
 per koneksi). Ketiganya baru teruji unit: capping didorong server, status history hanya saat pairing, dan tag anggota
 butuh perubahan label oleh seseorang di grup.
+
+**Celah socket napi vs Baileys (fitur yang belum ada di core):** addOrEditContact, removeContact, addOrEditQuickReply,
+removeQuickReply, getOrderDetails, updateBussinesProfile, updateMemberLabel, updateDefaultDisappearingMode,
+fetchDisappearingDuration, requestPlaceholderResend, newsletterUpdate, newsletterUpdateDescription, newsletterUpdatePicture,
+newsletterRemovePicture, newsletterSubscribers; updateCoverPhoto (core menerima foto yang sudah diunggah). Daftar ini
+dijaga oleh `bindings/baileys-napi/test/sock-api.test.js` (NOT_EXPOSED).

@@ -328,6 +328,85 @@ export interface WASocket {
   sendDocument(jid: string, docBuffer: Buffer | Uint8Array, fileName: string, mimetype?: string, caption?: string | null, pageCount?: number | null): Promise<string>;
   sendVideo(jid: string, videoBuffer: Buffer | Uint8Array, caption?: string | null, isGif?: boolean, seconds?: number | null): Promise<string>;
   sendSticker(jid: string, stickerBuffer: Buffer | Uint8Array, isAnimated?: boolean): Promise<string>;
+
+  // ---- Baileys socket API names ----
+  type: 'md';
+  waitForConnectionUpdate(check: (update: any) => boolean | undefined, timeoutMs?: number): Promise<any>;
+  waitForSocketOpen(timeoutMs?: number): Promise<any>;
+  logout(): Promise<void>;
+  requestPairingCode(phoneNumber: string): Promise<string>;
+  updateProfileName(name: string): Promise<void>;
+  fetchStatus(...jids: string[]): Promise<{ id: string; status: any }[]>;
+  getBusinessProfile(jid: string): Promise<any>;
+  rejectCall(callId: string, callFrom: string): Promise<void>;
+  createCallLink(type?: 'audio' | 'video'): Promise<string | null>;
+  getBotListV2(): Promise<any[]>;
+  fetchAccountReachoutTimelock(): Promise<any>;
+  fetchNewChatMessageCap(): Promise<any>;
+  cleanDirtyBits(type: 'account_sync' | 'groups', fromTimestamp?: number | string): Promise<void>;
+  resyncAppState(collections: readonly string[], isInitialSync?: boolean): Promise<{ collectionsSynced: number; mutationsApplied: number; collectionsFailed: number }>;
+  updateMediaMessage(message: { key: { id: string } }): Promise<void>;
+  getUSyncDevices(jids: string[]): Promise<{ user: string; device: number }[]>;
+  readMessages(keys: { remoteJid: string; id: string; participant?: string | null; fromMe?: boolean }[]): Promise<void>;
+  star(jid: string, messages: { id: string; fromMe?: boolean }[], star: boolean): Promise<void>;
+  addLabel(jid: string, label: { id?: string; name: string; color?: number; deleted?: boolean; predefinedId?: string }): Promise<any>;
+
+  updateLastSeenPrivacy(value: string): Promise<void>;
+  updateOnlinePrivacy(value: string): Promise<void>;
+  updateProfilePicturePrivacy(value: string): Promise<void>;
+  updateStatusPrivacy(value: string): Promise<void>;
+  updateReadReceiptsPrivacy(value: string): Promise<void>;
+  updateGroupsAddPrivacy(value: string): Promise<void>;
+  updateCallPrivacy(value: string): Promise<void>;
+  updateMessagesPrivacy(value: string): Promise<void>;
+  updateDisableLinkPreviewsPrivacy(isPreviewsDisabled: boolean): Promise<void>;
+
+  groupGetInviteInfo(code: string): Promise<GroupMetadata>;
+  groupToggleEphemeral(jid: string, ephemeralExpiration: number): Promise<void>;
+
+  productCreate(create: CatalogProduct): Promise<string>;
+  productUpdate(productId: string, update: CatalogProduct): Promise<void>;
+  productDelete(productIds: string[]): Promise<any>;
+  removeCoverPhoto(id: string): Promise<void>;
+
+  communityCreate(subject: string, body?: string): Promise<any>;
+  communityCreateGroup(subject: string, participants: string[], parentCommunityJid: string): Promise<string>;
+  communityLeave(id: string): Promise<void>;
+  communityLinkGroup(groupJid: string, parentCommunityJid: string): Promise<void>;
+  communityUnlinkGroup(groupJid: string, parentCommunityJid: string): Promise<void>;
+  communityFetchLinkedGroups(jid: string): Promise<any[]>;
+  communityMetadata(jid: string): Promise<any>;
+  communityInviteCode(jid: string): Promise<string>;
+  communityRevokeInvite(jid: string): Promise<string>;
+  communityAcceptInvite(code: string): Promise<string>;
+  communityGetInviteInfo(code: string): Promise<any>;
+  communityToggleEphemeral(jid: string, ephemeralExpiration: number): Promise<void>;
+  communitySettingUpdate(jid: string, setting: 'announcement' | 'not_announcement' | 'locked' | 'unlocked'): Promise<void>;
+  communityMemberAddMode(jid: string, mode: 'admin_add' | 'all_member_add'): Promise<void>;
+  communityJoinApprovalMode(jid: string, mode: 'on' | 'off'): Promise<void>;
+  communityFetchAllParticipating(): Promise<string[]>;
+  communityUpdateSubject(jid: string, subject: string): Promise<void>;
+  communityUpdateDescription(jid: string, description?: string): Promise<void>;
+  communityParticipantsUpdate(jid: string, participants: string[], action: 'add' | 'remove' | 'promote' | 'demote'): Promise<any>;
+  communityRequestParticipantsList(jid: string): Promise<any>;
+  communityRequestParticipantsUpdate(jid: string, participants: string[], action: 'approve' | 'reject'): Promise<any>;
+  communityRevokeInviteV4(communityJid: string, invitedJid: string): Promise<any>;
+  communityAcceptInviteV4(key: string | { remoteJid: string }, inviteMessage: { groupJid: string; inviteCode: string; inviteExpiration: number | string }): Promise<any>;
+
+  newsletterCreate(name: string, description?: string): Promise<any>;
+  newsletterMetadata(type: 'invite' | 'jid', key: string): Promise<any>;
+  newsletterFollow(jid: string): Promise<void>;
+  newsletterUnfollow(jid: string): Promise<void>;
+  newsletterMute(jid: string): Promise<void>;
+  newsletterUnmute(jid: string): Promise<void>;
+  newsletterUpdateName(jid: string, name: string): Promise<void>;
+  newsletterDelete(jid: string): Promise<void>;
+  newsletterReactMessage(jid: string, serverId: string, reaction?: string): Promise<void>;
+  newsletterFetchMessages(jid: string, count: number, since?: number): Promise<any[]>;
+  newsletterAdminCount(jid: string): Promise<number>;
+  newsletterChangeOwner(jid: string, newOwnerJid: string): Promise<void>;
+  newsletterDemote(jid: string, userJid: string): Promise<void>;
+  subscribeNewsletterUpdates(jid: string): Promise<any>;
 }
 
 export function makeWASocket(config?: WASocketConfig): WASocket;
@@ -351,11 +430,14 @@ export const DisconnectReason: {
   multicastTimeout: number;
 };
 
+/** Same as Baileys' Browsers: [platform, browser, version]. */
 export const Browsers: {
-  ubuntu(browser?: string): [string, string, string];
-  macOS(browser?: string): [string, string, string];
-  windows(browser?: string): [string, string, string];
-  appropriate(browser?: string): [string, string, string];
+  ubuntu(browser: string): [string, string, string];
+  macOS(browser: string): [string, string, string];
+  baileys(browser: string): [string, string, string];
+  windows(browser: string): [string, string, string];
+  android(browser: string): [string, string, string];
+  appropriate(browser: string): [string, string, string];
 };
 
 export const WAMessageStatus: {
