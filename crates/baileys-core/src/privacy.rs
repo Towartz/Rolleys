@@ -50,7 +50,6 @@ pub fn build_fetch_blocklist_iq(iq_id: &str) -> BinaryNode {
         .with_attr("xmlns", "blocklist")
         .with_attr("type", "get")
         .with_attr("id", iq_id)
-        .with_child(BinaryNode::new("list"))
 }
 
 /// Builds an IQ node to block or unblock a contact.
@@ -281,7 +280,8 @@ mod tests {
         assert_eq!(iq.tag, "iq");
         assert_eq!(iq.get_attr("xmlns"), Some("blocklist"));
         assert_eq!(iq.get_attr("type"), Some("get"));
-        assert!(iq.get_child("list").is_some());
+        // The server ignores the query if it carries a child; `<list>` only appears in the reply.
+        assert!(iq.get_children().is_empty());
     }
 
     #[test]
