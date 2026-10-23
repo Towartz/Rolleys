@@ -217,6 +217,7 @@ const SCHEMA_SQL: &str = "
 const INDEXES_SQL: &str = "
     CREATE INDEX IF NOT EXISTS idx_contacts_lid ON contacts (lid) WHERE lid IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_messages_starred ON messages (timestamp DESC) WHERE is_starred = 1;
+    CREATE INDEX IF NOT EXISTS idx_chats_sort ON chats (pinned DESC, last_message_timestamp DESC);
 ";
 
 /// Tuning for [`SqliteStore::open_with`]. The default suits the platform it is compiled for.
@@ -465,7 +466,8 @@ fn upsert_contact(conn: &Connection, contact: &StoredContact) -> Result<(), Stor
 ///
 /// - v1: chat and message flag columns ([`COLUMNS_ADDED_IN_V1`]).
 /// - v2: indexes for contact lookup by LID and for starred messages.
-const SCHEMA_VERSION: u32 = 2;
+/// - v3: index for the chat list order (pinned first, then most recent).
+const SCHEMA_VERSION: u32 = 3;
 
 /// Columns added after the first release, as `(table, definition)`. Databases from before schema
 /// versioning may or may not have them already.
@@ -2943,13 +2945,13 @@ mod tests {
     }
 
     #[test]
-    fn a_v1_database_gets_the_v2_indexes() {
+    fn a_v1_database_gets_the_later_indexes() {
         let path = temp_db("v1");
         drop(SqliteStore::open(&path).unwrap());
         {
             let conn = Connection::open(&path).unwrap();
             conn.execute_batch(
-                "DROP INDEX idx_contacts_lid; DROP INDEX idx_messages_starred;
+                "DROP INDEX idx_contacts_lid; DROP INDEX idx_messages_starred; DROP INDEX idx_chats_sort;
                  PRAGMA user_version = 1;
                  INSERT INTO contacts (jid, lid) VALUES ('a@s.whatsapp.net', '1@lid');",
             )
@@ -2961,12 +2963,12 @@ mod tests {
             .unwrap()
             .query_row(
                 "SELECT count(*) FROM sqlite_master WHERE type = 'index'
-                 AND name IN ('idx_contacts_lid', 'idx_messages_starred')",
+                 AND name IN ('idx_contacts_lid', 'idx_messages_starred', 'idx_chats_sort')",
                 [],
                 |r| r.get(0),
             )
             .unwrap();
-        assert_eq!(indexes, 2);
+        assert_eq!(indexes, 3);
         let jid: String = Connection::open(&path)
             .unwrap()
             .query_row("SELECT jid FROM contacts WHERE lid = '1@lid'", [], |r| {
@@ -2987,6 +2989,7 @@ mod tests {
             ("SELECT jid FROM contacts WHERE jid = 'x' UNION ALL SELECT jid FROM contacts WHERE lid = 'x' AND jid != 'x' LIMIT 1", "contacts"),
             ("SELECT id FROM messages WHERE chat_jid = 'x' AND timestamp < 5 ORDER BY timestamp DESC LIMIT 50", "messages"),
             ("SELECT id FROM messages WHERE is_starred = 1 ORDER BY timestamp DESC LIMIT 50", "messages"),
+            ("SELECT jid FROM chats ORDER BY pinned DESC, last_message_timestamp DESC", "chats"),
         ] {
             let mut stmt = conn.prepare(&format!("EXPLAIN QUERY PLAN {sql}")).unwrap();
             let plan: Vec<String> = stmt

@@ -1,97 +1,131 @@
+use crate::proto_recognizer::MessageExt;
 use baileys_proto::proto::{ContextInfo, Message, MessageKey};
+
+fn format_quote_prefix(proto: &Message) -> String {
+    if let Some(ci) = proto.extract_context_info() {
+        if let Some(ref stanza_id) = ci.stanza_id {
+            if !stanza_id.is_empty() {
+                let participant = ci.participant.as_deref().unwrap_or("");
+                let quoted_text = if let Some(ref qm) = ci.quoted_message {
+                    extract_raw_summary(qm)
+                } else {
+                    String::new()
+                };
+                let safe_id = stanza_id.replace('|', "_").replace('\n', " ");
+                let safe_participant = participant.replace('|', "_").replace('\n', " ");
+                let safe_text = quoted_text
+                    .replace(['|', '\n'], " ")
+                    .replace('[', "(")
+                    .replace(']', ")");
+                return format!("[Quote: {}|{}|{}] ", safe_id, safe_participant, safe_text);
+            }
+        }
+    }
+    String::new()
+}
 
 /// Extracts a human-readable summary of any WhatsApp message protobuf.
 /// Formats text, images, videos, audio/voice notes, documents, contacts, locations, reactions, events, interactive payloads, and polls.
 pub fn extract_message_summary(proto: &Message) -> String {
+    let quote_prefix = format_quote_prefix(proto);
+    let raw = extract_raw_summary(proto);
+    if quote_prefix.is_empty() {
+        raw
+    } else {
+        format!("{}{}", quote_prefix, raw)
+    }
+}
+
+pub fn extract_raw_summary(proto: &Message) -> String {
     // 1. Unwrap container envelopes
     if let Some(ref eph) = proto.ephemeral_message {
         if let Some(ref inner) = eph.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref vo) = proto.view_once_message {
         if let Some(ref inner) = vo.message {
-            return format!("[View Once] {}", extract_message_summary(inner));
+            return format!("[View Once] {}", extract_raw_summary(inner));
         }
     }
     if let Some(ref vo) = proto.view_once_message_v2 {
         if let Some(ref inner) = vo.message {
-            return format!("[View Once] {}", extract_message_summary(inner));
+            return format!("[View Once] {}", extract_raw_summary(inner));
         }
     }
     if let Some(ref vo) = proto.view_once_message_v2_extension {
         if let Some(ref inner) = vo.message {
-            return format!("[View Once] {}", extract_message_summary(inner));
+            return format!("[View Once] {}", extract_raw_summary(inner));
         }
     }
     if let Some(ref dwc) = proto.document_with_caption_message {
         if let Some(ref inner) = dwc.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref edit) = proto.edited_message {
         if let Some(ref inner) = edit.message {
-            return format!("[Edited] {}", extract_message_summary(inner));
+            return format!("[Edited] {}", extract_raw_summary(inner));
         }
     }
     if let Some(ref dev) = proto.device_sent_message {
         if let Some(ref inner) = dev.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref bot) = proto.bot_invoke_message {
         if let Some(ref inner) = bot.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref gm) = proto.group_mentioned_message {
         if let Some(ref inner) = gm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref lsm) = proto.lottie_sticker_message {
         if let Some(ref inner) = lsm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref sm) = proto.status_mention_message {
         if let Some(ref inner) = sm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref gsm) = proto.group_status_mention_message {
         if let Some(ref inner) = gsm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref pcm) = proto.poll_creation_message_v4 {
         if let Some(ref inner) = pcm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref acm) = proto.associated_child_message {
         if let Some(ref inner) = acm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref bfm) = proto.bot_forwarded_message {
         if let Some(ref inner) = bfm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref gsm) = proto.group_status_message {
         if let Some(ref inner) = gsm.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref gsm2) = proto.group_status_message_v2 {
         if let Some(ref inner) = gsm2.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
     if let Some(ref eci) = proto.event_cover_image {
         if let Some(ref inner) = eci.message {
-            return extract_message_summary(inner);
+            return extract_raw_summary(inner);
         }
     }
 
