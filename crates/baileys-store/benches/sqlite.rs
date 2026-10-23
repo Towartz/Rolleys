@@ -150,7 +150,21 @@ async fn run() {
     drop(store);
 
     let start = Instant::now();
-    let store = Arc::new(SqliteStore::open(&path).unwrap());
+    // SQLITE_BENCH_READERS=0 compares against a single shared connection.
+    let mut options = SqliteOptions::default();
+    if let Some(n) = std::env::var("SQLITE_BENCH_READERS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+    {
+        options.read_connections = n;
+    }
+    if let Some(n) = std::env::var("SQLITE_BENCH_MMAP")
+        .ok()
+        .and_then(|v| v.parse().ok())
+    {
+        options.mmap_bytes = n;
+    }
+    let store = Arc::new(SqliteStore::open_with(&path, options).unwrap());
     println!("{:<44} {:>12}", "open existing db", fmt(start.elapsed()));
 
     let s = &store;

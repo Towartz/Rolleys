@@ -230,9 +230,15 @@ Diukur dengan `cargo bench -p baileys-store --bench sqlite` (data sintetis, mesi
 | `get_chats` (2000) | 1,11 ms | 1,37 ms |
 | open database yang sudah ada | 2,60 ms | 2,18 ms |
 
-Tiga baris terakhir sebelum open tidak membaik (selisihnya dalam kisaran noise antar-run ±15%, kecuali `get_chats` yang
-konsisten ~20% lebih lambat; dugaan: tiap reader punya page cache sendiri yang dingin, belum diverifikasi). Live suite di
-sesi utama sesudah perubahan: 77 lulus, 0 gagal, 3 dilewati (sama dengan sebelumnya).
+`save_messages_batch`, `get_messages` dan `get_chats` tidak membaik. Selisih `get_chats` di tabel ternyata noise: diukur
+bergantian tiga kali melawan kode lama, kode lama 1,87–2,35 ms dan kode baru 2,27–2,67 ms (rentangnya tumpang-tindih),
+dan angkanya sama dengan 0 maupun 4 reader, dengan maupun tanpa mmap (`SQLITE_BENCH_READERS`, `SQLITE_BENCH_MMAP`).
+Live suite di sesi utama sesudah perubahan: 77 lulus, 0 gagal, 3 dilewati (sama dengan sebelumnya).
+
+**Cache perangkat, 2026-10-23.** Live suite menunjukkan dua balasan `406 not-acceptable` per pesan terkirim: cache
+`user_devices` tidak pernah kedaluwarsa dan masih memuat perangkat :72 dan :73 dari pairing lama, yang sesinya sudah
+dihapus, sehingga tiap kirim meminta pre-key bundle perangkat yang tak ada. Kini daftar perangkat dipakai 5 menit
+(`USER_DEVICES` di Baileys) lalu diambil ulang lewat USync, dan perangkat yang dijawab 406 langsung dibuang dari cache.
 
 Salinan `.sessions/live_suite.db` (629 chat, 2203 kontak, 1823 LID) naik ke v2 dengan `integrity_check` ok: open pertama
 17 ms (membangun index sekali), open berikutnya 2 ms. Kompilasi silang Android/iOS belum diverifikasi di mesin ini (target
