@@ -2972,6 +2972,574 @@ impl RoseBaileysClient {
     }
 }
 
+#[napi(object)]
+pub struct NapiTosNotice {
+    pub id: String,
+    pub stage: Option<String>,
+    pub state: Option<String>,
+}
+
+#[napi(object)]
+pub struct NapiResolvedUsername {
+    pub username: String,
+    pub jid: String,
+    pub phone_jid: Option<String>,
+    pub verified_name: Option<String>,
+}
+
+#[napi(object)]
+pub struct NapiAppStateSyncSummary {
+    pub collections_synced: u32,
+    pub mutations_applied: u32,
+    pub collections_failed: u32,
+}
+
+/// One entry of a multi-contact card message.
+#[napi(object)]
+pub struct NapiContactCard {
+    pub display_name: String,
+    pub phone_number: String,
+}
+
+impl From<NapiCatalogProduct> for baileys_core::CatalogProduct {
+    fn from(p: NapiCatalogProduct) -> Self {
+        Self {
+            id: p.id,
+            biz_jid: p.biz_jid,
+            title: p.title,
+            description: p.description,
+            currency: p.currency,
+            price_amount_1000: p.price_amount_1000,
+            sale_price_amount_1000: p.sale_price_amount_1000,
+            retailer_id: p.retailer_id,
+            url: p.url,
+            image_urls: p.image_urls,
+            is_hidden: p.is_hidden,
+            availability: p.availability,
+        }
+    }
+}
+
+fn to_core_err(e: impl std::fmt::Display) -> baileys_core::CoreError {
+    baileys_core::CoreError::Protocol(e.to_string())
+}
+
+/// Methods added to reach parity with the core client (and Baileys' socket API).
+#[napi]
+impl RoseBaileysClient {
+    /// Sends any message described as JSON (same shorthands as the core `send_message_json`).
+    #[napi]
+    pub async fn send_message_json(&self, to_jid: String, message_json: String) -> Result<String> {
+        let value: serde_json::Value =
+            serde_json::from_str(&message_json).map_err(|e| Error::from_reason(e.to_string()))?;
+        self.run_async(move |c| async move { c.send_message_json(&to_jid, &value).await })
+            .await
+    }
+
+    /// Wraps a JSON-described message in view-once (`v2` uses viewOnceMessageV2).
+    #[napi]
+    pub async fn send_view_once(
+        &self,
+        to_jid: String,
+        message_json: String,
+        v2: bool,
+    ) -> Result<String> {
+        let value: serde_json::Value =
+            serde_json::from_str(&message_json).map_err(|e| Error::from_reason(e.to_string()))?;
+        let inner =
+            baileys_core::messages::parse_message_from_json(&value).map_err(Error::from_reason)?;
+        self.run_async(move |c| async move { c.send_view_once(&to_jid, inner, v2).await })
+            .await
+    }
+
+    /// Forwards a message this client has seen (recent cache or store) by its id.
+    #[napi]
+    pub async fn forward_message(&self, to_jid: String, message_id: String) -> Result<String> {
+        self.run_async(move |c| async move {
+            let message = match c
+                .get_recent_message(&message_id)
+                .await
+                .and_then(|m| m.message)
+            {
+                Some(m) => m,
+                None => {
+                    use prost::Message as _;
+                    let stored = c
+                        .store
+                        .get_message(&message_id)
+                        .await
+                        .map_err(to_core_err)?
+                        .ok_or_else(|| to_core_err(format!("message {message_id} not found")))?;
+                    baileys_core::baileys_proto::proto::Message::decode(
+                        stored.proto_bytes.as_slice(),
+                    )
+                    .map_err(to_core_err)?
+                }
+            };
+            c.forward_message(&to_jid, message, true, 1).await
+        })
+        .await
+    }
+
+    /// Pins (`pin = true`) or unpins a message in a chat.
+    #[napi]
+    pub async fn pin_message(
+        &self,
+        chat_jid: String,
+        message_id: String,
+        pin: bool,
+        duration_secs: u32,
+    ) -> Result<String> {
+        self.run_async(move |c| async move {
+            c.pin_message(&chat_jid, &message_id, pin, duration_secs)
+                .await
+        })
+        .await
+    }
+
+    /// Comments on a message (e.g. a channel or community post).
+    #[napi]
+    pub async fn send_comment(
+        &self,
+        to_jid: String,
+        target_message_id: String,
+        target_from_me: bool,
+        target_participant: Option<String>,
+        text: String,
+    ) -> Result<String> {
+        let key = baileys_core::baileys_proto::proto::MessageKey {
+            remote_jid: Some(to_jid.clone()),
+            from_me: Some(target_from_me),
+            id: Some(target_message_id),
+            participant: target_participant,
+        };
+        self.run_async(move |c| async move { c.send_comment(&to_jid, &key, &text).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn send_album(
+        &self,
+        to_jid: String,
+        expected_image_count: u32,
+        expected_video_count: u32,
+    ) -> Result<String> {
+        self.run_async(move |c| async move {
+            c.send_album(&to_jid, expected_image_count, expected_video_count)
+                .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn send_event(
+        &self,
+        to_jid: String,
+        name: String,
+        description: Option<String>,
+        start_time: i64,
+        end_time: Option<i64>,
+        location_name: Option<String>,
+    ) -> Result<String> {
+        self.run_async(move |c| async move {
+            c.send_event(
+                &to_jid,
+                &name,
+                description.as_deref(),
+                start_time,
+                end_time,
+                location_name.as_deref(),
+            )
+            .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn send_vcard_message(
+        &self,
+        to_jid: String,
+        display_name: String,
+        vcard: String,
+    ) -> Result<String> {
+        self.run_async(move |c| async move { c.send_vcard(&to_jid, &display_name, &vcard).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn send_contacts_array(
+        &self,
+        to_jid: String,
+        display_name: String,
+        contacts: Vec<NapiContactCard>,
+    ) -> Result<String> {
+        let contacts = contacts
+            .into_iter()
+            .map(|c| (c.display_name, c.phone_number))
+            .collect();
+        self.run_async(move |c| async move {
+            c.send_contacts_array(&to_jid, &display_name, contacts)
+                .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn send_fake_quoted_message(
+        &self,
+        to_jid: String,
+        reply_text: String,
+        fake_sender_jid: String,
+        fake_quoted_text: String,
+    ) -> Result<String> {
+        self.run_async(move |c| async move {
+            c.send_fake_quoted_message(&to_jid, &reply_text, &fake_sender_jid, &fake_quoted_text)
+                .await
+        })
+        .await
+    }
+
+    /// Sends a prompt to Meta AI, optionally inside an existing chat.
+    #[napi]
+    pub async fn send_bot_prompt(
+        &self,
+        prompt: String,
+        target_chat: Option<String>,
+    ) -> Result<String> {
+        self.run_async(
+            move |c| async move { c.send_bot_prompt(&prompt, target_chat.as_deref()).await },
+        )
+        .await
+    }
+
+    #[napi]
+    pub async fn send_status_image(
+        &self,
+        image: Buffer,
+        caption: Option<String>,
+        mimetype: Option<String>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String> {
+        let bytes: Vec<u8> = image.as_ref().to_vec();
+        self.run_async(move |c| async move {
+            c.send_status_image(&bytes, caption.as_deref(), mimetype.as_deref(), audience)
+                .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn send_status_video(
+        &self,
+        video: Buffer,
+        caption: Option<String>,
+        mimetype: Option<String>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String> {
+        let bytes: Vec<u8> = video.as_ref().to_vec();
+        self.run_async(move |c| async move {
+            c.send_status_video(&bytes, caption.as_deref(), mimetype.as_deref(), audience)
+                .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn send_status_audio(
+        &self,
+        audio: Buffer,
+        seconds: u32,
+        mimetype: Option<String>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String> {
+        let bytes: Vec<u8> = audio.as_ref().to_vec();
+        self.run_async(move |c| async move {
+            c.send_status_audio(&bytes, seconds, mimetype.as_deref(), audience)
+                .await
+        })
+        .await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    #[napi]
+    pub async fn send_link_status(
+        &self,
+        url: String,
+        title: Option<String>,
+        description: Option<String>,
+        custom_text: Option<String>,
+        background_color: Option<String>,
+        font: Option<i32>,
+        thumbnail: Option<Buffer>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String> {
+        let thumbnail: Option<Vec<u8>> = thumbnail.map(|b| b.as_ref().to_vec());
+        self.run_async(move |c| async move {
+            c.send_link_status(
+                &url,
+                title.as_deref(),
+                description.as_deref(),
+                custom_text.as_deref(),
+                background_color.as_deref(),
+                font,
+                thumbnail,
+                audience,
+            )
+            .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn newsletter_delete(&self, jid: String) -> Result<()> {
+        self.run_async(move |c| async move { c.newsletter_delete(&jid).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn newsletter_update_name(&self, jid: String, name: String) -> Result<()> {
+        self.run_async(move |c| async move { c.newsletter_update_name(&jid, &name).await })
+            .await
+    }
+
+    /// Server ids arrive as JS numbers (they fit comfortably below 2^53).
+    #[napi]
+    pub async fn newsletter_view_receipt(&self, jid: String, server_ids: Vec<i64>) -> Result<()> {
+        let ids: Vec<u64> = server_ids.into_iter().map(|i| i.max(0) as u64).collect();
+        self.run_async(move |c| async move { c.newsletter_view_receipt(&jid, &ids).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn newsletter_send_image(
+        &self,
+        jid: String,
+        image: Buffer,
+        caption: Option<String>,
+    ) -> Result<String> {
+        let bytes: Vec<u8> = image.as_ref().to_vec();
+        self.run_async(move |c| async move {
+            c.newsletter_send_image(&jid, &bytes, caption.as_deref())
+                .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn newsletter_send_status_story(
+        &self,
+        newsletter_jid: String,
+        server_msg_id: i32,
+        newsletter_name: String,
+        caption_or_text: String,
+        status_recipients: Option<Vec<String>>,
+    ) -> Result<String> {
+        self.run_async(move |c| async move {
+            c.newsletter_send_status_story(
+                &newsletter_jid,
+                server_msg_id,
+                &newsletter_name,
+                &caption_or_text,
+                status_recipients,
+            )
+            .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn newsletter_send_image_status_story(
+        &self,
+        image: Buffer,
+        caption: Option<String>,
+        newsletter_jid: String,
+        server_msg_id: i32,
+        newsletter_name: String,
+        status_recipients: Option<Vec<String>>,
+    ) -> Result<String> {
+        let bytes: Vec<u8> = image.as_ref().to_vec();
+        self.run_async(move |c| async move {
+            c.newsletter_send_image_status_story(
+                &bytes,
+                caption.as_deref(),
+                &newsletter_jid,
+                server_msg_id,
+                &newsletter_name,
+                status_recipients,
+            )
+            .await
+        })
+        .await
+    }
+
+    /// Metadata of the group behind an invite code, without joining it.
+    #[napi]
+    pub async fn group_get_invite_info(&self, code: String) -> Result<NapiGroupMetadata> {
+        let node = self
+            .run_async(move |c| async move { c.group_get_invite_info(&code).await })
+            .await?;
+        baileys_core::groups::parse_group_metadata(&node)
+            .map(Into::into)
+            .map_err(|e| Error::from_reason(e.to_string()))
+    }
+
+    #[napi]
+    pub async fn product_create(&self, product: NapiCatalogProduct) -> Result<String> {
+        let product: baileys_core::CatalogProduct = product.into();
+        self.run_async(move |c| async move { c.product_create(&product).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn product_update(
+        &self,
+        product_id: String,
+        product: NapiCatalogProduct,
+    ) -> Result<()> {
+        let product: baileys_core::CatalogProduct = product.into();
+        self.run_async(move |c| async move { c.product_update(&product_id, &product).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn update_profile_name(&self, name: String) -> Result<()> {
+        self.run_async(move |c| async move { c.update_profile_name(&name).await })
+            .await
+    }
+
+    /// Asks the server for an 8-character pairing code for `phone` (link with phone number).
+    #[napi]
+    pub async fn request_pairing_code(&self, phone: String) -> Result<String> {
+        self.run_async(move |c| async move { c.request_pairing_code(&phone).await })
+            .await
+    }
+
+    /// The most recent QR string, if one was issued.
+    #[napi]
+    pub async fn get_last_qr(&self) -> Result<Option<String>> {
+        self.run_async(move |c| async move { Ok(c.get_last_qr().await) })
+            .await
+    }
+
+    /// Logs this device out and clears the session.
+    #[napi]
+    pub async fn logout(&self) -> Result<()> {
+        self.run_async(move |c| async move { c.logout().await })
+            .await
+    }
+
+    #[napi]
+    pub async fn me_lid(&self) -> Result<Option<String>> {
+        self.run_async(move |c| async move { c.me_lid().await })
+            .await
+    }
+
+    #[napi]
+    pub fn is_ghost_mode(&self) -> bool {
+        self.client.is_ghost_mode()
+    }
+
+    /// When enabled, read receipts and presence are not sent.
+    #[napi]
+    pub fn set_ghost_mode(&self, enabled: bool) {
+        self.client.set_ghost_mode(enabled)
+    }
+
+    #[napi]
+    pub fn is_auto_download(&self) -> bool {
+        self.client.is_auto_download()
+    }
+
+    /// Resolves a WhatsApp username (with its PIN when it has one).
+    #[napi]
+    pub async fn lookup_username(
+        &self,
+        username: String,
+        pin: Option<String>,
+    ) -> Result<Option<NapiResolvedUsername>> {
+        let found = self
+            .run_async(move |c| async move { c.lookup_username(&username, pin.as_deref()).await })
+            .await?;
+        Ok(found.map(|u| NapiResolvedUsername {
+            username: u.username,
+            jid: u.jid,
+            phone_jid: u.phone_jid,
+            verified_name: u.verified_name,
+        }))
+    }
+
+    /// Re-synchronises app-state collections (`force_snapshot` rebuilds them from scratch).
+    #[napi]
+    pub async fn resync_app_state(
+        &self,
+        collections: Vec<String>,
+        force_snapshot: bool,
+    ) -> Result<NapiAppStateSyncSummary> {
+        let s = self
+            .run_async(move |c| async move {
+                let refs: Vec<&str> = collections.iter().map(String::as_str).collect();
+                c.resync_app_state(&refs, force_snapshot).await
+            })
+            .await?;
+        Ok(NapiAppStateSyncSummary {
+            collections_synced: s.collections_synced as u32,
+            mutations_applied: s.mutations_applied as u32,
+            collections_failed: s.collections_failed as u32,
+        })
+    }
+
+    #[napi]
+    pub async fn query_tos(&self, notice_ids: Vec<String>) -> Result<Vec<NapiTosNotice>> {
+        let notices = self
+            .run_async(move |c| async move {
+                let refs: Vec<&str> = notice_ids.iter().map(String::as_str).collect();
+                c.query_tos(&refs).await
+            })
+            .await?;
+        Ok(notices
+            .into_iter()
+            .map(|n| NapiTosNotice {
+                id: n.id,
+                stage: n.stage,
+                state: n.state,
+            })
+            .collect())
+    }
+
+    #[napi]
+    pub async fn accept_tos(&self, notice_ids: Vec<String>, stage: Option<String>) -> Result<()> {
+        self.run_async(move |c| async move {
+            let refs: Vec<&str> = notice_ids.iter().map(String::as_str).collect();
+            c.accept_tos(&refs, stage.as_deref()).await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn get_linked_email(&self) -> Result<Option<String>> {
+        self.run_async(move |c| async move { c.get_linked_email().await })
+            .await
+    }
+
+    #[napi]
+    pub async fn set_linked_email(&self, email: String) -> Result<()> {
+        self.run_async(move |c| async move { c.set_linked_email(&email).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn request_email_code(&self, lang: String, locale: String) -> Result<()> {
+        self.run_async(move |c| async move { c.request_email_code(&lang, &locale).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn verify_email_code(&self, code: String) -> Result<()> {
+        self.run_async(move |c| async move { c.verify_email_code(&code).await })
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use baileys_core::BaileysEvent;
@@ -3000,5 +3568,119 @@ mod tests {
         })
         .unwrap();
         assert_eq!(v["MessagingHistoryStatus"]["sync_type"], json!(3));
+    }
+}
+
+#[cfg(test)]
+mod parity_tests {
+    /// Core client methods deliberately not exposed through FFI.
+    const NOT_EXPOSED: &[(&str, &str)] = &[
+        ("assert_session", "internal Signal session setup"),
+        (
+            "get_recent_message",
+            "returns a protobuf message; messages arrive through events",
+        ),
+        ("inner", "internal state accessor"),
+        ("metrics", "exposed as telemetry snapshot"),
+        ("refresh_media_conn", "internal media host refresh"),
+        (
+            "subscribe_connection_state",
+            "Rust stream; connection state arrives as events",
+        ),
+        (
+            "send_message",
+            "takes a protobuf Message; use send_message_json",
+        ),
+        (
+            "send_message_with_options",
+            "takes a protobuf Message; use send_message_json",
+        ),
+        (
+            "relay_message",
+            "takes a protobuf Message; use send_message_json",
+        ),
+        (
+            "send_peer_message",
+            "takes a protobuf Message; used internally",
+        ),
+        ("send_node", "raw binary node"),
+        ("send_iq", "raw binary node"),
+        (
+            "send_interactive_message",
+            "takes the Rust builder; use send_interactive_buttons / send_list_message",
+        ),
+        (
+            "with_additional_node",
+            "MessageOptions builder, not a client method",
+        ),
+        (
+            "with_additional_nodes",
+            "MessageOptions builder, not a client method",
+        ),
+        ("commerce", "Rust service facade"),
+        ("companion", "Rust service facade"),
+        ("groups", "Rust service facade"),
+        ("messages", "Rust service facade"),
+        ("newsletters", "Rust service facade"),
+        ("privacy", "Rust service facade"),
+        ("status", "Rust service facade"),
+    ];
+
+    const CORE_SOURCES: &[&str] = &[
+        include_str!("../../../crates/baileys-core/src/client/business.rs"),
+        include_str!("../../../crates/baileys-core/src/client/channels.rs"),
+        include_str!("../../../crates/baileys-core/src/client/chat_actions.rs"),
+        include_str!("../../../crates/baileys-core/src/client/community.rs"),
+        include_str!("../../../crates/baileys-core/src/client/companions.rs"),
+        include_str!("../../../crates/baileys-core/src/client/connection.rs"),
+        include_str!("../../../crates/baileys-core/src/client/groups.rs"),
+        include_str!("../../../crates/baileys-core/src/client/media.rs"),
+        include_str!("../../../crates/baileys-core/src/client/messaging.rs"),
+        include_str!("../../../crates/baileys-core/src/client/mod.rs"),
+        include_str!("../../../crates/baileys-core/src/client/privacy.rs"),
+        include_str!("../../../crates/baileys-core/src/client/status.rs"),
+    ];
+
+    fn pub_fns(src: &str) -> impl Iterator<Item = &str> {
+        src.lines().filter_map(|line| {
+            let rest = line
+                .trim_start()
+                .strip_prefix("pub async fn ")
+                .or_else(|| line.trim_start().strip_prefix("pub fn "))?;
+            rest.split(['(', '<']).next()
+        })
+    }
+
+    #[test]
+    fn every_core_method_is_reachable_from_napi() {
+        let ffi = include_str!("lib.rs");
+        let ffi_impl = &ffi[ffi
+            .find("impl RoseBaileysClient")
+            .expect("RoseBaileysClient impl")..];
+        let core: Vec<&str> = CORE_SOURCES.iter().flat_map(|s| pub_fns(s)).collect();
+
+        let missing: Vec<&str> = core
+            .iter()
+            .copied()
+            .filter(|name| !NOT_EXPOSED.iter().any(|(n, _)| n == name))
+            .filter(|name| {
+                !ffi_impl.contains(&format!(".{name}("))
+                    && !ffi_impl.contains(&format!("pub fn {name}("))
+            })
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "core methods not reachable from napi; expose them or list them in NOT_EXPOSED with a reason: {missing:?}"
+        );
+
+        let stale: Vec<&str> = NOT_EXPOSED
+            .iter()
+            .map(|(n, _)| *n)
+            .filter(|n| !core.contains(n))
+            .collect();
+        assert!(
+            stale.is_empty(),
+            "NOT_EXPOSED lists methods core no longer has: {stale:?}"
+        );
     }
 }
