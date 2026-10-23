@@ -219,7 +219,7 @@ pub fn extract_raw_summary(proto: &Message) -> String {
     }
 
     if let Some(ref react) = proto.reaction_message {
-        let text = react.text.as_deref().unwrap_or("❤️");
+        let text = react.text.as_deref().unwrap_or("");
         let target = react
             .key
             .as_ref()
