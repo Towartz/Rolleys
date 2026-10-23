@@ -119,3 +119,13 @@ Dugaan "kunci bukan yang terbaru" diuji dan **tidak** terbukti (dibatalkan).
 Catatan: patch uji yang terkirim SEBELUM perbaikan hash (pasangan aksi/pemulihan pada indeks yang sama) membawa snapshot MAC
 yang salah; dampaknya di HP belum diverifikasi. Status chatModify: kode diperbaiki dan teruji unit melawan decoder, bukti live
 dengan hash benar masih menunggu.
+
+**App-state sync: terverifikasi live (2026-10-23).** Koreksi atas catatan sebelumnya: perbandingan "rantai = snapshot" yang
+pertama TIDAK sahih, karena resync tidak pernah mengunduh snapshot eksternal (`snapshot_blob_ref`) dan berhenti setelah satu
+putaran meski `has_more_patches=true`; kedua sisi dibangun dari basis yang sama-sama kurang (hanya ~124 dari 1724 mutasi).
+Kini: snapshot dan `external_mutations` diunduh (`MediaType::AppState`, HKDF "WhatsApp App State Keys"), resync mengulang
+sampai tidak ada patch lagi, kegagalan satu koleksi tidak disimpan sebagian, dan snapshot/patch divalidasi MAC-nya terhadap
+server. Hasil: 5 koleksi, 1724 mutasi, tanpa peringatan; chatModify (mute/pin/archive/unread/star) diterima server dan
+state lokal hasil rantai patch identik dengan rekonstruksi snapshot (regular_low v123, 800 entri). Status: done (live).
+Catatan: patch yang dikirim sebelum perbaikan ini memakai hash dari basis yang tidak lengkap; pengguna melaporkan grup
+uji normal, tetapi dampak jangka panjang di perangkat lain tidak dapat diverifikasi dari sini.

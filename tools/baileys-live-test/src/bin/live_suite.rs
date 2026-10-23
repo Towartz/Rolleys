@@ -45,6 +45,7 @@ struct Outcome {
 
 struct Suite {
     client: Arc<BaileysClient>,
+    store: Arc<SqliteStore>,
     only: Option<String>,
     with_community: bool,
     chat_group: Option<String>,
@@ -144,7 +145,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!(
         "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
@@ -231,7 +232,7 @@ async fn main() {
         .with_phone_pairing(&phone)
         .with_dynamic_version(true)
         .build();
-    let client = Arc::new(BaileysClient::new(store, config));
+    let client = Arc::new(BaileysClient::new(store.clone(), config));
 
     // Subscribe before connecting so neither the pairing code nor `Connected` is missed.
     let mut rx = client.events();
@@ -269,6 +270,7 @@ async fn main() {
     let self_jid = format!("{phone}@s.whatsapp.net");
     let mut suite = Suite {
         client: client.clone(),
+        store: store.clone(),
         only,
         with_community,
         chat_group,
@@ -279,6 +281,7 @@ async fn main() {
     run_messaging(&mut suite, &self_jid).await;
     run_rich(&mut suite, &self_jid).await;
     run_chat(&mut suite, &self_jid).await;
+    run_appstate(&mut suite).await;
     run_media(&mut suite, &self_jid).await;
     run_groups(&mut suite).await;
     run_community(&mut suite).await;
@@ -1059,6 +1062,31 @@ macro_rules! chat_step {
     }};
 }
 
+/// `(version, hash, number of indexed entries)` per collection, as persisted locally.
+async fn app_state_fingerprint(
+    store: &SqliteStore,
+    collections: &[&str],
+) -> Result<Vec<(String, u64, String, usize)>, String> {
+    use baileys_core::syncd::StoredLTHashState;
+    use baileys_store::SignalKeysStore;
+    let mut out = Vec::new();
+    for col in collections {
+        let raw = store
+            .get_key("app-state-sync-version", col)
+            .await
+            .map_err(e)?
+            .ok_or_else(|| format!("no stored state for {col}"))?;
+        let st: StoredLTHashState = serde_json::from_slice(&raw).map_err(e)?;
+        out.push((
+            col.to_string(),
+            st.version,
+            st.hash_hex,
+            st.index_value_hex.len(),
+        ));
+    }
+    Ok(out)
+}
+
 async fn run_chat(s: &mut Suite, self_jid: &str) {
     use baileys_core::syncd::{
         CRITICAL_BLOCK, CRITICAL_UNBLOCK_LOW, REGULAR, REGULAR_HIGH, REGULAR_LOW,
@@ -1190,17 +1218,73 @@ async fn run_chat(s: &mut Suite, self_jid: &str) {
         s.skip("chat", "unstar (restore)", why);
     }
 
-    // A malformed patch or a diverged LTHash makes the server answer with an error or the
-    // collection fail to decode here, so this catches what the individual acks cannot.
-    s.step("chat", "resync after patches", |c| async move {
+    // The server cannot check our LTHash, so rebuild the collections from its snapshot and require
+    // the state we chained locally (version, hash, entry count) to be identical. This is what
+    // catches a wrong hash that the individual acks above cannot.
+    let store = s.store.clone();
+    s.step("chat", "local chain matches server snapshot", move |c| async move {
+        use baileys_core::syncd::{REGULAR_HIGH, REGULAR_LOW};
+        let cols = [REGULAR_HIGH, REGULAR_LOW];
+        let chained = app_state_fingerprint(&store, &cols).await?;
+        let sum = c.resync_app_state(&cols, true).await.map_err(e)?;
+        if sum.collections_failed > 0 {
+            return Err(format!("{} collection(s) failed to resync", sum.collections_failed));
+        }
+        let rebuilt = app_state_fingerprint(&store, &cols).await?;
+        for (a, b) in chained.iter().zip(&rebuilt) {
+            if a.1 != b.1 {
+                return Err(format!(
+                    "{}: server is at v{} but we chained to v{} (changed elsewhere during the check; rerun)",
+                    a.0, b.1, a.1
+                ));
+            }
+            if a.2 != b.2 || a.3 != b.3 {
+                return Err(format!(
+                    "{} v{}: chained hash/entries ({}.., {}) differ from snapshot ({}.., {})",
+                    a.0,
+                    a.1,
+                    &a.2[..16],
+                    a.3,
+                    &b.2[..16],
+                    b.3
+                ));
+            }
+        }
+        Ok(chained
+            .iter()
+            .map(|f| format!("{} v{} {} entries", f.0, f.1, f.3))
+            .collect::<Vec<_>>()
+            .join(", "))
+    })
+    .await;
+}
+
+async fn run_appstate(s: &mut Suite) {
+    use baileys_core::syncd::{
+        CRITICAL_BLOCK, CRITICAL_UNBLOCK_LOW, REGULAR, REGULAR_HIGH, REGULAR_LOW,
+    };
+    println!("== app-state snapshot rebuild (read-only) ==");
+    if s.only.as_deref() != Some("appstate") {
+        return;
+    }
+    s.step("appstate", "forced snapshot resync", |c| async move {
         let sum = c
-            .resync_app_state(&[REGULAR_HIGH, REGULAR_LOW], false)
+            .resync_app_state(
+                &[
+                    CRITICAL_BLOCK,
+                    CRITICAL_UNBLOCK_LOW,
+                    REGULAR_HIGH,
+                    REGULAR_LOW,
+                    REGULAR,
+                ],
+                true,
+            )
             .await
             .map_err(e)?;
-        if sum.collections_failed > 0 {
+        if sum.collections_failed > 0 || sum.collections_synced == 0 {
             return Err(format!(
-                "{} collection(s) failed to resync",
-                sum.collections_failed
+                "synced={} failed={}",
+                sum.collections_synced, sum.collections_failed
             ));
         }
         Ok(format!(
