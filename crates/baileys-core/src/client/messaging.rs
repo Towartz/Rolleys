@@ -1001,6 +1001,93 @@ impl BaileysClient {
 
         Ok(msg_id)
     }
+    /// Sends a protocol message to this account's primary device only (Baileys
+    /// `sendPeerDataOperationMessage`): history-on-demand requests, placeholder resends, etc.
+    ///
+    /// Differs from a normal send: encrypted only for our own device 0, wrapped in
+    /// `deviceSentMessage`, the `<enc>` sits directly in the stanza (no `<participants>`), the
+    /// stanza carries `category="peer"` and `push_priority="high_force"`, and no tctoken is
+    /// attached (the server rejects it on peer messages with 479).
+    pub async fn send_peer_message(&self, proto_msg: Message) -> Result<String, CoreError> {
+        let creds = self
+            .store
+            .get_creds()
+            .await
+            .map_err(|e| CoreError::Store(e.to_string()))?
+            .ok_or_else(|| CoreError::Auth("No active session credentials found".into()))?;
+        let socket = {
+            let lock = self.socket.lock().await;
+            lock.clone()
+        }
+        .ok_or_else(|| CoreError::Network("Client not connected".into()))?;
+        let me = creds
+            .me_jid
+            .as_deref()
+            .ok_or_else(|| CoreError::Auth("Not authenticated".into()))?;
+        // Our primary device: device 0 of our own phone-number user.
+        let primary = baileys_binary::jid::jid_normalized_user(me);
+
+        let rand_bytes: [u8; 9] = rand::random();
+        let msg_id = format!("3EB0{}", hex::encode(rand_bytes).to_uppercase());
+
+        let dsm = Message {
+            device_sent_message: Some(Box::new(baileys_proto::proto::message::DeviceSentMessage {
+                destination_jid: Some(primary.clone()),
+                message: Some(Box::new(proto_msg.clone())),
+                phash: None,
+            })),
+            message_context_info: proto_msg.message_context_info.clone(),
+            ..Default::default()
+        };
+        let mut bytes = Vec::new();
+        dsm.encode(&mut bytes).map_err(|e| {
+            CoreError::Protocol(format!("Failed to encode peer message protobuf: {}", e))
+        })?;
+        let padded = pad_random_max16(&bytes);
+
+        // Encrypt over the LID session when we have one: the phone keys our session by LID and
+        // answers on it, so a PN-addressed session would make its reply undecryptable. The
+        // stanza is still addressed to the PN, as Baileys does.
+        let session_jid = creds
+            .me_lid
+            .as_deref()
+            .map(baileys_binary::jid::jid_normalized_user)
+            .unwrap_or_else(|| primary.clone());
+        let our_identity = KeyPair::try_from(&creds.signed_identity_key)
+            .map_err(|e| CoreError::Crypto(e.to_string()))?;
+        self.assert_session(&session_jid, &creds).await?;
+        let (enc_type, ciphertext) = self
+            .signal
+            .encrypt_message(&session_jid, &padded, &our_identity)
+            .await
+            .map_err(|e| CoreError::Crypto(e.to_string()))?;
+
+        let mut node = BinaryNode::new("message")
+            .with_attr("to", &primary)
+            .with_attr("id", &msg_id)
+            .with_attr("type", "text")
+            .with_attr("category", "peer")
+            .with_attr("push_priority", "high_force")
+            .with_child(
+                BinaryNode::new("enc")
+                    .with_attr("v", "2")
+                    .with_attr("type", enc_type.clone())
+                    .with_bytes_content(ciphertext),
+            );
+        if enc_type == "pkmsg" {
+            if let Some(ref acc) = creds.account {
+                node = node
+                    .with_child(BinaryNode::new("device-identity").with_bytes_content(acc.clone()));
+            }
+        }
+        node = node.with_child(BinaryNode::new("meta").with_attr("appdata", "default"));
+
+        debug!("Outbound peer stanza: {:?}", node);
+        self.metrics().record_msg_out();
+        socket.send_node(node).await?;
+        Ok(msg_id)
+    }
+
     /// Sends a plain text message to a user or group over the encrypted WhatsApp connection.
     pub async fn send_text_message(&self, to_jid: &str, text: &str) -> Result<String, CoreError> {
         let proto_msg = Message {

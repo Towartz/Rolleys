@@ -645,26 +645,37 @@ impl BaileysClient {
         oldest_from_me: bool,
         oldest_timestamp: u64,
     ) -> Result<String, CoreError> {
-        let iq_id = format!("3EB0{:X}", rand::random::<u64>());
-        let req_node = BinaryNode::new("history_sync_request")
-            .with_attr("chat_jid", chat_jid)
-            .with_attr("count", count.to_string())
-            .with_attr("oldest_msg_id", oldest_msg_id)
-            .with_attr(
-                "oldest_msg_from_me",
-                if oldest_from_me { "true" } else { "false" },
-            )
-            .with_attr("oldest_msg_timestamp", oldest_timestamp.to_string());
-
-        let iq_node = BinaryNode::new("iq")
-            .with_attr("to", S_WHATSAPP_NET)
-            .with_attr("type", "set")
-            .with_attr("xmlns", "w:sync:history")
-            .with_attr("id", &iq_id)
-            .with_child(req_node);
-
-        self.send_iq(iq_node, Duration::from_secs(15)).await?;
-        Ok(iq_id)
+        // Baileys `fetchMessageHistory`: a HISTORY_SYNC_ON_DEMAND peer data operation sent to our
+        // own phone, which answers with an ON_DEMAND history sync notification.
+        // `oldest_timestamp` is in seconds, like every message timestamp in this API.
+        use baileys_proto::proto::message::{
+            peer_data_operation_request_message::HistorySyncOnDemandRequest, protocol_message,
+            PeerDataOperationRequestMessage, PeerDataOperationRequestType, ProtocolMessage,
+        };
+        let request = Message {
+            protocol_message: Some(Box::new(ProtocolMessage {
+                r#type: Some(protocol_message::Type::PeerDataOperationRequestMessage as i32),
+                peer_data_operation_request_message: Some(PeerDataOperationRequestMessage {
+                    peer_data_operation_request_type: Some(
+                        PeerDataOperationRequestType::HistorySyncOnDemand as i32,
+                    ),
+                    history_sync_on_demand_request: Some(HistorySyncOnDemandRequest {
+                        chat_jid: Some(chat_jid.to_string()),
+                        oldest_msg_id: Some(oldest_msg_id.to_string()),
+                        oldest_msg_from_me: Some(oldest_from_me),
+                        on_demand_msg_count: Some(count as i32),
+                        oldest_msg_timestamp_ms: Some(
+                            (oldest_timestamp as i64).saturating_mul(1000),
+                        ),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        self.send_peer_message(request).await
     }
     /// Clears message history for a chat while optionally keeping starred messages.
     pub async fn chat_modify_clear(
