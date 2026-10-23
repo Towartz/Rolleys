@@ -1953,9 +1953,18 @@ impl AppStateStore for SqliteStore {
     async fn save_story(&self, story: &StoredStory) -> Result<(), StoreError> {
         let conn = self.writer();
         conn.execute(
-            "INSERT OR REPLACE INTO status_stories (
+            "INSERT INTO status_stories (
                 msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+             ON CONFLICT(msg_id) DO UPDATE SET
+                author_jid = excluded.author_jid,
+                author_name = COALESCE(excluded.author_name, status_stories.author_name),
+                timestamp = excluded.timestamp,
+                message_type = excluded.message_type,
+                content = excluded.content,
+                caption = excluded.caption,
+                has_media = excluded.has_media,
+                viewed = MAX(status_stories.viewed, excluded.viewed)",
             params![
                 story.msg_id,
                 story.author_jid,
@@ -1979,10 +1988,12 @@ impl AppStateStore for SqliteStore {
         let conn = self.reader();
         let sql = if unviewed_only {
             "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
-             FROM status_stories WHERE viewed = 0 ORDER BY timestamp DESC LIMIT ?1"
+             FROM status_stories WHERE viewed = 0 AND timestamp >= CAST(strftime('%s','now') AS INTEGER) - 86400
+             ORDER BY timestamp DESC, msg_id DESC LIMIT ?1"
         } else {
             "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
-             FROM status_stories ORDER BY timestamp DESC LIMIT ?1"
+             FROM status_stories WHERE timestamp >= CAST(strftime('%s','now') AS INTEGER) - 86400
+             ORDER BY timestamp DESC, msg_id DESC LIMIT ?1"
         };
         let mut stmt = conn
             .prepare_cached(sql)
@@ -2020,7 +2031,8 @@ impl AppStateStore for SqliteStore {
         let conn = self.reader();
         let mut stmt = conn.prepare_cached(
             "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
-             FROM status_stories WHERE author_jid = ?1 ORDER BY timestamp DESC"
+             FROM status_stories WHERE author_jid = ?1 AND timestamp >= CAST(strftime('%s','now') AS INTEGER) - 86400
+             ORDER BY timestamp DESC, msg_id DESC"
         ).map_err(|e| StoreError::Database(e.to_string()))?;
         let rows = stmt
             .query_map(params![author_jid], |row| {
@@ -2818,6 +2830,51 @@ impl AppStateStore for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn status_story_expiry_full_author_history_and_replay_preserve_viewed() {
+        let path = temp_db("status-story");
+        let store = SqliteStore::open(&path).unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let mut story = StoredStory {
+            msg_id: "expired".into(),
+            author_jid: "author@s.whatsapp.net".into(),
+            author_name: Some("Author".into()),
+            timestamp: now - 90000,
+            message_type: "text".into(),
+            content: Some("Status".into()),
+            caption: None,
+            has_media: false,
+            viewed: false,
+        };
+        store.save_story(&story).await.unwrap();
+        for index in 0..25 {
+            story.msg_id = format!("story-{index:02}");
+            story.timestamp = now - 100 + index;
+            store.save_story(&story).await.unwrap();
+        }
+        assert_eq!(store.get_stories(20, false).await.unwrap().len(), 20);
+        assert_eq!(
+            store
+                .get_stories_by_author(&story.author_jid)
+                .await
+                .unwrap()
+                .len(),
+            25
+        );
+        store.mark_story_viewed(&story.msg_id).await.unwrap();
+        // A duplicate incoming delivery must not reset viewed state or erase the known author name.
+        story.author_name = None;
+        store.save_story(&story).await.unwrap();
+        let latest = store.get_stories(100, false).await.unwrap();
+        assert_eq!(latest.len(), 25);
+        assert!(latest[0].viewed);
+        assert_eq!(latest[0].author_name.as_deref(), Some("Author"));
+        assert_eq!(store.get_stories(100, true).await.unwrap().len(), 24);
+    }
 
     fn temp_db(name: &str) -> std::path::PathBuf {
         let dir =

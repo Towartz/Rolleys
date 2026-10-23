@@ -6,6 +6,7 @@
 //! - Extracting incoming story updates from protobuf messages.
 //! - Dispatching story read receipts to the author via `status@broadcast`.
 
+use crate::proto_recognizer::MessageExt;
 use baileys_binary::BinaryNode;
 use baileys_proto::proto::message::extended_text_message::FontType;
 use baileys_proto::proto::message::ExtendedTextMessage;
@@ -236,6 +237,9 @@ pub fn parse_story_from_proto(
     timestamp: u64,
     proto: &Message,
 ) -> StoredStory {
+    // Status media may be inside ephemeral, view-once, or device-sent envelopes.
+    let unwrapped = proto.unwrap_wrappers();
+    let proto = unwrapped.payload;
     if let Some(ref ext) = proto.extended_text_message {
         return StoredStory {
             msg_id: msg_id.to_string(),
@@ -367,6 +371,30 @@ mod tests {
         assert_eq!(story.content.as_deref(), Some("Coding Rust!"));
         assert!(!story.has_media);
         assert!(!story.viewed);
+    }
+
+    #[test]
+    fn wrapped_status_media_keeps_its_type_and_caption() {
+        let image = Message {
+            image_message: Some(Box::new(baileys_proto::proto::message::ImageMessage {
+                caption: Some("A photo".to_string()),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let wrapped = crate::ephemeral::wrap_ephemeral_message(
+            crate::proto_builders::wrap_view_once(image, true),
+        );
+        let story = parse_story_from_proto(
+            "wrapped",
+            "author@s.whatsapp.net",
+            None,
+            1700000000,
+            &wrapped,
+        );
+        assert!(story.has_media);
+        assert_eq!(story.message_type, "image");
+        assert_eq!(story.caption.as_deref(), Some("A photo"));
     }
 
     #[test]

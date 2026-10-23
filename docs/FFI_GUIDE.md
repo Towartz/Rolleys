@@ -258,3 +258,20 @@ CI runs `cargo test -p baileys-core --lib messages::tests` and
 `cargo test -p baileys-core --lib archive_tests`. The archive regression uses in-memory SQLite and
 an unconnected client; it verifies local alias state and the event on sync failure without contacting
 WhatsApp. Message tests cover combined context, omitted proto fields, validation, and wrappers.
+
+### Status cache and viewer lifecycle
+
+`get_recent_stories` and `get_stories_by_author` return active stories from the last
+24 hours. Recent queries apply their limit across authors; open a contact with
+`get_stories_by_author` to fetch its full active sequence rather than reusing a
+truncated global page. Ties are ordered by message id. Native timestamps are epoch
+seconds; Android converts them to milliseconds for display. Duplicate story delivery
+preserves a previously viewed flag and known author name. Incoming Status parsing
+unwraps supported container envelopes before identifying text/image/video/audio.
+
+Use `download_media` with the Status message id to decrypt image/video/audio files
+from recent-message cache or persisted protobuf data. Display a retry state on
+failure; do not start an image countdown before decode or close a media story with a
+fixed timer during preparation/buffering. Android keeps an author snapshot and saved
+playback position, uses per-visit completion guards, and follows actual media-player
+completion for video/audio.
