@@ -931,7 +931,8 @@ mod tests {
 
         let (proto_str, total, roots) =
             parse_waproto_from_js(js, "2.3000.9999").expect("Failed to parse");
-        assert!(proto_str.contains("syntax = \"proto3\";"));
+        // WhatsApp's schema relies on proto2 semantics (optional fields), like the checked-in WAProto.proto.
+        assert!(proto_str.contains("syntax = \"proto2\";"));
         assert!(proto_str.contains("message TestParent {"));
         assert!(proto_str.contains("message TestChild {"));
         assert!(proto_str.contains("enum TestStatus {"));
