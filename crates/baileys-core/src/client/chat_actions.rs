@@ -248,7 +248,15 @@ impl BaileysClient {
         Ok(summary)
     }
     /// Helper to dispatch AppState Syncd mutation patch to WhatsApp server.
-    pub(crate) async fn dispatch_syncd_patch<F>(&self, collection: &str, patch_fn: F)
+    ///
+    /// Fails when the primary device has not shared an app-state key yet, when the patch cannot be
+    /// built, or when the server rejects or does not answer the IQ. Callers update the local store
+    /// first, so on error the local state is ahead of the server.
+    pub(crate) async fn dispatch_syncd_patch<F>(
+        &self,
+        collection: &str,
+        patch_fn: F,
+    ) -> Result<(), CoreError>
     where
         F: FnOnce(&[u8], &[u8], &[u8], u64) -> Result<crate::syncd::SyncdPatchResult, CoreError>,
     {
@@ -288,43 +296,36 @@ impl BaileysClient {
             .await
             .unwrap_or(None);
 
-        if let (Some(key_data), Some(key_id)) = (key_data_opt, key_id_opt) {
-            if let Ok(res) = patch_fn(&key_id, &key_data, &current_hash, current_version) {
-                let iq = crate::syncd::build_syncd_iq(collection, current_version, &res.patch);
-                match self.send_iq(iq, Duration::from_secs(10)).await {
-                    Ok(_) => {
-                        debug!(
-                            "Syncd mutation for collection '{}' acknowledged by WhatsApp gateway",
-                            collection
-                        );
-                        let updated_state = crate::syncd::LTHashState {
-                            version: res.next_version,
-                            hash: res.new_hash,
-                            index_value_map: HashMap::new(),
-                        };
-                        let stored = crate::syncd::StoredLTHashState::from(&updated_state);
-                        if let Ok(json_bytes) = serde_json::to_vec(&stored) {
-                            let _ = self
-                                .store
-                                .set_keys(vec![baileys_store::KeyEntry {
-                                    key_type: "app-state-sync-version".to_string(),
-                                    id: collection.to_string(),
-                                    data: json_bytes,
-                                }])
-                                .await;
-                        }
-                    }
-                    Err(e) => {
-                        debug!(
-                            "Syncd mutation for '{}' gateway acknowledgement note: {}",
-                            collection, e
-                        );
-                    }
-                }
-            }
-        } else {
-            debug!("No AppStateSyncKey available yet for '{}', wire sync skipped (local store updated)", collection);
+        let (Some(key_data), Some(key_id)) = (key_data_opt, key_id_opt) else {
+            return Err(CoreError::Protocol(format!(
+                "no AppStateSyncKey for '{collection}': the primary device has not shared app-state keys yet"
+            )));
+        };
+
+        let res = patch_fn(&key_id, &key_data, &current_hash, current_version)?;
+        let iq = crate::syncd::build_syncd_iq(collection, current_version, &res.patch);
+        self.send_iq(iq, Duration::from_secs(10)).await?;
+        debug!(
+            "Syncd mutation for collection '{}' acknowledged by WhatsApp gateway",
+            collection
+        );
+        let updated_state = crate::syncd::LTHashState {
+            version: res.next_version,
+            hash: res.new_hash,
+            index_value_map: HashMap::new(),
+        };
+        let stored = crate::syncd::StoredLTHashState::from(&updated_state);
+        if let Ok(json_bytes) = serde_json::to_vec(&stored) {
+            let _ = self
+                .store
+                .set_keys(vec![baileys_store::KeyEntry {
+                    key_type: "app-state-sync-version".to_string(),
+                    id: collection.to_string(),
+                    data: json_bytes,
+                }])
+                .await;
         }
+        Ok(())
     }
     /// Modifies chat mute status (None = unmuted, Some(duration_seconds) = muted until now + duration, or Some(u64::MAX) for indefinite mute).
     pub async fn chat_modify_mute(
@@ -369,7 +370,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -394,7 +395,7 @@ impl BaileysClient {
                 crate::syncd::create_pin_patch(&normalized, pin, key_id, key_data, state_hash, ver)
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -426,7 +427,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -466,7 +467,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -562,7 +563,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -593,7 +594,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -629,7 +630,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }

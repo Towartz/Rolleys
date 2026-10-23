@@ -433,6 +433,17 @@ pub fn extract_syncd_response(
             continue;
         }
 
+        tracing::debug!(
+            "syncd collection node '{}': attrs={:?} children={:?}",
+            name,
+            col_node.attrs,
+            col_node
+                .get_children()
+                .iter()
+                .map(|c| (c.tag.as_str(), c.attrs.clone()))
+                .collect::<Vec<_>>()
+        );
+
         let version = col_node
             .get_attr("version")
             .and_then(|v| v.parse::<u64>().ok())
@@ -465,6 +476,16 @@ pub fn extract_syncd_response(
                 }
             }
         }
+
+        tracing::debug!(
+            "syncd collection '{}': version={} inline_snapshot={} snapshot_blob_ref={} patches={} has_more={}",
+            name,
+            version,
+            snapshot.is_some(),
+            snapshot_blob_ref.is_some(),
+            patches.len(),
+            has_more_patches
+        );
 
         result.insert(
             name.clone(),

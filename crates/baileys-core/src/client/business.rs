@@ -68,7 +68,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(label_id)
     }
@@ -116,7 +116,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -152,7 +152,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -188,7 +188,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -250,7 +250,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }
@@ -293,7 +293,7 @@ impl BaileysClient {
                 )
             },
         )
-        .await;
+        .await?;
 
         Ok(())
     }

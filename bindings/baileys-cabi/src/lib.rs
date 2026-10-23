@@ -2970,15 +2970,16 @@ mod tests {
 
             let jid = CString::new("123456789@s.whatsapp.net").unwrap();
 
-            // Test chat actions
+            // A fresh client has no app-state sync key, so the syncd patch cannot be built.
+            // The call must report that (-2) instead of pretending the change reached the server.
             let res_clear = baileys_client_chat_clear(handle, jid.as_ptr(), 0);
-            assert_eq!(res_clear, 0);
+            assert_eq!(res_clear, -2);
 
             let res_unread = baileys_client_chat_mark_unread(handle, jid.as_ptr(), 1);
-            assert_eq!(res_unread, 0);
+            assert_eq!(res_unread, -2);
 
             let res_del = baileys_client_chat_delete(handle, jid.as_ptr());
-            assert_eq!(res_del, 0);
+            assert_eq!(res_del, -2);
 
             // Test null safety
             assert_eq!(
