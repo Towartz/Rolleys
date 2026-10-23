@@ -736,7 +736,7 @@ impl BaileysClient {
     /// Queries the administrator count for a newsletter via GraphQL MEX.
     pub async fn newsletter_admin_count(&self, newsletter_jid: &str) -> Result<u32, CoreError> {
         let vars = serde_json::json!({
-            "input": { "key": newsletter_jid }
+            "newsletter_id": newsletter_jid
         });
         let iq = crate::newsletter::build_mex_iq(crate::newsletter::QUERY_ADMIN_COUNT, vars);
         let res = self.send_iq(iq, Duration::from_secs(12)).await?;
