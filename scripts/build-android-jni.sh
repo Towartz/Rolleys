@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rose-Baileys Android JNI & UniFFI Build Pipeline (Linux / macOS / CI)
+# Rolleys Android JNI & UniFFI Build Pipeline (Linux / macOS / CI)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,7 +10,7 @@ ANDROID_JNI_DIR="$ANDROID_PROJECT_DIR/android/app/src/main/jniLibs"
 ANDROID_JAVA_DIR="$ANDROID_PROJECT_DIR/android/app/src/main/java"
 
 echo "============================================================"
-echo "   Rose-Baileys Android UniFFI & JNI Build Automation       "
+echo "   Rolleys Android UniFFI & JNI Build Automation       "
 echo "============================================================"
 
 # 1. Build host uniffi-bindgen tool
@@ -47,5 +47,5 @@ else
 fi
 
 echo "============================================================"
-echo "   Rose-Baileys Android UniFFI Setup Complete!              "
+echo "   Rolleys Android UniFFI Setup Complete!              "
 echo "============================================================"

@@ -1,7 +1,7 @@
 {
-  "name": "rose-baileys-napi",
+  "name": "rolleys-napi",
   "version": "0.1.0",
-  "description": "Rose-Baileys: Unified High-Performance Rust WhatsApp Engine for Node.js and Electron",
+  "description": "Rolleys: Unified High-Performance Rust WhatsApp Engine for Node.js and Electron",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
@@ -16,6 +16,6 @@
     "e2ee",
     "signal"
   ],
-  "author": "Rose-Baileys Contributors",
+  "author": "Rolleys Contributors",
   "license": "MIT OR Apache-2.0"
 }

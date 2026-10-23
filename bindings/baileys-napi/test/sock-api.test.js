@@ -77,7 +77,7 @@ const NOT_EXPOSED = {
 
 const nativeMethods = () => {
   const src = fs.readFileSync(path.join(__dirname, '../src/lib.rs'), 'utf8');
-  const impl = src.slice(src.indexOf('impl RoseBaileysClient'));
+  const impl = src.slice(src.indexOf('impl RolleysClient'));
   const toCamel = (n) => n.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
   return new Set([...impl.matchAll(/pub (?:async )?fn ([a-z0-9_]+)\(/g)].map((m) => toCamel(m[1])));
 };

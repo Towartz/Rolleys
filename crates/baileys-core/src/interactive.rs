@@ -404,13 +404,10 @@ mod tests {
 
     #[test]
     fn test_interactive_native_flow_quick_reply_and_url() {
-        let msg = InteractiveMessageBuilder::new("Hello from Rose-Baileys!")
+        let msg = InteractiveMessageBuilder::new("Hello from Rolleys!")
             .footer("Select an option below")
             .add_quick_reply("btn_1", "Confirm Booking")
-            .add_url_button(
-                "Visit Website",
-                "https://github.com/Rose-Project/rose-baileys",
-            )
+            .add_url_button("Visit Website", "https://github.com/Towartz/Rolleys")
             .add_call_button("Call Support", "+628123456789")
             .build();
 
@@ -428,7 +425,7 @@ mod tests {
 
         assert_eq!(
             interactive.body.unwrap().text.as_deref(),
-            Some("Hello from Rose-Baileys!")
+            Some("Hello from Rolleys!")
         );
         assert_eq!(
             interactive.footer.unwrap().text.as_deref(),
@@ -448,11 +445,11 @@ mod tests {
 
     #[test]
     fn test_interactive_carousel_message() {
-        let card1 = CarouselCard::new("Product 1: Rose High-Performance Engine")
+        let card1 = CarouselCard::new("Product 1: Rolleys High-Performance Engine")
             .footer("$49.99")
             .add_url_button("Buy Now", "https://example.com/item1");
 
-        let card2 = CarouselCard::new("Product 2: Rose Enterprise Cluster")
+        let card2 = CarouselCard::new("Product 2: Rolleys Enterprise Cluster")
             .footer("$199.99")
             .add_url_button("Buy Now", "https://example.com/item2");
 
@@ -476,8 +473,8 @@ mod tests {
         match interactive.interactive_message.unwrap() {
             baileys_proto::proto::message::interactive_message::InteractiveMessage::CarouselMessage(carousel) => {
                 assert_eq!(carousel.cards.len(), 2);
-                assert_eq!(carousel.cards[0].body.as_ref().unwrap().text.as_deref(), Some("Product 1: Rose High-Performance Engine"));
-                assert_eq!(carousel.cards[1].body.as_ref().unwrap().text.as_deref(), Some("Product 2: Rose Enterprise Cluster"));
+                assert_eq!(carousel.cards[0].body.as_ref().unwrap().text.as_deref(), Some("Product 1: Rolleys High-Performance Engine"));
+                assert_eq!(carousel.cards[1].body.as_ref().unwrap().text.as_deref(), Some("Product 2: Rolleys Enterprise Cluster"));
             }
             _ => panic!("Expected CarouselMessage"),
         }

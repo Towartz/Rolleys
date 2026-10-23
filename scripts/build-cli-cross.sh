@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rose-Baileys Multiplatform CLI Build Automation (Bash)
+# Rolleys Multiplatform CLI Build Automation (Bash)
 # Builds baileys-cli for Linux (glibc & static musl), macOS (Apple Silicon & Intel), and Windows.
 
 set -euo pipefail
@@ -16,7 +16,7 @@ if [ -z "${VERSION}" ]; then
 fi
 
 echo "============================================================"
-echo "   Rose-Baileys CLI Multiplatform Build (Bash, v${VERSION})   "
+echo "   Rolleys CLI Multiplatform Build (Bash, v${VERSION})   "
 echo "============================================================"
 
 mkdir -p "${DIST_DIR}"

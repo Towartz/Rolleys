@@ -1,4 +1,4 @@
-//! Pure Rust WhatsApp Web Protobuf Extractor for Rose-Baileys.
+//! Pure Rust WhatsApp Web Protobuf Extractor for Rolleys.
 //!
 //! Downloads the live WhatsApp Web service worker, fetches the primary JavaScript bundle,
 //! analyzes the AST using `oxc_parser`, and synthesizes a complete, valid `WAProto.proto` schema.

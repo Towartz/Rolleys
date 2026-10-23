@@ -684,7 +684,7 @@ mod tests {
     fn test_build_event_and_album() {
         let ev = build_event_message(
             "Project Demo",
-            Some("Live walkthrough of Rose-Baileys"),
+            Some("Live walkthrough of Rolleys"),
             1700000000,
             Some(1700003600),
             Some("Google Meet"),

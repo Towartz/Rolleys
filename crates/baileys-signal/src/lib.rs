@@ -263,7 +263,7 @@ mod tests {
     fn test_export_rust_vector() {
         let mut alice = SenderKeyRecord::new();
         let skdm = GroupCipher::create_session(&mut alice, 7777).unwrap();
-        let plaintext = b"Hello from Rust Rose-Baileys to Upstream Baileys!";
+        let plaintext = b"Hello from Rust Rolleys to Upstream Baileys!";
         let ciphertext = GroupCipher::encrypt(&mut alice, plaintext).unwrap();
 
         println!("RUST_VECTOR_SKDM: {}", hex::encode(skdm.serialize()));

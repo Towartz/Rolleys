@@ -8,7 +8,7 @@ pub async fn run_self_test(
     store: &Arc<SqliteStore>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("\n============================================================");
-    println!("         STARTING ROSE-BAILEYS AUTOMATED SELF-TEST");
+    println!("         STARTING ROLLEYS AUTOMATED SELF-TEST");
     println!("============================================================");
 
     // 1. Connection check
@@ -43,7 +43,7 @@ pub async fn run_self_test(
     // 4. Create Group with Only Self
     println!("\n[*] Step 3/6: Creating test group with only self number...");
     let group_subject = format!(
-        "Rose-Baileys Self-Test ({})",
+        "Rolleys Self-Test ({})",
         chrono::Local::now().format("%H:%M")
     );
     let group_jid = match client.group_create(&group_subject, &[]).await {
@@ -87,7 +87,7 @@ pub async fn run_self_test(
     // 6. Send Test Message into the Group
     println!("\n[*] Step 5/6: Sending verification message to newly created group...");
     let test_group_msg = format!(
-        "Test message to group from Rose-Baileys Self-Test at {}",
+        "Test message to group from Rolleys Self-Test at {}",
         log_ts()
     );
     match client.send_text_message(&group_jid, &test_group_msg).await {
@@ -108,10 +108,7 @@ pub async fn run_self_test(
     } else {
         format!("{}@s.whatsapp.net", clean_me)
     };
-    let self_dm_msg = format!(
-        "Rose-Baileys Note-to-Self verification ping at {}",
-        log_ts()
-    );
+    let self_dm_msg = format!("Rolleys Note-to-Self verification ping at {}", log_ts());
     match client.send_text_message(&self_target, &self_dm_msg).await {
         Ok(mid) => {
             println!("    [+] Note-to-self dispatched successfully!");

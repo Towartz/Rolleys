@@ -1,4 +1,4 @@
-# Rose-Baileys WhatsApp Newsletter / Channel Live Test Runner
+# Rolleys WhatsApp Newsletter / Channel Live Test Runner
 # Runs the isolated channel test harness in crates/baileys-live-test
 
 param(
@@ -44,7 +44,7 @@ if ($SkipMedia) {
 }
 
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "   Rose-Baileys Newsletter / Channel Live Test Runner         " -ForegroundColor Cyan
+Write-Host "   Rolleys Newsletter / Channel Live Test Runner         " -ForegroundColor Cyan
 Write-Host "   DB:       $Db                                             " -ForegroundColor Gray
 if ([string]::IsNullOrWhiteSpace($Channel)) {
     Write-Host "   Channel:  Isolated Private Test Channel (Auto-Cleanup: $(-not $Keep))" -ForegroundColor Green

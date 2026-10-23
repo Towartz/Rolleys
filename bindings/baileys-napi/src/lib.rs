@@ -681,13 +681,13 @@ pub struct NapiTelemetrySnapshot {
 }
 
 #[napi]
-pub struct RoseBaileysClient {
+pub struct RolleysClient {
     client: Arc<BaileysClient>,
     runtime: Arc<tokio::runtime::Runtime>,
     is_running: Arc<AtomicBool>,
 }
 
-impl RoseBaileysClient {
+impl RolleysClient {
     async fn run_async<T, F, Fut>(&self, f: F) -> Result<T>
     where
         F: FnOnce(Arc<BaileysClient>) -> Fut + Send + 'static,
@@ -706,7 +706,7 @@ impl RoseBaileysClient {
 }
 
 #[napi]
-impl RoseBaileysClient {
+impl RolleysClient {
     #[napi(constructor)]
     pub fn new(database_path: Option<String>, phone_number: Option<String>) -> Result<Self> {
         let db_path = database_path.unwrap_or_else(|| "rolleys_session.db".to_string());
@@ -3026,7 +3026,7 @@ fn to_core_err(e: impl std::fmt::Display) -> baileys_core::CoreError {
 
 /// Methods added to reach parity with the core client (and Baileys' socket API).
 #[napi]
-impl RoseBaileysClient {
+impl RolleysClient {
     /// Sends any message described as JSON (same shorthands as the core `send_message_json`).
     #[napi]
     pub async fn send_message_json(&self, to_jid: String, message_json: String) -> Result<String> {
@@ -3654,9 +3654,7 @@ mod parity_tests {
     #[test]
     fn every_core_method_is_reachable_from_napi() {
         let ffi = include_str!("lib.rs");
-        let ffi_impl = &ffi[ffi
-            .find("impl RoseBaileysClient")
-            .expect("RoseBaileysClient impl")..];
+        let ffi_impl = &ffi[ffi.find("impl RolleysClient").expect("RolleysClient impl")..];
         let core: Vec<&str> = CORE_SOURCES.iter().flat_map(|s| pub_fns(s)).collect();
 
         let missing: Vec<&str> = core

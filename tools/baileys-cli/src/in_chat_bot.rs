@@ -1,4 +1,4 @@
-//! In-Chat Command Runner for Rose-Baileys CLI.
+//! In-Chat Command Runner for Rolleys CLI.
 //!
 //! Allows authorized WhatsApp chats (self-chat notes, 1-on-1 direct messages, and group chats)
 //! to trigger commands directly using prefixes ('.', '!', '/').
@@ -282,7 +282,7 @@ async fn execute_command(
     match cmd.to_lowercase().as_str() {
         "ping" => match client.ping().await {
             Ok(dur) => Ok(Some(format!(
-                "🏓 *Pong!*\n• Round-trip latency: *{:.2?}*\n• Gateway: *WhatsApp Web (Rust/Tokio)*\n• Node: *Rose-Baileys Engine*",
+                "🏓 *Pong!*\n• Round-trip latency: *{:.2?}*\n• Gateway: *WhatsApp Web (Rust/Tokio)*\n• Node: *Rolleys Engine*",
                 dur
             ))),
             Err(e) => Ok(Some(format!("❌ *Ping Failed*: {}", e))),
@@ -310,7 +310,7 @@ async fn execute_command(
             };
 
             Ok(Some(format!(
-                "📊 *Rose-Baileys Engine Status*\n• *Connection*: {}\n• *Phone JID*: `{}`\n• *LID*: `{}`\n• *In-Chat Bot*: *{}*\n• *Auto-Download*: {}",
+                "📊 *Rolleys Engine Status*\n• *Connection*: {}\n• *Phone JID*: `{}`\n• *LID*: `{}`\n• *In-Chat Bot*: *{}*\n• *Auto-Download*: {}",
                 if connected { "🟢 Connected" } else { "🔴 Disconnected" },
                 me_phone,
                 me_lid,
@@ -631,7 +631,7 @@ async fn execute_command(
         "help" => {
             let cur_mode = get_mode();
             let mut h = format!(
-                "🤖 *Rose-Baileys In-Chat Command Menu*\n• *Active Mode*: {}\n\n*Public Commands*:\n",
+                "🤖 *Rolleys In-Chat Command Menu*\n• *Active Mode*: {}\n\n*Public Commands*:\n",
                 cur_mode.display_badge()
             );
             h.push_str("• `.ping` - Gateway round-trip latency\n");
@@ -691,7 +691,7 @@ async fn handle_in_chat_proto(
     match sub.as_str() {
         "list" => {
             let types = RecognizedMessageType::all_canonical();
-            let mut out = String::from("📦 *Rose-Baileys Recognized Message Types*\n");
+            let mut out = String::from("📦 *Rolleys Recognized Message Types*\n");
             for (i, t) in types.iter().take(15).enumerate() {
                 out.push_str(&format!(
                     "  {}. `{}` - {}\n",

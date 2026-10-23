@@ -383,7 +383,7 @@ mod tests {
         ];
 
         let msg = build_interactive_button_message(
-            "Welcome to Rose-Baileys!",
+            "Welcome to Rolleys!",
             &buttons,
             Some("Interactive Menu"),
             Some("Powered by Rust"),
@@ -401,7 +401,7 @@ mod tests {
         let inter = inner.interactive_message.unwrap();
         assert_eq!(
             inter.body.unwrap().text.as_deref(),
-            Some("Welcome to Rose-Baileys!")
+            Some("Welcome to Rolleys!")
         );
         assert_eq!(
             inter.header.unwrap().title.as_deref(),
@@ -436,7 +436,7 @@ mod tests {
             "Choose your primary language:",
             "View List",
             &sections,
-            Some("Rose-Baileys"),
+            Some("Rolleys"),
         );
 
         let list = msg.list_message.unwrap();

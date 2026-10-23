@@ -1,6 +1,6 @@
 [package]
 name = "baileys-cli"
-description = "High-performance multi-platform CLI client for WhatsApp based on Rose-Baileys"
+description = "High-performance multi-platform CLI client for WhatsApp based on Rolleys"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -8,19 +8,19 @@ use rustyline::Context;
 #[test]
 fn test_dynamic_prompt() {
     let connecting_prompt = get_prompt(false);
-    assert_eq!(connecting_prompt, "rose[connecting] > ");
-    let highlighted_connecting = RoseHelper.highlight_prompt(&connecting_prompt, true);
+    assert_eq!(connecting_prompt, "rolleys[connecting] > ");
+    let highlighted_connecting = RolleysHelper.highlight_prompt(&connecting_prompt, true);
     assert!(highlighted_connecting.contains("\x1b[33m")); // Yellow
 
     let online_prompt = get_prompt(true);
-    assert_eq!(online_prompt, "rose[online] > ");
-    let highlighted_online = RoseHelper.highlight_prompt(&online_prompt, true);
+    assert_eq!(online_prompt, "rolleys[online] > ");
+    let highlighted_online = RolleysHelper.highlight_prompt(&online_prompt, true);
     assert!(highlighted_online.contains("\x1b[92m")); // Bright green
 }
 
 #[test]
-fn test_rose_helper_completer() {
-    let helper = RoseHelper;
+fn test_rolleys_helper_completer() {
+    let helper = RolleysHelper;
     let dummy_ctx = rustyline::history::DefaultHistory::new();
     let (start, matches) = helper.complete("se", 2, &Context::new(&dummy_ctx)).unwrap();
     assert_eq!(start, 0);

@@ -158,7 +158,7 @@ fn usage() {
 async fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut phone = std::env::var("LIVE_PHONE").ok();
-    let mut db_path = std::env::var("ROSE_LIVE_SESSION_DB")
+    let mut db_path = std::env::var("ROLLEYS_LIVE_SESSION_DB")
         .unwrap_or_else(|_| ".sessions/live_suite.db".to_string());
     let mut chat_group = None::<String>;
     let (mut clean, mut json, mut with_community, mut only) = (false, false, false, None::<String>);

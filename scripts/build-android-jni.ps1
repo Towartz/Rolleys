@@ -1,4 +1,4 @@
-# Rose-Baileys Android JNI & UniFFI Build Pipeline
+# Rolleys Android JNI & UniFFI Build Pipeline
 # Compiles native .so libraries for arm64-v8a, armeabi-v7a, and x86_64,
 # generates UniFFI Kotlin bindings, and packages them into the Android app project
 # ($env:ANDROID_PROJECT_DIR, default ..\Rolleys_Android).
@@ -17,7 +17,7 @@ $AndroidJniDir = Join-Path $AndroidProjectDir "android\app\src\main\jniLibs"
 $AndroidJavaDir = Join-Path $AndroidProjectDir "android\app\src\main\java"
 
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "   Rose-Baileys Android UniFFI & JNI Build Automation       " -ForegroundColor Cyan
+Write-Host "   Rolleys Android UniFFI & JNI Build Automation       " -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 
 # 1. Build host uniffi-bindgen tool
@@ -82,5 +82,5 @@ if ($HasCargoNdk) {
 }
 
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "   Rose-Baileys Android UniFFI Setup Complete!              " -ForegroundColor Green
+Write-Host "   Rolleys Android UniFFI Setup Complete!              " -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Cyan

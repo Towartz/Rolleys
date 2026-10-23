@@ -14,11 +14,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut revoke_only = false;
 
     // Resolve default isolated session path:
-    // 1. Check ROSE_LIVE_SESSION_DB environment variable
+    // 1. Check ROLLEYS_LIVE_SESSION_DB environment variable
     // 2. If .sessions/live_status_session.db exists -> use it
     // 3. If live_status_session.db exists in cwd -> use it
     // 4. Default -> .sessions/live_status_session.db
-    let default_db_path = if let Ok(env_path) = std::env::var("ROSE_LIVE_SESSION_DB") {
+    let default_db_path = if let Ok(env_path) = std::env::var("ROLLEYS_LIVE_SESSION_DB") {
         env_path
     } else if Path::new(".sessions/live_status_session.db").exists() {
         ".sessions/live_status_session.db".to_string()
@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 clean_session = true;
             }
             "--help" | "-h" => {
-                println!("Live Status Broadcast Tester for Rose-Baileys\n");
+                println!("Live Status Broadcast Tester for Rolleys\n");
                 println!("Usage: live-status-test [OPTIONS]\n");
                 println!("Options:");
                 println!(
@@ -120,9 +120,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("============================================================");
     if revoke_only {
-        println!("   Rose-Baileys: Emergency Status Story Revoke Mode          ");
+        println!("   Rolleys: Emergency Status Story Revoke Mode          ");
     } else {
-        println!("   Rose-Baileys: Live WhatsApp Status Broadcast Test Harness  ");
+        println!("   Rolleys: Live WhatsApp Status Broadcast Test Harness  ");
     }
     println!("   Target Phone Number: +{}", phone_number);
     if revoke_only {
@@ -211,13 +211,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // ── Test 1: Plain / Colored Text Status Broadcast ──
                     println!("────────────────────────────────────────────────────────────");
                     println!("[Test 1/4] Publishing Text Status Card to status@broadcast...");
-                    println!("  Text: 'Rose-Baileys Status Live Test: Text Card #1 🌟'");
+                    println!("  Text: 'Rolleys Status Live Test: Text Card #1 🌟'");
                     println!("  Background: '#1E88E5' (Material Blue)");
                     println!("  Font: Sans-Serif (1)");
 
                     match client_bg
                         .send_text_status(
-                            "Rose-Baileys Status Live Test: Text Card #1 🌟",
+                            "Rolleys Status Live Test: Text Card #1 🌟",
                             Some("#1E88E5"),
                             Some(1),
                             audience_bg.clone(),
@@ -248,7 +248,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "https://github.com/WhiskeySockets/Baileys",
                         Some("WhiskeySockets/Baileys"),
                         Some("Lightweight & full-featured WhatsApp Web client"),
-                        Some("Testing Status Link Preview with Rose-Baileys! 🚀 https://github.com/WhiskeySockets/Baileys"),
+                        Some("Testing Status Link Preview with Rolleys! 🚀 https://github.com/WhiskeySockets/Baileys"),
                         Some("#7B1FA2"),
                         Some(2),
                         None,
@@ -303,7 +303,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match client_bg
                         .send_status_image(
                             &image_bytes,
-                            Some("Rose-Baileys HD Image Story Live Test 📷"),
+                            Some("Rolleys HD Image Story Live Test 📷"),
                             Some("image/jpeg"),
                             audience_bg.clone(),
                         )

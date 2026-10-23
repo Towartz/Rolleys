@@ -1,8 +1,8 @@
 {
-  "name": "rose-baileys-scripts",
+  "name": "rolleys-scripts",
   "version": "1.0.0",
   "private": true,
-  "description": "WhatsApp Web Protobuf extraction and developer automation tools for Rose-Baileys",
+  "description": "WhatsApp Web Protobuf extraction and developer automation tools for Rolleys",
   "scripts": {
     "extract": "node extract-waproto.js"
   },

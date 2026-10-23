@@ -25,10 +25,10 @@ for (const p of candidates) {
 }
 
 if (!nativeBinding) {
-  throw new Error('Failed to load Rose-Baileys native addon (baileys_napi.node / baileys_napi.dll)');
+  throw new Error('Failed to load Rolleys native addon (baileys_napi.node / baileys_napi.dll)');
 }
 
-const { RoseBaileysClient } = nativeBinding;
+const { RolleysClient } = nativeBinding;
 
 /**
  * Creates a Baileys-compatible WhatsApp Socket engine backed by pure Rust.
@@ -37,7 +37,7 @@ function makeWASocket(config = {}) {
   const dbPath = config.databasePath || config.authPath || 'rolleys_session.db';
   const phone = config.phoneNumber || config.phone || null;
 
-  const client = new RoseBaileysClient(dbPath, phone);
+  const client = new RolleysClient(dbPath, phone);
   const ev = new EventEmitter();
 
   // Register native event bridge
@@ -137,7 +137,7 @@ function makeWASocket(config = {}) {
           ev.emit(event, data);
       }
     } catch (err) {
-      console.error('[rose-baileys-napi] Error handling event:', err);
+      console.error('[rolleys-napi] Error handling event:', err);
     }
   });
 
@@ -215,7 +215,7 @@ const WAMessageStatus = {
 module.exports = {
   makeWASocket,
   default: makeWASocket,
-  RoseBaileysClient,
+  RolleysClient,
   jidNormalizedUser,
   isJidGroup,
   isJidBroadcast,

@@ -407,10 +407,10 @@ mod tests {
 
     #[test]
     fn test_build_vcard_and_contact_message() {
-        let vcard = build_vcard_string("John Doe", "+1234567890", Some("Rose Project"));
+        let vcard = build_vcard_string("John Doe", "+1234567890", Some("Rolleys Project"));
         assert!(vcard.contains("BEGIN:VCARD"));
         assert!(vcard.contains("FN:John Doe"));
-        assert!(vcard.contains("ORG:Rose Project"));
+        assert!(vcard.contains("ORG:Rolleys Project"));
         assert!(vcard.contains("waid=1234567890:+1234567890"));
         assert!(vcard.contains("END:VCARD"));
 

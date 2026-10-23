@@ -77,7 +77,7 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                 run_selftest = true;
             }
             "--help" | "-h" => {
-                println!("Rose-Baileys CLI - Unified WhatsApp Engine\n");
+                println!("Rolleys CLI - Unified WhatsApp Engine\n");
                 println!("Usage: baileys-cli [OPTIONS]\n");
                 println!("Options:");
                 println!(
@@ -116,7 +116,7 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
     tracing::subscriber::set_global_default(subscriber)?;
 
     println!("============================================================");
-    println!("   Rose-Baileys: Unified Multiplatform Rust WhatsApp Engine  ");
+    println!("   Rolleys: Unified Multiplatform Rust WhatsApp Engine  ");
     println!("   Targets: Android, macOS, Linux, Windows                  ");
     println!("============================================================");
 
@@ -840,7 +840,7 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
     // Interactive REPL loop
     run_repl(&client, &store).await?;
 
-    println!("[*] Shutting down Rose-Baileys engine...");
+    println!("[*] Shutting down Rolleys engine...");
     client.disconnect().await;
 
     Ok(())

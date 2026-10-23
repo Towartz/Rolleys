@@ -179,9 +179,9 @@ const REPL_COMMANDS: &[&str] = &[
 ];
 
 #[derive(Default)]
-pub struct RoseHelper;
+pub struct RolleysHelper;
 
-impl Completer for RoseHelper {
+impl Completer for RolleysHelper {
     type Candidate = Pair;
 
     fn complete(
@@ -291,35 +291,35 @@ impl Completer for RoseHelper {
     }
 }
 
-impl Hinter for RoseHelper {
+impl Hinter for RolleysHelper {
     type Hint = String;
 }
 
-impl Highlighter for RoseHelper {
+impl Highlighter for RolleysHelper {
     fn highlight_prompt<'b, 's: 'b, 'p: 'b>(
         &'s self,
         prompt: &'p str,
         _default: bool,
     ) -> std::borrow::Cow<'b, str> {
         if prompt.contains("online") {
-            std::borrow::Cow::Owned("rose[\x1b[92monline\x1b[0m] > ".to_string())
+            std::borrow::Cow::Owned("rolleys[\x1b[92monline\x1b[0m] > ".to_string())
         } else if prompt.contains("connecting") {
-            std::borrow::Cow::Owned("rose[\x1b[33mconnecting\x1b[0m] > ".to_string())
+            std::borrow::Cow::Owned("rolleys[\x1b[33mconnecting\x1b[0m] > ".to_string())
         } else {
             std::borrow::Cow::Borrowed(prompt)
         }
     }
 }
 
-impl Validator for RoseHelper {}
+impl Validator for RolleysHelper {}
 
-impl Helper for RoseHelper {}
+impl Helper for RolleysHelper {}
 
 fn get_prompt(is_connected: bool) -> String {
     if is_connected {
-        "rose[online] > ".to_string()
+        "rolleys[online] > ".to_string()
     } else {
-        "rose[connecting] > ".to_string()
+        "rolleys[connecting] > ".to_string()
     }
 }
 
@@ -431,7 +431,7 @@ pub async fn run_repl(
     let config = Config::builder().auto_add_history(true).build();
 
     let mut rl = Editor::with_config(config)?;
-    rl.set_helper(Some(RoseHelper));
+    rl.set_helper(Some(RolleysHelper));
 
     // Register external printer for non-destructive log interleaving
     if let Ok(printer) = rl.create_external_printer() {
@@ -440,7 +440,7 @@ pub async fn run_repl(
         }));
     }
 
-    let history_file = ".rose_history";
+    let history_file = ".rolleys_history";
     let _ = rl.load_history(history_file);
 
     let rl_arc = Arc::new(Mutex::new(rl));
@@ -469,7 +469,7 @@ pub async fn run_repl(
                 dispatch::dispatch_command(trimmed, client, store).await;
             }
             Err(ReadlineError::Interrupted) => {
-                println!("\n[*] Ctrl+C received, shutting down Rose-Baileys engine...");
+                println!("\n[*] Ctrl+C received, shutting down Rolleys engine...");
                 break;
             }
             Err(ReadlineError::Eof) => {

@@ -1,6 +1,6 @@
 [package]
 name = "baileys-live-test"
-description = "Isolated live integration and WhatsApp status broadcast testing harness for Rose-Baileys"
+description = "Isolated live integration and WhatsApp status broadcast testing harness for Rolleys"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

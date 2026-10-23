@@ -1,4 +1,4 @@
-# Rose-Baileys Standalone Artifact Packaging & Checksum Generator
+# Rolleys Standalone Artifact Packaging & Checksum Generator
 param(
     [string]$ArtifactsDir = "dist",
     [string]$Version = ""

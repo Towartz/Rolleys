@@ -1,5 +1,5 @@
 /**
- * WhatsApp Web Protobuf Extractor for Rose-Baileys
+ * WhatsApp Web Protobuf Extractor for Rolleys
  * 
  * Fetches the latest WhatsApp Web JavaScript bundles directly from web.whatsapp.com,
  * locates internalSpec Protobuf definitions via Acorn AST analysis, and generates

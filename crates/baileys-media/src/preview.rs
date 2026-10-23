@@ -294,11 +294,10 @@ mod tests {
 
     #[test]
     fn test_extract_first_url() {
-        let msg =
-            "Check out this link: https://github.com/Rose-Project/rose-baileys for more info!";
+        let msg = "Check out this link: https://github.com/Towartz/Rolleys for more info!";
         assert_eq!(
             extract_first_url(msg),
-            Some("https://github.com/Rose-Project/rose-baileys".to_string())
+            Some("https://github.com/Towartz/Rolleys".to_string())
         );
 
         let bare = "Visit google.com today.";
@@ -318,7 +317,7 @@ mod tests {
             <html>
             <head>
                 <title>Test Page Title</title>
-                <meta property="og:title" content="Rose Baileys WhatsApp Engine &amp; SDK" />
+                <meta property="og:title" content="Rolleys WhatsApp Engine &amp; SDK" />
                 <meta property="og:description" content="Ultra-fast pure Rust WhatsApp protocol client." />
                 <meta property="og:image" content="/assets/cover.png" />
             </head>
@@ -327,7 +326,7 @@ mod tests {
         "#;
 
         let (title, desc, img) = parse_opengraph_html(html, "https://example.com");
-        assert_eq!(title.as_deref(), Some("Rose Baileys WhatsApp Engine & SDK"));
+        assert_eq!(title.as_deref(), Some("Rolleys WhatsApp Engine & SDK"));
         assert_eq!(
             desc.as_deref(),
             Some("Ultra-fast pure Rust WhatsApp protocol client.")

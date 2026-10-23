@@ -10,8 +10,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let mut db_path = if Path::new(".sessions/live_status_session.db").exists() {
         ".sessions/live_status_session.db".to_string()
-    } else if Path::new("rose-baileys/.sessions/live_status_session.db").exists() {
-        "rose-baileys/.sessions/live_status_session.db".to_string()
+    } else if Path::new("rolleys/.sessions/live_status_session.db").exists() {
+        "rolleys/.sessions/live_status_session.db".to_string()
     } else {
         "live_status_session.db".to_string()
     };
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 skip_media = true;
             }
             "--help" | "-h" => {
-                println!("Rose-Baileys WhatsApp Newsletter / Channel Live Test Suite\n");
+                println!("Rolleys WhatsApp Newsletter / Channel Live Test Suite\n");
                 println!("Usage: live-newsletter-test [OPTIONS]\n");
                 println!("Options:");
                 println!("  -s, --db <PATH>       Path to session database (default: .sessions/live_status_session.db)");
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = tracing::subscriber::set_global_default(subscriber);
 
     println!("============================================================");
-    println!("   Rose-Baileys: WhatsApp Newsletter / Channel Live Test     ");
+    println!("   Rolleys: WhatsApp Newsletter / Channel Live Test     ");
     println!("   Session Database: {}", db_path);
     if let Some(ref ch) = target_channel {
         println!("   Target Channel:   {}", ch);
@@ -155,9 +155,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         (existing_jid, false)
                     } else {
                         let ts = chrono::Local::now().format("%H:%M:%S").to_string();
-                        let test_ch_name = format!("Rose-Baileys Test ({})", ts);
+                        let test_ch_name = format!("Rolleys Test ({})", ts);
                         let test_ch_desc =
-                            "Automated isolated integration test channel for Rose-Baileys";
+                            "Automated isolated integration test channel for Rolleys";
                         println!(
                             "[Phase 2/5] Creating isolated private test channel: '{}'...",
                             test_ch_name
@@ -215,7 +215,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // 3A: Plaintext announcement post
                     println!("  [*] [3A] Publishing Plaintext Story Post...");
                     let post_text = format!(
-                        "🚀 Rose-Baileys Channel Live Test: Announcement at {}",
+                        "🚀 Rolleys Channel Live Test: Announcement at {}",
                         chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
                     );
                     match client_bg
@@ -239,11 +239,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             {
                                 "downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
                             } else if Path::new(
-                                "rose-baileys/downloads/A5CA598A9270996297A28DA9E9A5286E.jpg",
+                                "rolleys/downloads/A5CA598A9270996297A28DA9E9A5286E.jpg",
                             )
                             .exists()
                             {
-                                "rose-baileys/downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
+                                "rolleys/downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
                             } else {
                                 "downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
                             };
@@ -278,7 +278,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         };
 
-                        match client_bg.newsletter_send_image(&channel_jid, &image_bytes, Some("Rose-Baileys Live Channel HD Image Story 📸")).await {
+                        match client_bg.newsletter_send_image(&channel_jid, &image_bytes, Some("Rolleys Live Channel HD Image Story 📸")).await {
                             Ok(msg_id) => println!("  [✓] SUCCESS: Image story uploaded and published! Stanza Msg ID: {}", msg_id),
                             Err(e) => eprintln!("  [-] Failed to upload channel image story: {}", e),
                         }
@@ -344,7 +344,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     "🚀 Update Saluran Baru! Post #{}",
                                     first_msg.server_id
                                 );
-                                match client_bg.newsletter_send_status_story(&channel_jid, first_msg.server_id as i32, "Rose-Baileys Test", &story_caption, audience).await {
+                                match client_bg.newsletter_send_status_story(&channel_jid, first_msg.server_id as i32, "Rolleys Test", &story_caption, audience).await {
                                     Ok(msg_id) => println!("  [✓] SUCCESS: Channel Text Status Story published to status@broadcast! (Msg ID: {})", msg_id),
                                     Err(e) => eprintln!("  [-] Failed to publish channel status story: {}", e),
                                 }
@@ -361,7 +361,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     {
                                         "downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
                                     } else {
-                                        "rose-baileys/downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
+                                        "rolleys/downloads/A5CA598A9270996297A28DA9E9A5286E.jpg"
                                     };
                                     if let Ok(img_bytes) = std::fs::read(sample_path) {
                                         let audience_img = self_jid_opt.map(|j| vec![j]);
@@ -369,7 +369,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             "📸 Saluran HD Image Story! Post #{}",
                                             first_msg.server_id
                                         );
-                                        match client_bg.newsletter_send_image_status_story(&img_bytes, Some(&story_img_caption), &channel_jid, first_msg.server_id as i32, "Rose-Baileys Test", audience_img).await {
+                                        match client_bg.newsletter_send_image_status_story(&img_bytes, Some(&story_img_caption), &channel_jid, first_msg.server_id as i32, "Rolleys Test", audience_img).await {
                                             Ok(msg_id) => println!("  [✓] SUCCESS: Full-Screen HD Channel Image Story published to status@broadcast! (Msg ID: {})", msg_id),
                                             Err(e) => eprintln!("  [-] Failed to publish channel image status story: {}", e),
                                         }

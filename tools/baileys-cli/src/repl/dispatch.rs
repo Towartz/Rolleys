@@ -48,7 +48,7 @@ pub async fn dispatch_command(
         let snapshot = client.telemetry_snapshot();
         let state = client.get_connection_state();
         println!("\n============================================================");
-        println!("           ROSE-BAILEYS ENGINE HEALTH & TELEMETRY");
+        println!("           ROLLEYS ENGINE HEALTH & TELEMETRY");
         println!("============================================================");
         println!("  Inbound Messages Count    : {}", snapshot.messages_in);
         println!("  Outbound Messages Count   : {}", snapshot.messages_out);

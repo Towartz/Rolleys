@@ -1,4 +1,4 @@
-//! Observability and health telemetry subsystem for Rose-Baileys.
+//! Observability and health telemetry subsystem for Rolleys.
 //!
 //! Tracks:
 //! - Inbound and outbound message throughput

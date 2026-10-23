@@ -220,7 +220,7 @@ mod tests {
 
         let creds = AuthCreds::init();
         let config = BaileysConfigBuilder::new()
-            .with_browser("Rose-Baileys", "Desktop", "1.0.0")
+            .with_browser("Chrome", "Mac OS", "14.4.1")
             .build();
 
         let payload = generate_registration_node(&creds, &config);
@@ -238,7 +238,7 @@ mod tests {
 
         let creds = AuthCreds::init();
         let config = BaileysConfigBuilder::new()
-            .with_browser("Rose-Baileys", "Desktop", "1.0.0")
+            .with_browser("Chrome", "Mac OS", "14.4.1")
             .build();
 
         let companion = CompanionPairingState::new("6281234567890");

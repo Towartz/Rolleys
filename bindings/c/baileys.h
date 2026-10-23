@@ -1,11 +1,11 @@
 /*
- * Rose-Baileys C-ABI Header (bindings/c/baileys.h)
- * Multiplatform C/C++ interface for Rose-Baileys WhatsApp engine.
+ * Rolleys C-ABI Header (bindings/c/baileys.h)
+ * Multiplatform C/C++ interface for Rolleys WhatsApp engine.
  * Compatible with Windows, Linux, macOS, Android, and iOS.
  */
 
-#ifndef ROSE_BAILEYS_H
-#define ROSE_BAILEYS_H
+#ifndef ROLLEYS_H
+#define ROLLEYS_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -184,4 +184,4 @@ BAILEYS_API int baileys_client_remove_companion_device(BaileysClientHandle* hand
 }
 #endif
 
-#endif /* ROSE_BAILEYS_H */
+#endif /* ROLLEYS_H */

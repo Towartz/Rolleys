@@ -1,4 +1,4 @@
-# Rose-Baileys Multiplatform CLI Build Automation (PowerShell)
+# Rolleys Multiplatform CLI Build Automation (PowerShell)
 # Builds baileys-cli for Windows (x64, ARM64), Linux (musl, glibc), and macOS.
 
 param(
@@ -27,7 +27,7 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
 }
 
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "   Rose-Baileys CLI Multiplatform Build Pipeline (v$Version) " -ForegroundColor Cyan
+Write-Host "   Rolleys CLI Multiplatform Build Pipeline (v$Version) " -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path $DistPath)) {
@@ -226,5 +226,5 @@ if ($Package) {
 }
 
 Write-Host "`n============================================================" -ForegroundColor Cyan
-Write-Host "   Rose-Baileys CLI Build Complete! Artifacts in: $OutDir    " -ForegroundColor Green
+Write-Host "   Rolleys CLI Build Complete! Artifacts in: $OutDir    " -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Cyan

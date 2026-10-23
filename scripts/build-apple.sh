@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rose-Baileys Apple (macOS & iOS) UniFFI Build Pipeline
+# Rolleys Apple (macOS & iOS) UniFFI Build Pipeline
 # Compiles staticlib / dylib and generates Swift bindings / XCFramework for iOS & macOS.
 set -euo pipefail
 
@@ -8,7 +8,7 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUT_DIR="$WORKSPACE_ROOT/bindings/swift"
 
 echo "============================================================"
-echo "   Rose-Baileys Apple (macOS & iOS) Build Automation        "
+echo "   Rolleys Apple (macOS & iOS) Build Automation        "
 echo "============================================================"
 
 cd "$WORKSPACE_ROOT"

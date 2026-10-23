@@ -1,4 +1,4 @@
-# Rose-Baileys Live WhatsApp Broadcast Test Runner
+# Rolleys Live WhatsApp Broadcast Test Runner
 # Runs the isolated live test harness in crates/baileys-live-test
 
 param(
@@ -46,7 +46,7 @@ if ($Clean) {
 }
 
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "   Rose-Baileys Isolated Live Test Runner                     " -ForegroundColor Cyan
+Write-Host "   Rolleys Isolated Live Test Runner                     " -ForegroundColor Cyan
 Write-Host "   Phone: +$Phone                                            " -ForegroundColor Gray
 Write-Host "   DB:    $Db                                                " -ForegroundColor Gray
 if ($Revoke) {

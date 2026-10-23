@@ -16,7 +16,7 @@ pub(crate) async fn handle_proto_command(sub: &str, store: &Arc<SqliteStore>) {
 
     match parts[0].to_lowercase().as_str() {
         "list" => {
-            println!("\n=== Recognized High-Level Message Types (Rose-Baileys Intelligence) ===");
+            println!("\n=== Recognized High-Level Message Types (Rolleys Intelligence) ===");
             let canonical = RecognizedMessageType::all_canonical();
             for (i, t) in canonical.iter().enumerate() {
                 println!("  [{:>2}] {:<24} - {}", i + 1, t.as_str(), t.display_name());

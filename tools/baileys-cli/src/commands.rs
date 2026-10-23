@@ -1,4 +1,4 @@
-//! Command Registry, Metadata & Help System for Rose-Baileys CLI.
+//! Command Registry, Metadata & Help System for Rolleys CLI.
 //!
 //! Provides two-stage command dispatching, detailed parameter validation,
 //! typo suggestions ("Did you mean?"), and categorized contextual help.
@@ -108,7 +108,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         category: CommandCategory::Messaging,
         summary: "Send a text message to a user or group",
         usage: "send <JID> <TEXT>",
-        example: "send 62812345678@s.whatsapp.net Hello from Rose-Baileys!",
+        example: "send 62812345678@s.whatsapp.net Hello from Rolleys!",
         min_args: 2,
         missing_hint: "<JID> <TEXT>",
     },
@@ -348,7 +348,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         category: CommandCategory::Messaging,
         summary: "Send text message with OpenGraph rich link preview",
         usage: "sendpreview <JID> <TEXT>",
-        example: "sendpreview 62812345678@s.whatsapp.net Check this: https://github.com/Rose-Project",
+        example: "sendpreview 62812345678@s.whatsapp.net Check this: https://github.com/Towartz/Rolleys",
         min_args: 2,
         missing_hint: "<JID> <TEXT>",
     },
@@ -430,7 +430,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         category: CommandCategory::Groups,
         summary: "Update group title / subject",
         usage: "groupsubject <GROUP_JID> <NEW_SUBJECT>",
-        example: "groupsubject 120363028123456789@g.us \"Rose Rust Team\"",
+        example: "groupsubject 120363028123456789@g.us \"Rolleys Rust Team\"",
         min_args: 2,
         missing_hint: "<GROUP_JID> <NEW_SUBJECT>",
     },
@@ -440,7 +440,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         category: CommandCategory::Groups,
         summary: "Update group description",
         usage: "groupdesc <GROUP_JID> <NEW_DESCRIPTION>",
-        example: "groupdesc 120363028123456789@g.us \"Official Rose Project Discussion\"",
+        example: "groupdesc 120363028123456789@g.us \"Official Rolleys Project Discussion\"",
         min_args: 2,
         missing_hint: "<GROUP_JID> <NEW_DESCRIPTION>",
     },
@@ -552,7 +552,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         category: CommandCategory::Status,
         summary: "Publish text status story to status@broadcast",
         usage: "statuspost <TEXT> [| BG_HEX]",
-        example: "statuspost Hello world from Rose! | #128C7E",
+        example: "statuspost Hello world from Rolleys! | #128C7E",
         min_args: 1,
         missing_hint: "<TEXT>",
     },
@@ -622,7 +622,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         category: CommandCategory::Status,
         summary: "Update self WhatsApp profile text status (About)",
         usage: "statusupdate <STATUS_TEXT>",
-        example: "statusupdate \"Available on Rose-Baileys\"",
+        example: "statusupdate \"Available on Rolleys\"",
         min_args: 1,
         missing_hint: "<STATUS_TEXT>",
     },
@@ -1701,7 +1701,7 @@ pub fn print_help(query_opt: Option<&str>) {
 
 fn print_general_help() {
     println!("\n============================================================");
-    println!("             Rose-Baileys CLI Command Guide                ");
+    println!("             Rolleys CLI Command Guide                ");
     println!("============================================================");
     println!("Explore commands by category: type 'help <category>'");
     println!("  • messaging   - Text, buttons, lists, polls, voice notes, rich media");
