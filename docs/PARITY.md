@@ -48,25 +48,27 @@ assertion `message TestChild {` pada parser nested message).
 
 ## Fungsi (`sock.*`)
 
-Rincian per area ada di rencana kerja; ringkasannya:
+Dijaga otomatis: test kontrak memastikan setiap method publik `BaileysClient` terjangkau dari ffi, napi, dan C
+(atau dikecualikan dengan alasan), dan setiap kunci `makeWASocket` Baileys 7.0.0-rc14 ada di socket napi atau
+dikecualikan dengan alasan. Daftar pengecualian ada di test masing-masing.
 
-| Area | Status | Catatan |
+| Area | Status | Bukti / catatan |
 |---|---|---|
-| Kirim pesan (teks, media, poll, reaksi, lokasi, kontak, tombol, daftar, view-once, album, event, produk) | done | |
-| Edit/hapus/forward/pin | done | |
-| `readMessages` batch, `markRead` via syncd + `lastMessages` | partial | hanya per pesan |
-| Grup (CRUD, peserta, invite, setelan, approval, member-add-mode) | done | event grup belum ada |
-| Komunitas | done | 5 perintah CLI belum terdaftar |
-| Newsletter/channel | done | event newsletter belum ada |
-| Status/story | done | |
-| Privasi, blocklist, profil | done | |
-| Pairing code, QR, multi-device | done | |
-| App-state sync, history sync | done | |
-| LID mapping, usync, `onWhatsApp` | done | |
-| Bisnis (katalog, produk, order) | partial | detail order, update profil bisnis |
-| Panggilan | partial | belum ada `offer` |
-| Bot/AI | partial | |
-| Auth state (`creds.update`) | partial | belum ada event |
+| Kirim pesan (teks, media, poll, reaksi, lokasi, kontak, tombol, daftar, view-once, album, event, produk) | done (live) | area `messaging`, `rich`, `media` |
+| Edit/hapus/forward/pin | done (live) | |
+| `readMessages` batch | done (unit) | dikelompokkan per chat, `read-self` bila receipt baca dimatikan; belum diuji live agar tidak menandai pesan orang lain sebagai dibaca |
+| `chatModify`, app-state sync | done (live) | rantai hash cocok dengan snapshot server |
+| Grup (CRUD, peserta, invite, setelan, approval, foto, label anggota) | done (live) | peserta add/remove perlu akun kedua |
+| Komunitas | done (live, opt-in) | `leave` oleh pemilik tidak berefek |
+| Newsletter/channel (termasuk deskripsi, foto, subscriber) | done (live) | |
+| Status/story | done | belum di live-suite |
+| Privasi, blocklist, profil, mode disappearing default | done (live) | |
+| Kontak (`addOrEditContact`/`removeContact`) | done (live) | operasi REMOVE; encoder diperbaiki |
+| Quick reply, profil bisnis, detail order | done (unit) | butuh akun WhatsApp Business / token order; tidak diuji live |
+| `requestPlaceholderResend` | done (live: diterima server) | |
+| Pairing code, QR, multi-device, LID, usync | done | |
+| Panggilan | done | Baileys hanya punya `rejectCall`; tidak ada `offer` |
+| Bot/AI | partial | `send_bot_prompt`, `get_bot_list_v2` |
 
 ## Binding
 
@@ -172,3 +174,13 @@ dijaga oleh `bindings/baileys-napi/test/sock-api.test.js` (NOT_EXPOSED).
 dari satu tabel (`scripts/gen-cabi-parity.py`) dan callback event tersedia. Test kontrak menemukan 5 ekspor lama yang tidak
 pernah dideklarasikan di `baileys.h` (`send_json`, `send_event`, `send_status_image`, `send_status_video`,
 `recognize_message_json`). Contoh C di `FFI_GUIDE.md` memakai fungsi yang tidak ada; sudah ditulis ulang dan terkompilasi.
+
+**Celah terakhir ditutup (2026-10-23).** Ditambahkan di core: kontak, quick reply, `read_messages` batch, `update_member_label`,
+`request_placeholder_resend`, mode disappearing default (set + baca), detail order, profil bisnis, serta `newsletter_update`
+(deskripsi, foto, hapus foto) dan `newsletter_subscribers`. Temuan dari uji live: (1) encoder syncd salah untuk operasi
+REMOVE (mengurangi MAC baru, bukan nilai lama); (2) `newsletter_query_metadata` tidak membaca foto karena server mengirim
+`direct_path`, bukan `url`; (3) id query SUBSCRIBERS milik Baileys dijawab server dengan objek admin, jadi jumlah subscriber
+diambil dari metadata channel; (4) `update_profile_picture` tidak mengecilkan/memotong gambar seperti Baileys, kini ya
+(persegi 640 px JPEG); (5) `send_read_receipt` tidak menyertakan atribut `t`.
+Dua id query newsletter Baileys (UPDATE_METADATA dan lainnya) berbeda dari yang dipakai core; yang dipakai core terbukti
+bekerja live, jadi tidak diubah.
