@@ -975,7 +975,14 @@ impl RoseBaileysClient {
                     | BaileysEvent::NewsletterReaction { .. }
                     | BaileysEvent::NewsletterView { .. }
                     | BaileysEvent::NewsletterParticipantsUpdate { .. }
-                    | BaileysEvent::NewsletterSettingsUpdate { .. } => {
+                    | BaileysEvent::NewsletterSettingsUpdate { .. }
+                    | BaileysEvent::ChatsDelete { .. }
+                    | BaileysEvent::ChatsLock { .. }
+                    | BaileysEvent::SettingsUpdate { .. }
+                    | BaileysEvent::LidMappingUpdate { .. }
+                    | BaileysEvent::ContactsUpsert { .. }
+                    | BaileysEvent::MessagesDelete { .. }
+                    | BaileysEvent::MessageStarred { .. } => {
                         NapiEventPayload::Raw(serde_json::to_value(&event).unwrap_or_default())
                     }
                 };

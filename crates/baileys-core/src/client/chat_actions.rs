@@ -81,6 +81,9 @@ impl BaileysClient {
         // Keep asking while the server reports more patches; each round continues from the state
         // the previous one produced.
         let mut pending: Vec<String> = collections.iter().map(|c| c.to_string()).collect();
+        // Collections that start from an empty state are an initial sync for every round: their
+        // historical deletes are existing state, not new events (Baileys' `isInitialSync`).
+        let mut initial_sync: std::collections::HashSet<String> = std::collections::HashSet::new();
         let mut round = 0usize;
         loop {
             let mut next_pending: Vec<String> = Vec::new();
@@ -108,6 +111,10 @@ impl BaileysClient {
             // 5. Process each collection
             for (col_name, col_data) in collections_data {
                 let mut curr_state = states.remove(&col_name).unwrap_or_default();
+                if round == 0 && curr_state.version == 0 {
+                    initial_sync.insert(col_name.clone());
+                }
+                let is_initial = initial_sync.contains(&col_name);
                 let mut all_mutations = Vec::new();
 
                 // A. Decode snapshot if present (the server sends it as an external blob reference)
@@ -227,10 +234,16 @@ impl BaileysClient {
                         crate::syncd::SyncdAction::Star {
                             jid,
                             msg_id,
+                            from_me,
                             starred,
-                            ..
                         } => {
                             let _ = self.store.update_message_star(&jid, &msg_id, starred).await;
+                            self.events.emit(BaileysEvent::MessageStarred {
+                                chat_jid: jid,
+                                message_id: msg_id,
+                                from_me,
+                                starred,
+                            });
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::Contact { id, name, lid, .. } => {
@@ -262,6 +275,55 @@ impl BaileysClient {
                         }
                         crate::syncd::SyncdAction::DeleteChat { jid } => {
                             let _ = self.store.delete_chat(&jid).await;
+                            // Baileys skips chats.delete during an initial sync.
+                            if !is_initial {
+                                self.events
+                                    .emit(BaileysEvent::ChatsDelete { jids: vec![jid] });
+                            }
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::LockChat { jid, locked } => {
+                            self.events.emit(BaileysEvent::ChatsLock { jid, locked });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::Setting { setting, value } => {
+                            self.events
+                                .emit(BaileysEvent::SettingsUpdate { setting, value });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::LidMapping { lid, pn } => {
+                            self.events.emit(BaileysEvent::LidMappingUpdate { lid, pn });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::LidContact {
+                            lid,
+                            name,
+                            username: _,
+                        } => {
+                            let contact = baileys_store::StoredContact {
+                                jid: lid.clone(),
+                                name: name.clone(),
+                                push_name: name,
+                                lid: Some(lid),
+                            };
+                            let _ = self.store.save_contact(&contact).await;
+                            self.events.emit(BaileysEvent::ContactsUpsert {
+                                contacts: vec![contact],
+                            });
+                            summary.mutations_applied += 1;
+                        }
+                        crate::syncd::SyncdAction::DeleteMessageForMe {
+                            jid,
+                            msg_id,
+                            from_me,
+                        } => {
+                            if !is_initial {
+                                self.events.emit(BaileysEvent::MessagesDelete {
+                                    chat_jid: jid,
+                                    message_id: msg_id,
+                                    from_me,
+                                });
+                            }
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::Other { .. } => {}

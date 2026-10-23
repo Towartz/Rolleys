@@ -130,6 +130,33 @@ pub enum SyncdAction {
         lid: Option<String>,
         phone_number: Option<String>,
     },
+    /// Chat locked or unlocked (Baileys `chats.lock`).
+    LockChat {
+        jid: String,
+        locked: bool,
+    },
+    /// Account-wide setting change (Baileys `settings.update`); `value` is rendered as text.
+    Setting {
+        setting: String,
+        value: String,
+    },
+    /// Phone number learned for a LID chat (Baileys `lid-mapping.update`).
+    LidMapping {
+        lid: String,
+        pn: String,
+    },
+    /// Contact details stored against a LID (Baileys `contacts.upsert`).
+    LidContact {
+        lid: String,
+        name: Option<String>,
+        username: Option<String>,
+    },
+    /// Message deleted on this account's devices only (Baileys `messages.delete`).
+    DeleteMessageForMe {
+        jid: String,
+        msg_id: String,
+        from_me: bool,
+    },
     Other {
         name: String,
         index: Vec<String>,
@@ -208,10 +235,112 @@ impl DecodedSyncdMutation {
                     phone_number,
                 }
             }
-            _ => SyncdAction::Other {
+            "deleteMessageForMe" => SyncdAction::DeleteMessageForMe {
+                jid,
+                msg_id: self.index.get(2).cloned().unwrap_or_default(),
+                from_me: self.index.get(3).map(|s| s == "1").unwrap_or(false),
+            },
+            // The remaining actions are recognised by which value field is set, as Baileys'
+            // `processSyncAction` does, because their index names vary (`setting_locale`, ...).
+            _ => self.parse_by_value(action_name, jid),
+        }
+    }
+
+    fn parse_by_value(&self, action_name: &str, jid: String) -> SyncdAction {
+        let setting = |setting: &str, value: String| SyncdAction::Setting {
+            setting: setting.to_string(),
+            value,
+        };
+        let Some(v) = self.sync_action.value.as_ref() else {
+            return SyncdAction::Other {
                 name: action_name.to_string(),
                 index: self.index.clone(),
-            },
+            };
+        };
+        if v.delete_message_for_me_action.is_some() {
+            return SyncdAction::DeleteMessageForMe {
+                jid,
+                msg_id: self.index.get(2).cloned().unwrap_or_default(),
+                from_me: self.index.get(3).map(|s| s == "1").unwrap_or(false),
+            };
+        }
+        if let Some(a) = &v.unarchive_chats_setting {
+            return setting(
+                "unarchiveChats",
+                a.unarchive_chats.unwrap_or(false).to_string(),
+            );
+        }
+        if let Some(locale) = v.locale_setting.as_ref().and_then(|a| a.locale.clone()) {
+            return setting("locale", locale);
+        }
+        if let Some(a) = &v.time_format_action {
+            let h24 = a.is_twenty_four_hour_format_enabled.unwrap_or(false);
+            return setting("timeFormat", if h24 { "24h" } else { "12h" }.to_string());
+        }
+        if let Some(a) = &v.pn_for_lid_chat_action {
+            if let Some(pn) = a.pn_jid.clone() {
+                return SyncdAction::LidMapping { lid: jid, pn };
+            }
+        }
+        if let Some(a) = &v.privacy_setting_relay_all_calls {
+            return setting(
+                "privacySettingRelayAllCalls",
+                a.is_enabled.unwrap_or(false).to_string(),
+            );
+        }
+        if let Some(a) = &v.status_privacy {
+            let mode = a
+                .mode
+                .and_then(|m| {
+                    baileys_proto::proto::sync_action_value::status_privacy_action::StatusDistributionMode::try_from(m).ok()
+                })
+                .map(|m| m.as_str_name().to_string())
+                .unwrap_or_default();
+            return setting("statusPrivacy", mode);
+        }
+        if let Some(a) = &v.lock_chat_action {
+            return SyncdAction::LockChat {
+                jid,
+                locked: a.locked.unwrap_or(false),
+            };
+        }
+        if let Some(a) = &v.privacy_setting_disable_link_previews_action {
+            return setting(
+                "disableLinkPreviews",
+                a.is_previews_disabled.unwrap_or(false).to_string(),
+            );
+        }
+        if let Some(n) = v
+            .notification_activity_setting_action
+            .as_ref()
+            .and_then(|a| a.notification_activity_setting)
+        {
+            let name = baileys_proto::proto::sync_action_value::notification_activity_setting_action::NotificationActivitySetting::try_from(n)
+                .map(|m| m.as_str_name().to_string())
+                .unwrap_or_else(|_| n.to_string());
+            return setting("notificationActivitySetting", name);
+        }
+        if let Some(a) = &v.lid_contact_action {
+            let name = a
+                .full_name
+                .clone()
+                .or_else(|| a.first_name.clone())
+                .or_else(|| a.username.clone());
+            return SyncdAction::LidContact {
+                lid: jid,
+                name,
+                username: a.username.clone(),
+            };
+        }
+        if let Some(a) = &v.privacy_setting_channels_personalised_recommendation_action {
+            return setting(
+                "channelsPersonalisedRecommendation",
+                (!a.is_user_opted_out.unwrap_or(false)).to_string(),
+            );
+        }
+        SyncdAction::Other {
+            name: action_name.to_string(),
+            index: self.index.clone(),
         }
     }
 }
@@ -1488,5 +1617,130 @@ mod tests {
             d_naive.hash, naive.new_hash,
             "ignoring the existing index value must produce a hash the receiver disagrees with"
         );
+    }
+
+    fn mutation(index: &[&str], value: SyncActionValue) -> DecodedSyncdMutation {
+        DecodedSyncdMutation {
+            operation: 0,
+            index: index.iter().map(|s| s.to_string()).collect(),
+            sync_action: SyncActionData {
+                index: None,
+                value: Some(value),
+                padding: None,
+                version: None,
+            },
+            index_mac: Vec::new(),
+            value_mac: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn parse_action_recognises_value_based_actions() {
+        use sync_action_value::*;
+        let jid = "123@s.whatsapp.net";
+
+        let m = mutation(
+            &["lock", jid],
+            SyncActionValue {
+                lock_chat_action: Some(LockChatAction { locked: Some(true) }),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            m.parse_action(),
+            SyncdAction::LockChat {
+                jid: jid.into(),
+                locked: true
+            }
+        );
+
+        let m = mutation(
+            &["setting_locale"],
+            SyncActionValue {
+                locale_setting: Some(LocaleSetting {
+                    locale: Some("id_ID".into()),
+                }),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            m.parse_action(),
+            SyncdAction::Setting {
+                setting: "locale".into(),
+                value: "id_ID".into()
+            }
+        );
+
+        let m = mutation(
+            &["time_format"],
+            SyncActionValue {
+                time_format_action: Some(TimeFormatAction {
+                    is_twenty_four_hour_format_enabled: Some(true),
+                }),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            m.parse_action(),
+            SyncdAction::Setting {
+                setting: "timeFormat".into(),
+                value: "24h".into()
+            }
+        );
+
+        let m = mutation(
+            &["pnForLidChat", "999@lid"],
+            SyncActionValue {
+                pn_for_lid_chat_action: Some(PnForLidChatAction {
+                    pn_jid: Some(jid.into()),
+                }),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            m.parse_action(),
+            SyncdAction::LidMapping {
+                lid: "999@lid".into(),
+                pn: jid.into()
+            }
+        );
+
+        let m = mutation(
+            &["lid_contact", "999@lid"],
+            SyncActionValue {
+                lid_contact_action: Some(LidContactAction {
+                    full_name: None,
+                    first_name: Some("Ana".into()),
+                    username: Some("ana".into()),
+                    birthday: None,
+                }),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            m.parse_action(),
+            SyncdAction::LidContact {
+                lid: "999@lid".into(),
+                name: Some("Ana".into()),
+                username: Some("ana".into())
+            }
+        );
+
+        let m = mutation(
+            &["deleteMessageForMe", jid, "MSG1", "1", "0"],
+            SyncActionValue::default(),
+        );
+        assert_eq!(
+            m.parse_action(),
+            SyncdAction::DeleteMessageForMe {
+                jid: jid.into(),
+                msg_id: "MSG1".into(),
+                from_me: true
+            }
+        );
+
+        // Nothing recognisable stays `Other`.
+        let m = mutation(&["somethingNew", jid], SyncActionValue::default());
+        assert!(matches!(m.parse_action(), SyncdAction::Other { .. }));
     }
 }

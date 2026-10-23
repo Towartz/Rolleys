@@ -369,11 +369,7 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 BaileysEvent::GroupsUpdate { update } => {
-                    print_comfy_event(
-                        "GROUP",
-                        ANSI_CYAN,
-                        &format!("Group update: {:?}", update),
-                    );
+                    print_comfy_event("GROUP", ANSI_CYAN, &format!("Group update: {:?}", update));
                 }
                 BaileysEvent::GroupParticipantsUpdate {
                     group_jid,
@@ -458,6 +454,56 @@ async fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
                             "{} settings: name={:?} description={:?}",
                             newsletter_jid, name, description
                         ),
+                    );
+                }
+                BaileysEvent::ChatsDelete { jids } => {
+                    print_comfy_event(
+                        "CHAT",
+                        ANSI_YELLOW,
+                        &format!("Deleted: {}", jids.join(", ")),
+                    );
+                }
+                BaileysEvent::ChatsLock { jid, locked } => {
+                    print_comfy_event("CHAT", ANSI_CYAN, &format!("{} locked={}", jid, locked));
+                }
+                BaileysEvent::SettingsUpdate { setting, value } => {
+                    print_comfy_event("SETTING", ANSI_CYAN, &format!("{} = {}", setting, value));
+                }
+                BaileysEvent::LidMappingUpdate { lid, pn } => {
+                    if CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed) == 0 {
+                        print_comfy_event("LID", ANSI_CYAN, &format!("{} -> {}", lid, pn));
+                    }
+                }
+                BaileysEvent::ContactsUpsert { contacts } => {
+                    if CLI_LOG_FILTER.load(std::sync::atomic::Ordering::Relaxed) == 0 {
+                        print_comfy_event(
+                            "CONTACT",
+                            ANSI_CYAN,
+                            &format!("{} contact(s) upserted", contacts.len()),
+                        );
+                    }
+                }
+                BaileysEvent::MessagesDelete {
+                    chat_jid,
+                    message_id,
+                    ..
+                } => {
+                    print_comfy_event(
+                        "MSG",
+                        ANSI_YELLOW,
+                        &format!("Deleted for me: {} in {}", message_id, chat_jid),
+                    );
+                }
+                BaileysEvent::MessageStarred {
+                    chat_jid,
+                    message_id,
+                    starred,
+                    ..
+                } => {
+                    print_comfy_event(
+                        "MSG",
+                        ANSI_CYAN,
+                        &format!("{} in {} starred={}", message_id, chat_jid, starred),
                     );
                 }
                 BaileysEvent::BlocklistUpdate { added, removed } => {

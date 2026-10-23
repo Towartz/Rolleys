@@ -169,6 +169,32 @@ pub enum BaileysEvent {
         name: Option<String>,
         description: Option<String>,
     },
+    /// Chats deleted on another device (Baileys `chats.delete`); not emitted for initial snapshots.
+    ChatsDelete { jids: Vec<String> },
+    /// Chat locked or unlocked (Baileys `chats.lock`)
+    ChatsLock { jid: String, locked: bool },
+    /// Account setting changed (Baileys `settings.update`). `setting` uses Baileys' names
+    /// (`locale`, `timeFormat`, `unarchiveChats`, `statusPrivacy`, ...); `value` is rendered as text.
+    SettingsUpdate { setting: String, value: String },
+    /// Phone number learned for a LID (Baileys `lid-mapping.update`)
+    LidMappingUpdate { lid: String, pn: String },
+    /// Contacts added or replaced (Baileys `contacts.upsert`)
+    ContactsUpsert {
+        contacts: Vec<baileys_store::StoredContact>,
+    },
+    /// Message deleted for this account only (Baileys `messages.delete`)
+    MessagesDelete {
+        chat_jid: String,
+        message_id: String,
+        from_me: bool,
+    },
+    /// Message starred or unstarred (Baileys `messages.update` with `starred`)
+    MessageStarred {
+        chat_jid: String,
+        message_id: String,
+        from_me: bool,
+        starred: bool,
+    },
 }
 
 /// Partial group metadata carried by [`BaileysEvent::GroupsUpdate`].
@@ -214,9 +240,16 @@ pub struct EventEmitter {
     sender: broadcast::Sender<BaileysEvent>,
 }
 
+/// Events buffered per subscriber before the slowest one starts losing them.
+///
+/// A forced app-state snapshot emits one event per mutation (~1.8k on a real account), all at
+/// once. Baileys' emitter is synchronous and never drops; a broadcast channel does once full, so
+/// this must comfortably exceed a full resync.
+pub const DEFAULT_EVENT_CAPACITY: usize = 16_384;
+
 impl Default for EventEmitter {
     fn default() -> Self {
-        Self::new(256)
+        Self::new(DEFAULT_EVENT_CAPACITY)
     }
 }
 
@@ -232,5 +265,35 @@ impl EventEmitter {
 
     pub fn subscribe(&self) -> broadcast::Receiver<BaileysEvent> {
         self.sender.subscribe()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_capacity_survives_a_full_app_state_resync() {
+        // A forced snapshot of a real account emitted ~1.8k events at once; with the old
+        // capacity of 256 a consumer that was not polling lost ~1.5k of them.
+        let emitter = EventEmitter::default();
+        let mut rx = emitter.subscribe();
+        for _ in 0..5_000 {
+            emitter.emit(BaileysEvent::CredsUpdate);
+        }
+        let mut received = 0;
+        loop {
+            match rx.try_recv() {
+                Ok(_) => received += 1,
+                Err(broadcast::error::TryRecvError::Lagged(n)) => panic!("lagged by {n}"),
+                Err(_) => break,
+            }
+        }
+        assert_eq!(received, 5_000);
+        eprintln!(
+            "size_of::<BaileysEvent>() = {} bytes, capacity {}",
+            std::mem::size_of::<BaileysEvent>(),
+            DEFAULT_EVENT_CAPACITY
+        );
     }
 }

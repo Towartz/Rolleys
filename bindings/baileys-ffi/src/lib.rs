@@ -921,7 +921,14 @@ impl AuroraClient {
                     | BaileysEvent::NewsletterReaction { .. }
                     | BaileysEvent::NewsletterView { .. }
                     | BaileysEvent::NewsletterParticipantsUpdate { .. }
-                    | BaileysEvent::NewsletterSettingsUpdate { .. } => continue,
+                    | BaileysEvent::NewsletterSettingsUpdate { .. }
+                    | BaileysEvent::ChatsDelete { .. }
+                    | BaileysEvent::ChatsLock { .. }
+                    | BaileysEvent::SettingsUpdate { .. }
+                    | BaileysEvent::LidMappingUpdate { .. }
+                    | BaileysEvent::ContactsUpsert { .. }
+                    | BaileysEvent::MessagesDelete { .. }
+                    | BaileysEvent::MessageStarred { .. } => continue,
                 };
 
                 listener.on_event(ffi_event);
