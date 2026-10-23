@@ -1,7 +1,8 @@
 # Rolleys Android JNI & UniFFI Build Pipeline
 # Compiles native .so libraries for arm64-v8a, armeabi-v7a, and x86_64,
 # generates UniFFI Kotlin bindings, and packages them into the Android app project
-# ($env:ANDROID_PROJECT_DIR, default ..\Rolleys_Android).
+# ($env:ANDROID_PROJECT_DIR; otherwise the parent folder when this repo is its submodule,
+# otherwise a sibling ..\Rolleys_android).
 
 param(
     [string]$TargetAbi = "all", # "all", "arm64", "armv7", "x86_64"
@@ -12,13 +13,33 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $WorkspaceRoot = Split-Path -Parent $ScriptDir
-$AndroidProjectDir = if ($env:ANDROID_PROJECT_DIR) { $env:ANDROID_PROJECT_DIR } else { Join-Path $WorkspaceRoot "..\Rolleys_Android" }
-$AndroidJniDir = Join-Path $AndroidProjectDir "android\app\src\main\jniLibs"
-$AndroidJavaDir = Join-Path $AndroidProjectDir "android\app\src\main\java"
+function Test-GradleProject([string]$Dir) {
+    (Test-Path (Join-Path $Dir "settings.gradle.kts")) -or (Test-Path (Join-Path $Dir "settings.gradle"))
+}
+$ParentDir = Split-Path -Parent $WorkspaceRoot
+$AndroidProjectDir = if ($env:ANDROID_PROJECT_DIR) {
+    $env:ANDROID_PROJECT_DIR
+} elseif (Test-GradleProject $ParentDir) {
+    $ParentDir # this repo is the Android project's submodule
+} else {
+    Join-Path $ParentDir "Rolleys_android"
+}
+if (-not (Test-GradleProject $AndroidProjectDir)) {
+    throw "No Android project at $AndroidProjectDir (expected settings.gradle.kts). Set ANDROID_PROJECT_DIR."
+}
+$AndroidProjectDir = (Resolve-Path $AndroidProjectDir).Path
+# The app module sits at the project root (app\); older layouts nested it under android\.
+$AndroidAppDir = Join-Path $AndroidProjectDir "app"
+if (-not (Test-Path $AndroidAppDir) -and (Test-Path (Join-Path $AndroidProjectDir "android\app"))) {
+    $AndroidAppDir = Join-Path $AndroidProjectDir "android\app"
+}
+$AndroidJniDir = Join-Path $AndroidAppDir "src\main\jniLibs"
+$AndroidJavaDir = Join-Path $AndroidAppDir "src\main\java"
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "   Rolleys Android UniFFI & JNI Build Automation       " -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "  Android project: $AndroidProjectDir"
 
 # 1. Build host uniffi-bindgen tool
 Write-Host "[1/4] Building host uniffi-bindgen tool..." -ForegroundColor Yellow
