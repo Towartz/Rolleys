@@ -326,6 +326,13 @@ pub trait ChatStore: Send + Sync {
     async fn get_chat(&self, _jid: &str) -> Result<Option<StoredChat>, StoreError> {
         Ok(None)
     }
+    /// Saves many chats at once; stores with transactions should write them in one.
+    async fn save_chats_batch(&self, chats: &[StoredChat]) -> Result<(), StoreError> {
+        for chat in chats {
+            self.save_chat(chat).await?;
+        }
+        Ok(())
+    }
 
     async fn save_message(&self, _message: &StoredMessage) -> Result<(), StoreError> {
         Ok(())
@@ -388,6 +395,13 @@ pub trait ChatStore: Send + Sync {
     }
 
     async fn save_contact(&self, _contact: &StoredContact) -> Result<(), StoreError> {
+        Ok(())
+    }
+    /// Saves many contacts at once; stores with transactions should write them in one.
+    async fn save_contacts_batch(&self, contacts: &[StoredContact]) -> Result<(), StoreError> {
+        for contact in contacts {
+            self.save_contact(contact).await?;
+        }
         Ok(())
     }
     async fn get_contact(&self, _jid: &str) -> Result<Option<StoredContact>, StoreError> {

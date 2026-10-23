@@ -20,6 +20,10 @@ thiserror.workspace = true
 tracing.workspace = true
 redis = { workspace = true, optional = true }
 
+[[bench]]
+name = "sqlite"
+harness = false
+
 [features]
 default = []
 redis-store = ["dep:redis"]
