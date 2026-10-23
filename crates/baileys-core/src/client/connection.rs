@@ -1222,28 +1222,34 @@ impl BaileysClient {
                                                                         debug!("Successfully decrypted HistorySync: {} conversations, {} status updates (type={}, progress={})",
                                                                             conv_count, status_count, sync_type, progress);
 
-                                                                        // Persist Pushnames and build lookup map for chat naming
+                                                                        // Persist Pushnames and build lookup map for chat naming. Each kind of row in
+                                                                        // the chunk is written in one batch (one transaction) rather than row by row.
                                                                         let mut pushname_map: HashMap<String, String> = HashMap::new();
+                                                                        let mut pushname_contacts = Vec::new();
                                                                         for pn in &history.pushnames {
                                                                             if let (Some(ref id), Some(ref name)) = (&pn.id, &pn.pushname) {
                                                                                 pushname_map.insert(id.clone(), name.clone());
-                                                                                let _ = store_h.save_contact(&StoredContact {
+                                                                                pushname_contacts.push(StoredContact {
                                                                                     jid: id.clone(),
                                                                                     name: None,
                                                                                     push_name: Some(name.clone()),
                                                                                     lid: None,
-                                                                                }).await;
+                                                                                });
                                                                             }
+                                                                        }
+                                                                        if !pushname_contacts.is_empty() {
+                                                                            let _ = store_h.save_contacts_batch(&pushname_contacts).await;
                                                                         }
 
                                                                         // Persist Conversations & Historical Messages
+                                                                        let mut stored_msgs = Vec::new();
+                                                                        let mut stored_chats = Vec::new();
                                                                         for conv in &history.conversations {
                                                                             let chat_jid = conv.id.as_deref().unwrap_or_default();
                                                                             if chat_jid.is_empty() {
                                                                                 continue;
                                                                             }
 
-                                                                            let mut stored_msgs = Vec::new();
                                                                             let mut latest_ts = conv.last_msg_timestamp.or(conv.conversation_timestamp).unwrap_or(0);
                                                                             let mut latest_summary = None;
 
@@ -1294,10 +1300,6 @@ impl BaileysClient {
                                                                                 }
                                                                             }
 
-                                                                            if !stored_msgs.is_empty() {
-                                                                                let _ = store_h.save_messages_batch(&stored_msgs).await;
-                                                                            }
-
                                                                             let is_pinned = conv.pinned.map(|p| p > 0).unwrap_or(false);
                                                                             let is_archived = conv.archived.unwrap_or(false);
                                                                             let mute_until = conv.mute_end_time;
@@ -1319,7 +1321,13 @@ impl BaileysClient {
                                                                                 ephemeral_expiration: conv.ephemeral_expiration.unwrap_or(0),
                                                                                 ephemeral_setting_timestamp: conv.ephemeral_setting_timestamp,
                                                                             };
-                                                                            let _ = store_h.save_chat(&stored_chat).await;
+                                                                            stored_chats.push(stored_chat);
+                                                                        }
+                                                                        if !stored_msgs.is_empty() {
+                                                                            let _ = store_h.save_messages_batch(&stored_msgs).await;
+                                                                        }
+                                                                        if !stored_chats.is_empty() {
+                                                                            let _ = store_h.save_chats_batch(&stored_chats).await;
                                                                         }
 
                                                                         // Messages are persisted above; now build the Baileys payload, which
@@ -1328,6 +1336,7 @@ impl BaileysClient {
 
                                                                         // Persist LID-PN mappings (explicit ones plus those derived from chats)
                                                                         let mut entries = Vec::new();
+                                                                        let mut lid_contacts = Vec::new();
                                                                         for m in &processed.lid_pn_mappings {
                                                                             signal_h.lid_mappings().store_mapping(&m.pn, &m.lid);
                                                                             entries.push(baileys_store::KeyEntry {
@@ -1335,12 +1344,15 @@ impl BaileysClient {
                                                                                 id: m.pn.clone(),
                                                                                 data: m.lid.as_bytes().to_vec(),
                                                                             });
-                                                                            let _ = store_h.save_contact(&StoredContact {
+                                                                            lid_contacts.push(StoredContact {
                                                                                 jid: m.pn.clone(),
                                                                                 name: None,
                                                                                 push_name: None,
                                                                                 lid: Some(m.lid.clone()),
-                                                                            }).await;
+                                                                            });
+                                                                        }
+                                                                        if !lid_contacts.is_empty() {
+                                                                            let _ = store_h.save_contacts_batch(&lid_contacts).await;
                                                                         }
                                                                         if !entries.is_empty() {
                                                                             let _ = store_h.set_keys(entries).await;

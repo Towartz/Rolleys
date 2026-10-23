@@ -206,3 +206,34 @@ menelan error, satu jalur inisialisasi. (4) database baru memakai auto-vacuum in
 lama (contoh: 10,1 MB -> 5,0 MB, 0 halaman bebas, `integrity_check` ok). `busy_timeout` 5 dtk sudah bawaan rusqlite.
 Belum dikerjakan: pemangkasan pesan lama (tabel `messages` tumbuh tanpa batas), tabel `sync_cursors` tak terpakai,
 dan `compact()` belum punya perintah CLI. Penyebab sesi utama sempat terlepas dari server (balasan 401) belum diketahui.
+
+**Performa SQLite, 2026-10-23.** Satu koneksi writer ditambah pool koneksi read-only (WAL membolehkan baca saat menulis),
+`prepare_cached` di semua query, pragma per platform lewat `SqliteOptions` (desktop: cache 16 MiB, mmap 128 MiB, 4 reader;
+Android/iOS: 4 MiB, 32 MiB, 2 reader; 32-bit tanpa mmap; `temp_store` MEMORY; WAL dipangkas ke 8 MiB), open melewati
+skema bila `user_version` sudah terbaru, `incremental_vacuum` dijalankan sampai habis (sebelumnya hanya satu langkah) dengan
+batas 4096 halaman, dan `PRAGMA optimize` saat store ditutup. Skema v2 menambah index `contacts(lid)` dan pesan berbintang;
+`get_contact` memakai dua lookup ber-index, bukan `OR`. History sync menulis pushname, chat, pesan dan kontak LID per
+potongan dalam satu transaksi per jenis (`save_contacts_batch`, `save_chats_batch`). Path `:memory:` tetap satu koneksi.
+Diukur dengan `cargo bench -p baileys-store --bench sqlite` (data sintetis, mesin yang sama, median):
+
+| Operasi | Sebelum | Sesudah |
+|---|---|---|
+| `get_key` session (hit / miss) | 4,03 / 2,79 µs | 2,62 / 1,45 µs |
+| `set_keys` 1 session | 5,30 µs | 4,01 µs |
+| `get_contact` by jid / by lid (10k kontak) | 219 / 210 µs | 2,11 / 2,16 µs |
+| `get_starred_messages` 50 (50k pesan) | 4,45 ms | 41 µs |
+| potongan history (500 pushname + 200 chat + 1000 LID) | 52,1 ms | 4,04 ms |
+| 4 `get_key` paralel, per panggilan | 11,1 µs | 1,63 µs |
+| idem, sambil ada writer batch | 22,8 µs | 2,68 µs |
+| `save_messages_batch` 1000 | 12,7 ms | 12,0 ms |
+| `get_messages` halaman 50 | 49 µs | 56 µs |
+| `get_chats` (2000) | 1,11 ms | 1,37 ms |
+| open database yang sudah ada | 2,60 ms | 2,18 ms |
+
+Tiga baris terakhir sebelum open tidak membaik (selisihnya dalam kisaran noise antar-run ±15%, kecuali `get_chats` yang
+konsisten ~20% lebih lambat; dugaan: tiap reader punya page cache sendiri yang dingin, belum diverifikasi). Live suite di
+sesi utama sesudah perubahan: 77 lulus, 0 gagal, 3 dilewati (sama dengan sebelumnya).
+
+Salinan `.sessions/live_suite.db` (629 chat, 2203 kontak, 1823 LID) naik ke v2 dengan `integrity_check` ok: open pertama
+17 ms (membangun index sekali), open berikutnya 2 ms. Kompilasi silang Android/iOS belum diverifikasi di mesin ini (target
+tidak terpasang); pilihan default per platform hanya `cfg!` tanpa kode khusus platform.
