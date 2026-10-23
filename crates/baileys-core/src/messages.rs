@@ -1320,34 +1320,14 @@ fn parse_message_payload_from_json(json_val: &serde_json::Value) -> Result<Messa
         .get("extendedTextMessage")
         .or_else(|| json_val.get("extended_text_message"))
     {
-        let text = ext
-            .get("text")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        let matched_text = ext
-            .get("matchedText")
-            .or_else(|| ext.get("matched_text"))
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        let title = ext
-            .get("title")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        let description = ext
-            .get("description")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-
+        // Deserialize the complete structure: selecting text/title alone loses nested context,
+        // thumbnail bytes, link metadata and future protobuf fields.
+        let body = serde_json::from_value::<baileys_proto::proto::message::ExtendedTextMessage>(
+            convert_camel_to_snake_value(ext),
+        )
+        .map_err(|e| format!("Invalid extendedTextMessage: {e}"))?;
         return Ok(Message {
-            extended_text_message: Some(Box::new(
-                baileys_proto::proto::message::ExtendedTextMessage {
-                    text,
-                    matched_text,
-                    title,
-                    description,
-                    ..Default::default()
-                },
-            )),
+            extended_text_message: Some(Box::new(body)),
             ..Default::default()
         });
     }
