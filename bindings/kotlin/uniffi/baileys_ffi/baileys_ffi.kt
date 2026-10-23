@@ -6096,6 +6096,42 @@ public object FfiConverterTypeRolleysChat: FfiConverterRustBuffer<RolleysChat> {
 
 
 
+data class RolleysChatUpsert (
+    var `jid`: kotlin.String, 
+    var `name`: kotlin.String?, 
+    var `conversationTimestamp`: kotlin.Long?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysChatUpsert: FfiConverterRustBuffer<RolleysChatUpsert> {
+    override fun read(buf: ByteBuffer): RolleysChatUpsert {
+        return RolleysChatUpsert(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysChatUpsert) = (
+            FfiConverterString.allocationSize(value.`jid`) +
+            FfiConverterOptionalString.allocationSize(value.`name`) +
+            FfiConverterOptionalLong.allocationSize(value.`conversationTimestamp`)
+    )
+
+    override fun write(value: RolleysChatUpsert, buf: ByteBuffer) {
+            FfiConverterString.write(value.`jid`, buf)
+            FfiConverterOptionalString.write(value.`name`, buf)
+            FfiConverterOptionalLong.write(value.`conversationTimestamp`, buf)
+    }
+}
+
+
+
 data class RolleysClientConfig (
     var `databasePath`: kotlin.String, 
     var `browserName`: kotlin.String, 
@@ -6656,6 +6692,86 @@ public object FfiConverterTypeRolleysGroupParticipant: FfiConverterRustBuffer<Ro
 
 
 
+data class RolleysGroupUpdate (
+    var `id`: kotlin.String, 
+    var `author`: kotlin.String?, 
+    var `subject`: kotlin.String?, 
+    var `subjectOwner`: kotlin.String?, 
+    var `subjectTime`: kotlin.Long?, 
+    var `description`: kotlin.String?, 
+    var `descriptionDeleted`: kotlin.Boolean, 
+    var `descriptionId`: kotlin.String?, 
+    var `announce`: kotlin.Boolean?, 
+    var `restrict`: kotlin.Boolean?, 
+    var `joinApprovalMode`: kotlin.Boolean?, 
+    var `memberAddMode`: kotlin.String?, 
+    var `ephemeralDuration`: kotlin.UInt?, 
+    var `inviteCode`: kotlin.String?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysGroupUpdate: FfiConverterRustBuffer<RolleysGroupUpdate> {
+    override fun read(buf: ByteBuffer): RolleysGroupUpdate {
+        return RolleysGroupUpdate(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalBoolean.read(buf),
+            FfiConverterOptionalBoolean.read(buf),
+            FfiConverterOptionalBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalUInt.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysGroupUpdate) = (
+            FfiConverterString.allocationSize(value.`id`) +
+            FfiConverterOptionalString.allocationSize(value.`author`) +
+            FfiConverterOptionalString.allocationSize(value.`subject`) +
+            FfiConverterOptionalString.allocationSize(value.`subjectOwner`) +
+            FfiConverterOptionalLong.allocationSize(value.`subjectTime`) +
+            FfiConverterOptionalString.allocationSize(value.`description`) +
+            FfiConverterBoolean.allocationSize(value.`descriptionDeleted`) +
+            FfiConverterOptionalString.allocationSize(value.`descriptionId`) +
+            FfiConverterOptionalBoolean.allocationSize(value.`announce`) +
+            FfiConverterOptionalBoolean.allocationSize(value.`restrict`) +
+            FfiConverterOptionalBoolean.allocationSize(value.`joinApprovalMode`) +
+            FfiConverterOptionalString.allocationSize(value.`memberAddMode`) +
+            FfiConverterOptionalUInt.allocationSize(value.`ephemeralDuration`) +
+            FfiConverterOptionalString.allocationSize(value.`inviteCode`)
+    )
+
+    override fun write(value: RolleysGroupUpdate, buf: ByteBuffer) {
+            FfiConverterString.write(value.`id`, buf)
+            FfiConverterOptionalString.write(value.`author`, buf)
+            FfiConverterOptionalString.write(value.`subject`, buf)
+            FfiConverterOptionalString.write(value.`subjectOwner`, buf)
+            FfiConverterOptionalLong.write(value.`subjectTime`, buf)
+            FfiConverterOptionalString.write(value.`description`, buf)
+            FfiConverterBoolean.write(value.`descriptionDeleted`, buf)
+            FfiConverterOptionalString.write(value.`descriptionId`, buf)
+            FfiConverterOptionalBoolean.write(value.`announce`, buf)
+            FfiConverterOptionalBoolean.write(value.`restrict`, buf)
+            FfiConverterOptionalBoolean.write(value.`joinApprovalMode`, buf)
+            FfiConverterOptionalString.write(value.`memberAddMode`, buf)
+            FfiConverterOptionalUInt.write(value.`ephemeralDuration`, buf)
+            FfiConverterOptionalString.write(value.`inviteCode`, buf)
+    }
+}
+
+
+
 data class RolleysInteractiveButton (
     var `name`: kotlin.String, 
     var `buttonParamsJson`: kotlin.String
@@ -6851,6 +6967,125 @@ public object FfiConverterTypeRolleysMessage: FfiConverterRustBuffer<RolleysMess
             FfiConverterString.write(value.`summary`, buf)
             FfiConverterBoolean.write(value.`hasMedia`, buf)
             FfiConverterBoolean.write(value.`isStarred`, buf)
+    }
+}
+
+
+
+data class RolleysMessageCapInfo (
+    var `totalQuota`: kotlin.Long?, 
+    var `usedQuota`: kotlin.Long?, 
+    var `cycleStartTimestamp`: kotlin.String?, 
+    var `cycleEndTimestamp`: kotlin.String?, 
+    var `serverSentTimestamp`: kotlin.String?, 
+    var `oteStatus`: kotlin.String?, 
+    var `mvStatus`: kotlin.String?, 
+    var `cappingStatus`: kotlin.String?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysMessageCapInfo: FfiConverterRustBuffer<RolleysMessageCapInfo> {
+    override fun read(buf: ByteBuffer): RolleysMessageCapInfo {
+        return RolleysMessageCapInfo(
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysMessageCapInfo) = (
+            FfiConverterOptionalLong.allocationSize(value.`totalQuota`) +
+            FfiConverterOptionalLong.allocationSize(value.`usedQuota`) +
+            FfiConverterOptionalString.allocationSize(value.`cycleStartTimestamp`) +
+            FfiConverterOptionalString.allocationSize(value.`cycleEndTimestamp`) +
+            FfiConverterOptionalString.allocationSize(value.`serverSentTimestamp`) +
+            FfiConverterOptionalString.allocationSize(value.`oteStatus`) +
+            FfiConverterOptionalString.allocationSize(value.`mvStatus`) +
+            FfiConverterOptionalString.allocationSize(value.`cappingStatus`)
+    )
+
+    override fun write(value: RolleysMessageCapInfo, buf: ByteBuffer) {
+            FfiConverterOptionalLong.write(value.`totalQuota`, buf)
+            FfiConverterOptionalLong.write(value.`usedQuota`, buf)
+            FfiConverterOptionalString.write(value.`cycleStartTimestamp`, buf)
+            FfiConverterOptionalString.write(value.`cycleEndTimestamp`, buf)
+            FfiConverterOptionalString.write(value.`serverSentTimestamp`, buf)
+            FfiConverterOptionalString.write(value.`oteStatus`, buf)
+            FfiConverterOptionalString.write(value.`mvStatus`, buf)
+            FfiConverterOptionalString.write(value.`cappingStatus`, buf)
+    }
+}
+
+
+
+data class RolleysMessageReaction (
+    var `chatJid`: kotlin.String, 
+    var `messageId`: kotlin.String, 
+    var `targetFromMe`: kotlin.Boolean, 
+    var `targetParticipant`: kotlin.String?, 
+    var `sender`: kotlin.String, 
+    var `senderFromMe`: kotlin.Boolean, 
+    /**
+     * Emoji; empty when the reaction was removed.
+     */
+    var `text`: kotlin.String, 
+    var `removed`: kotlin.Boolean, 
+    var `senderTimestampMs`: kotlin.Long?
+) {
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRolleysMessageReaction: FfiConverterRustBuffer<RolleysMessageReaction> {
+    override fun read(buf: ByteBuffer): RolleysMessageReaction {
+        return RolleysMessageReaction(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RolleysMessageReaction) = (
+            FfiConverterString.allocationSize(value.`chatJid`) +
+            FfiConverterString.allocationSize(value.`messageId`) +
+            FfiConverterBoolean.allocationSize(value.`targetFromMe`) +
+            FfiConverterOptionalString.allocationSize(value.`targetParticipant`) +
+            FfiConverterString.allocationSize(value.`sender`) +
+            FfiConverterBoolean.allocationSize(value.`senderFromMe`) +
+            FfiConverterString.allocationSize(value.`text`) +
+            FfiConverterBoolean.allocationSize(value.`removed`) +
+            FfiConverterOptionalLong.allocationSize(value.`senderTimestampMs`)
+    )
+
+    override fun write(value: RolleysMessageReaction, buf: ByteBuffer) {
+            FfiConverterString.write(value.`chatJid`, buf)
+            FfiConverterString.write(value.`messageId`, buf)
+            FfiConverterBoolean.write(value.`targetFromMe`, buf)
+            FfiConverterOptionalString.write(value.`targetParticipant`, buf)
+            FfiConverterString.write(value.`sender`, buf)
+            FfiConverterBoolean.write(value.`senderFromMe`, buf)
+            FfiConverterString.write(value.`text`, buf)
+            FfiConverterBoolean.write(value.`removed`, buf)
+            FfiConverterOptionalLong.write(value.`senderTimestampMs`, buf)
     }
 }
 
@@ -7767,6 +8002,206 @@ sealed class RolleysEvent {
         companion object
     }
     
+    /**
+     * Credentials were persisted (Baileys `creds.update`).
+     */
+    object CredsUpdate : RolleysEvent()
+    
+    
+    /**
+     * Group created or joined (Baileys `groups.upsert`).
+     */
+    data class GroupsUpsert(
+        val `groups`: List<RolleysGroupMetadata>) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Partial group change (Baileys `groups.update`).
+     */
+    data class GroupsUpdate(
+        val `update`: RolleysGroupUpdate) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `group-participants.update`; `action` is add/remove/leave/promote/demote/modify.
+     */
+    data class GroupParticipantsUpdate(
+        val `groupJid`: kotlin.String, 
+        val `author`: kotlin.String?, 
+        val `participants`: List<RolleysGroupParticipant>, 
+        val `action`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `group.join-request`.
+     */
+    data class GroupJoinRequest(
+        val `groupJid`: kotlin.String, 
+        val `author`: kotlin.String?, 
+        val `participant`: kotlin.String, 
+        val `participantPn`: kotlin.String?, 
+        val `action`: kotlin.String, 
+        val `method`: kotlin.String?) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `group.member-tag.update`.
+     */
+    data class GroupMemberTagUpdate(
+        val `groupJid`: kotlin.String, 
+        val `participant`: kotlin.String, 
+        val `participantAlt`: kotlin.String?, 
+        val `label`: kotlin.String, 
+        val `messageTimestamp`: kotlin.ULong) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `newsletter.reaction`.
+     */
+    data class NewsletterReaction(
+        val `newsletterJid`: kotlin.String, 
+        val `serverId`: kotlin.String, 
+        val `code`: kotlin.String?, 
+        val `count`: kotlin.UInt?, 
+        val `removed`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `newsletter.view`.
+     */
+    data class NewsletterView(
+        val `newsletterJid`: kotlin.String, 
+        val `serverId`: kotlin.String, 
+        val `count`: kotlin.UInt) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `newsletter-participants.update`.
+     */
+    data class NewsletterParticipantsUpdate(
+        val `newsletterJid`: kotlin.String, 
+        val `author`: kotlin.String?, 
+        val `user`: kotlin.String, 
+        val `action`: kotlin.String, 
+        val `newRole`: kotlin.String?) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `newsletter-settings.update`.
+     */
+    data class NewsletterSettingsUpdate(
+        val `newsletterJid`: kotlin.String, 
+        val `name`: kotlin.String?, 
+        val `description`: kotlin.String?) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `chats.upsert`.
+     */
+    data class ChatsUpsert(
+        val `chats`: List<RolleysChatUpsert>) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `chats.delete`.
+     */
+    data class ChatsDelete(
+        val `jids`: List<kotlin.String>) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `chats.lock`.
+     */
+    data class ChatsLock(
+        val `jid`: kotlin.String, 
+        val `locked`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `settings.update`.
+     */
+    data class SettingsUpdate(
+        val `setting`: kotlin.String, 
+        val `value`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `lid-mapping.update`.
+     */
+    data class LidMappingUpdate(
+        val `lid`: kotlin.String, 
+        val `pn`: kotlin.String) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `contacts.upsert`.
+     */
+    data class ContactsUpsert(
+        val `contacts`: List<RolleysContact>) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `messages.delete` (deleted for me).
+     */
+    data class MessagesDelete(
+        val `chatJid`: kotlin.String, 
+        val `messageId`: kotlin.String, 
+        val `fromMe`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `messages.update` with `starred`.
+     */
+    data class MessageStarred(
+        val `chatJid`: kotlin.String, 
+        val `messageId`: kotlin.String, 
+        val `fromMe`: kotlin.Boolean, 
+        val `starred`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `messages.reaction`.
+     */
+    data class MessagesReaction(
+        val `reaction`: RolleysMessageReaction) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `messaging-history.status`: `status` is "complete" or "paused".
+     */
+    data class MessagingHistoryStatus(
+        val `syncType`: kotlin.Int, 
+        val `status`: kotlin.String, 
+        val `explicit`: kotlin.Boolean) : RolleysEvent() {
+        companion object
+    }
+    
+    /**
+     * Baileys `message-capping.update`.
+     */
+    data class MessageCappingUpdate(
+        val `info`: RolleysMessageCapInfo) : RolleysEvent() {
+        companion object
+    }
+    
 
     
     companion object
@@ -7886,6 +8321,101 @@ public object FfiConverterTypeRolleysEvent : FfiConverterRustBuffer<RolleysEvent
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterFloat.read(buf),
+                )
+            27 -> RolleysEvent.CredsUpdate
+            28 -> RolleysEvent.GroupsUpsert(
+                FfiConverterSequenceTypeRolleysGroupMetadata.read(buf),
+                )
+            29 -> RolleysEvent.GroupsUpdate(
+                FfiConverterTypeRolleysGroupUpdate.read(buf),
+                )
+            30 -> RolleysEvent.GroupParticipantsUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterSequenceTypeRolleysGroupParticipant.read(buf),
+                FfiConverterString.read(buf),
+                )
+            31 -> RolleysEvent.GroupJoinRequest(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                )
+            32 -> RolleysEvent.GroupMemberTagUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterULong.read(buf),
+                )
+            33 -> RolleysEvent.NewsletterReaction(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterOptionalUInt.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            34 -> RolleysEvent.NewsletterView(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            35 -> RolleysEvent.NewsletterParticipantsUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                )
+            36 -> RolleysEvent.NewsletterSettingsUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                FfiConverterOptionalString.read(buf),
+                )
+            37 -> RolleysEvent.ChatsUpsert(
+                FfiConverterSequenceTypeRolleysChatUpsert.read(buf),
+                )
+            38 -> RolleysEvent.ChatsDelete(
+                FfiConverterSequenceString.read(buf),
+                )
+            39 -> RolleysEvent.ChatsLock(
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            40 -> RolleysEvent.SettingsUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            41 -> RolleysEvent.LidMappingUpdate(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                )
+            42 -> RolleysEvent.ContactsUpsert(
+                FfiConverterSequenceTypeRolleysContact.read(buf),
+                )
+            43 -> RolleysEvent.MessagesDelete(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            44 -> RolleysEvent.MessageStarred(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            45 -> RolleysEvent.MessagesReaction(
+                FfiConverterTypeRolleysMessageReaction.read(buf),
+                )
+            46 -> RolleysEvent.MessagingHistoryStatus(
+                FfiConverterInt.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            47 -> RolleysEvent.MessageCappingUpdate(
+                FfiConverterTypeRolleysMessageCapInfo.read(buf),
                 )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
@@ -8106,6 +8636,186 @@ public object FfiConverterTypeRolleysEvent : FfiConverterRustBuffer<RolleysEvent
                 + FfiConverterFloat.allocationSize(value.`percentage`)
             )
         }
+        is RolleysEvent.CredsUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is RolleysEvent.GroupsUpsert -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterSequenceTypeRolleysGroupMetadata.allocationSize(value.`groups`)
+            )
+        }
+        is RolleysEvent.GroupsUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysGroupUpdate.allocationSize(value.`update`)
+            )
+        }
+        is RolleysEvent.GroupParticipantsUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`groupJid`)
+                + FfiConverterOptionalString.allocationSize(value.`author`)
+                + FfiConverterSequenceTypeRolleysGroupParticipant.allocationSize(value.`participants`)
+                + FfiConverterString.allocationSize(value.`action`)
+            )
+        }
+        is RolleysEvent.GroupJoinRequest -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`groupJid`)
+                + FfiConverterOptionalString.allocationSize(value.`author`)
+                + FfiConverterString.allocationSize(value.`participant`)
+                + FfiConverterOptionalString.allocationSize(value.`participantPn`)
+                + FfiConverterString.allocationSize(value.`action`)
+                + FfiConverterOptionalString.allocationSize(value.`method`)
+            )
+        }
+        is RolleysEvent.GroupMemberTagUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`groupJid`)
+                + FfiConverterString.allocationSize(value.`participant`)
+                + FfiConverterOptionalString.allocationSize(value.`participantAlt`)
+                + FfiConverterString.allocationSize(value.`label`)
+                + FfiConverterULong.allocationSize(value.`messageTimestamp`)
+            )
+        }
+        is RolleysEvent.NewsletterReaction -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`newsletterJid`)
+                + FfiConverterString.allocationSize(value.`serverId`)
+                + FfiConverterOptionalString.allocationSize(value.`code`)
+                + FfiConverterOptionalUInt.allocationSize(value.`count`)
+                + FfiConverterBoolean.allocationSize(value.`removed`)
+            )
+        }
+        is RolleysEvent.NewsletterView -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`newsletterJid`)
+                + FfiConverterString.allocationSize(value.`serverId`)
+                + FfiConverterUInt.allocationSize(value.`count`)
+            )
+        }
+        is RolleysEvent.NewsletterParticipantsUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`newsletterJid`)
+                + FfiConverterOptionalString.allocationSize(value.`author`)
+                + FfiConverterString.allocationSize(value.`user`)
+                + FfiConverterString.allocationSize(value.`action`)
+                + FfiConverterOptionalString.allocationSize(value.`newRole`)
+            )
+        }
+        is RolleysEvent.NewsletterSettingsUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`newsletterJid`)
+                + FfiConverterOptionalString.allocationSize(value.`name`)
+                + FfiConverterOptionalString.allocationSize(value.`description`)
+            )
+        }
+        is RolleysEvent.ChatsUpsert -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterSequenceTypeRolleysChatUpsert.allocationSize(value.`chats`)
+            )
+        }
+        is RolleysEvent.ChatsDelete -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterSequenceString.allocationSize(value.`jids`)
+            )
+        }
+        is RolleysEvent.ChatsLock -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`jid`)
+                + FfiConverterBoolean.allocationSize(value.`locked`)
+            )
+        }
+        is RolleysEvent.SettingsUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`setting`)
+                + FfiConverterString.allocationSize(value.`value`)
+            )
+        }
+        is RolleysEvent.LidMappingUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`lid`)
+                + FfiConverterString.allocationSize(value.`pn`)
+            )
+        }
+        is RolleysEvent.ContactsUpsert -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterSequenceTypeRolleysContact.allocationSize(value.`contacts`)
+            )
+        }
+        is RolleysEvent.MessagesDelete -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterBoolean.allocationSize(value.`fromMe`)
+            )
+        }
+        is RolleysEvent.MessageStarred -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`chatJid`)
+                + FfiConverterString.allocationSize(value.`messageId`)
+                + FfiConverterBoolean.allocationSize(value.`fromMe`)
+                + FfiConverterBoolean.allocationSize(value.`starred`)
+            )
+        }
+        is RolleysEvent.MessagesReaction -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysMessageReaction.allocationSize(value.`reaction`)
+            )
+        }
+        is RolleysEvent.MessagingHistoryStatus -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterInt.allocationSize(value.`syncType`)
+                + FfiConverterString.allocationSize(value.`status`)
+                + FfiConverterBoolean.allocationSize(value.`explicit`)
+            )
+        }
+        is RolleysEvent.MessageCappingUpdate -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeRolleysMessageCapInfo.allocationSize(value.`info`)
+            )
+        }
     }
 
     override fun write(value: RolleysEvent, buf: ByteBuffer) {
@@ -8270,6 +8980,144 @@ public object FfiConverterTypeRolleysEvent : FfiConverterRustBuffer<RolleysEvent
                 FfiConverterULong.write(value.`bytesTransferred`, buf)
                 FfiConverterULong.write(value.`totalBytes`, buf)
                 FfiConverterFloat.write(value.`percentage`, buf)
+                Unit
+            }
+            is RolleysEvent.CredsUpdate -> {
+                buf.putInt(27)
+                Unit
+            }
+            is RolleysEvent.GroupsUpsert -> {
+                buf.putInt(28)
+                FfiConverterSequenceTypeRolleysGroupMetadata.write(value.`groups`, buf)
+                Unit
+            }
+            is RolleysEvent.GroupsUpdate -> {
+                buf.putInt(29)
+                FfiConverterTypeRolleysGroupUpdate.write(value.`update`, buf)
+                Unit
+            }
+            is RolleysEvent.GroupParticipantsUpdate -> {
+                buf.putInt(30)
+                FfiConverterString.write(value.`groupJid`, buf)
+                FfiConverterOptionalString.write(value.`author`, buf)
+                FfiConverterSequenceTypeRolleysGroupParticipant.write(value.`participants`, buf)
+                FfiConverterString.write(value.`action`, buf)
+                Unit
+            }
+            is RolleysEvent.GroupJoinRequest -> {
+                buf.putInt(31)
+                FfiConverterString.write(value.`groupJid`, buf)
+                FfiConverterOptionalString.write(value.`author`, buf)
+                FfiConverterString.write(value.`participant`, buf)
+                FfiConverterOptionalString.write(value.`participantPn`, buf)
+                FfiConverterString.write(value.`action`, buf)
+                FfiConverterOptionalString.write(value.`method`, buf)
+                Unit
+            }
+            is RolleysEvent.GroupMemberTagUpdate -> {
+                buf.putInt(32)
+                FfiConverterString.write(value.`groupJid`, buf)
+                FfiConverterString.write(value.`participant`, buf)
+                FfiConverterOptionalString.write(value.`participantAlt`, buf)
+                FfiConverterString.write(value.`label`, buf)
+                FfiConverterULong.write(value.`messageTimestamp`, buf)
+                Unit
+            }
+            is RolleysEvent.NewsletterReaction -> {
+                buf.putInt(33)
+                FfiConverterString.write(value.`newsletterJid`, buf)
+                FfiConverterString.write(value.`serverId`, buf)
+                FfiConverterOptionalString.write(value.`code`, buf)
+                FfiConverterOptionalUInt.write(value.`count`, buf)
+                FfiConverterBoolean.write(value.`removed`, buf)
+                Unit
+            }
+            is RolleysEvent.NewsletterView -> {
+                buf.putInt(34)
+                FfiConverterString.write(value.`newsletterJid`, buf)
+                FfiConverterString.write(value.`serverId`, buf)
+                FfiConverterUInt.write(value.`count`, buf)
+                Unit
+            }
+            is RolleysEvent.NewsletterParticipantsUpdate -> {
+                buf.putInt(35)
+                FfiConverterString.write(value.`newsletterJid`, buf)
+                FfiConverterOptionalString.write(value.`author`, buf)
+                FfiConverterString.write(value.`user`, buf)
+                FfiConverterString.write(value.`action`, buf)
+                FfiConverterOptionalString.write(value.`newRole`, buf)
+                Unit
+            }
+            is RolleysEvent.NewsletterSettingsUpdate -> {
+                buf.putInt(36)
+                FfiConverterString.write(value.`newsletterJid`, buf)
+                FfiConverterOptionalString.write(value.`name`, buf)
+                FfiConverterOptionalString.write(value.`description`, buf)
+                Unit
+            }
+            is RolleysEvent.ChatsUpsert -> {
+                buf.putInt(37)
+                FfiConverterSequenceTypeRolleysChatUpsert.write(value.`chats`, buf)
+                Unit
+            }
+            is RolleysEvent.ChatsDelete -> {
+                buf.putInt(38)
+                FfiConverterSequenceString.write(value.`jids`, buf)
+                Unit
+            }
+            is RolleysEvent.ChatsLock -> {
+                buf.putInt(39)
+                FfiConverterString.write(value.`jid`, buf)
+                FfiConverterBoolean.write(value.`locked`, buf)
+                Unit
+            }
+            is RolleysEvent.SettingsUpdate -> {
+                buf.putInt(40)
+                FfiConverterString.write(value.`setting`, buf)
+                FfiConverterString.write(value.`value`, buf)
+                Unit
+            }
+            is RolleysEvent.LidMappingUpdate -> {
+                buf.putInt(41)
+                FfiConverterString.write(value.`lid`, buf)
+                FfiConverterString.write(value.`pn`, buf)
+                Unit
+            }
+            is RolleysEvent.ContactsUpsert -> {
+                buf.putInt(42)
+                FfiConverterSequenceTypeRolleysContact.write(value.`contacts`, buf)
+                Unit
+            }
+            is RolleysEvent.MessagesDelete -> {
+                buf.putInt(43)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterBoolean.write(value.`fromMe`, buf)
+                Unit
+            }
+            is RolleysEvent.MessageStarred -> {
+                buf.putInt(44)
+                FfiConverterString.write(value.`chatJid`, buf)
+                FfiConverterString.write(value.`messageId`, buf)
+                FfiConverterBoolean.write(value.`fromMe`, buf)
+                FfiConverterBoolean.write(value.`starred`, buf)
+                Unit
+            }
+            is RolleysEvent.MessagesReaction -> {
+                buf.putInt(45)
+                FfiConverterTypeRolleysMessageReaction.write(value.`reaction`, buf)
+                Unit
+            }
+            is RolleysEvent.MessagingHistoryStatus -> {
+                buf.putInt(46)
+                FfiConverterInt.write(value.`syncType`, buf)
+                FfiConverterString.write(value.`status`, buf)
+                FfiConverterBoolean.write(value.`explicit`, buf)
+                Unit
+            }
+            is RolleysEvent.MessageCappingUpdate -> {
+                buf.putInt(47)
+                FfiConverterTypeRolleysMessageCapInfo.write(value.`info`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -9048,6 +9896,34 @@ public object FfiConverterSequenceTypeRolleysChat: FfiConverterRustBuffer<List<R
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeRolleysChatUpsert: FfiConverterRustBuffer<List<RolleysChatUpsert>> {
+    override fun read(buf: ByteBuffer): List<RolleysChatUpsert> {
+        val len = buf.getInt()
+        return List<RolleysChatUpsert>(len) {
+            FfiConverterTypeRolleysChatUpsert.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<RolleysChatUpsert>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeRolleysChatUpsert.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<RolleysChatUpsert>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeRolleysChatUpsert.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeRolleysCommunityParticipant: FfiConverterRustBuffer<List<RolleysCommunityParticipant>> {
     override fun read(buf: ByteBuffer): List<RolleysCommunityParticipant> {
         val len = buf.getInt()
@@ -9094,6 +9970,34 @@ public object FfiConverterSequenceTypeRolleysCommunitySubgroup: FfiConverterRust
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeRolleysCommunitySubgroup.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeRolleysContact: FfiConverterRustBuffer<List<RolleysContact>> {
+    override fun read(buf: ByteBuffer): List<RolleysContact> {
+        val len = buf.getInt()
+        return List<RolleysContact>(len) {
+            FfiConverterTypeRolleysContact.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<RolleysContact>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeRolleysContact.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<RolleysContact>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeRolleysContact.write(it, buf)
         }
     }
 }

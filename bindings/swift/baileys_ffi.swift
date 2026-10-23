@@ -3709,6 +3709,80 @@ public func FfiConverterTypeRolleysChat_lower(_ value: RolleysChat) -> RustBuffe
 }
 
 
+public struct RolleysChatUpsert {
+    public var jid: String
+    public var name: String?
+    public var conversationTimestamp: Int64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(jid: String, name: String?, conversationTimestamp: Int64?) {
+        self.jid = jid
+        self.name = name
+        self.conversationTimestamp = conversationTimestamp
+    }
+}
+
+
+
+extension RolleysChatUpsert: Equatable, Hashable {
+    public static func ==(lhs: RolleysChatUpsert, rhs: RolleysChatUpsert) -> Bool {
+        if lhs.jid != rhs.jid {
+            return false
+        }
+        if lhs.name != rhs.name {
+            return false
+        }
+        if lhs.conversationTimestamp != rhs.conversationTimestamp {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(jid)
+        hasher.combine(name)
+        hasher.combine(conversationTimestamp)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysChatUpsert: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysChatUpsert {
+        return
+            try RolleysChatUpsert(
+                jid: FfiConverterString.read(from: &buf), 
+                name: FfiConverterOptionString.read(from: &buf), 
+                conversationTimestamp: FfiConverterOptionInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysChatUpsert, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.jid, into: &buf)
+        FfiConverterOptionString.write(value.name, into: &buf)
+        FfiConverterOptionInt64.write(value.conversationTimestamp, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysChatUpsert_lift(_ buf: RustBuffer) throws -> RolleysChatUpsert {
+    return try FfiConverterTypeRolleysChatUpsert.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysChatUpsert_lower(_ value: RolleysChatUpsert) -> RustBuffer {
+    return FfiConverterTypeRolleysChatUpsert.lower(value)
+}
+
+
 public struct RolleysClientConfig {
     public var databasePath: String
     public var browserName: String
@@ -4853,6 +4927,168 @@ public func FfiConverterTypeRolleysGroupParticipant_lower(_ value: RolleysGroupP
 }
 
 
+public struct RolleysGroupUpdate {
+    public var id: String
+    public var author: String?
+    public var subject: String?
+    public var subjectOwner: String?
+    public var subjectTime: Int64?
+    public var description: String?
+    public var descriptionDeleted: Bool
+    public var descriptionId: String?
+    public var announce: Bool?
+    public var restrict: Bool?
+    public var joinApprovalMode: Bool?
+    public var memberAddMode: String?
+    public var ephemeralDuration: UInt32?
+    public var inviteCode: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: String, author: String?, subject: String?, subjectOwner: String?, subjectTime: Int64?, description: String?, descriptionDeleted: Bool, descriptionId: String?, announce: Bool?, restrict: Bool?, joinApprovalMode: Bool?, memberAddMode: String?, ephemeralDuration: UInt32?, inviteCode: String?) {
+        self.id = id
+        self.author = author
+        self.subject = subject
+        self.subjectOwner = subjectOwner
+        self.subjectTime = subjectTime
+        self.description = description
+        self.descriptionDeleted = descriptionDeleted
+        self.descriptionId = descriptionId
+        self.announce = announce
+        self.restrict = restrict
+        self.joinApprovalMode = joinApprovalMode
+        self.memberAddMode = memberAddMode
+        self.ephemeralDuration = ephemeralDuration
+        self.inviteCode = inviteCode
+    }
+}
+
+
+
+extension RolleysGroupUpdate: Equatable, Hashable {
+    public static func ==(lhs: RolleysGroupUpdate, rhs: RolleysGroupUpdate) -> Bool {
+        if lhs.id != rhs.id {
+            return false
+        }
+        if lhs.author != rhs.author {
+            return false
+        }
+        if lhs.subject != rhs.subject {
+            return false
+        }
+        if lhs.subjectOwner != rhs.subjectOwner {
+            return false
+        }
+        if lhs.subjectTime != rhs.subjectTime {
+            return false
+        }
+        if lhs.description != rhs.description {
+            return false
+        }
+        if lhs.descriptionDeleted != rhs.descriptionDeleted {
+            return false
+        }
+        if lhs.descriptionId != rhs.descriptionId {
+            return false
+        }
+        if lhs.announce != rhs.announce {
+            return false
+        }
+        if lhs.restrict != rhs.restrict {
+            return false
+        }
+        if lhs.joinApprovalMode != rhs.joinApprovalMode {
+            return false
+        }
+        if lhs.memberAddMode != rhs.memberAddMode {
+            return false
+        }
+        if lhs.ephemeralDuration != rhs.ephemeralDuration {
+            return false
+        }
+        if lhs.inviteCode != rhs.inviteCode {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(author)
+        hasher.combine(subject)
+        hasher.combine(subjectOwner)
+        hasher.combine(subjectTime)
+        hasher.combine(description)
+        hasher.combine(descriptionDeleted)
+        hasher.combine(descriptionId)
+        hasher.combine(announce)
+        hasher.combine(restrict)
+        hasher.combine(joinApprovalMode)
+        hasher.combine(memberAddMode)
+        hasher.combine(ephemeralDuration)
+        hasher.combine(inviteCode)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysGroupUpdate: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysGroupUpdate {
+        return
+            try RolleysGroupUpdate(
+                id: FfiConverterString.read(from: &buf), 
+                author: FfiConverterOptionString.read(from: &buf), 
+                subject: FfiConverterOptionString.read(from: &buf), 
+                subjectOwner: FfiConverterOptionString.read(from: &buf), 
+                subjectTime: FfiConverterOptionInt64.read(from: &buf), 
+                description: FfiConverterOptionString.read(from: &buf), 
+                descriptionDeleted: FfiConverterBool.read(from: &buf), 
+                descriptionId: FfiConverterOptionString.read(from: &buf), 
+                announce: FfiConverterOptionBool.read(from: &buf), 
+                restrict: FfiConverterOptionBool.read(from: &buf), 
+                joinApprovalMode: FfiConverterOptionBool.read(from: &buf), 
+                memberAddMode: FfiConverterOptionString.read(from: &buf), 
+                ephemeralDuration: FfiConverterOptionUInt32.read(from: &buf), 
+                inviteCode: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysGroupUpdate, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.id, into: &buf)
+        FfiConverterOptionString.write(value.author, into: &buf)
+        FfiConverterOptionString.write(value.subject, into: &buf)
+        FfiConverterOptionString.write(value.subjectOwner, into: &buf)
+        FfiConverterOptionInt64.write(value.subjectTime, into: &buf)
+        FfiConverterOptionString.write(value.description, into: &buf)
+        FfiConverterBool.write(value.descriptionDeleted, into: &buf)
+        FfiConverterOptionString.write(value.descriptionId, into: &buf)
+        FfiConverterOptionBool.write(value.announce, into: &buf)
+        FfiConverterOptionBool.write(value.restrict, into: &buf)
+        FfiConverterOptionBool.write(value.joinApprovalMode, into: &buf)
+        FfiConverterOptionString.write(value.memberAddMode, into: &buf)
+        FfiConverterOptionUInt32.write(value.ephemeralDuration, into: &buf)
+        FfiConverterOptionString.write(value.inviteCode, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysGroupUpdate_lift(_ buf: RustBuffer) throws -> RolleysGroupUpdate {
+    return try FfiConverterTypeRolleysGroupUpdate.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysGroupUpdate_lower(_ value: RolleysGroupUpdate) -> RustBuffer {
+    return FfiConverterTypeRolleysGroupUpdate.lower(value)
+}
+
+
 public struct RolleysInteractiveButton {
     public var name: String
     public var buttonParamsJson: String
@@ -5260,6 +5496,248 @@ public func FfiConverterTypeRolleysMessage_lift(_ buf: RustBuffer) throws -> Rol
 #endif
 public func FfiConverterTypeRolleysMessage_lower(_ value: RolleysMessage) -> RustBuffer {
     return FfiConverterTypeRolleysMessage.lower(value)
+}
+
+
+public struct RolleysMessageCapInfo {
+    public var totalQuota: Int64?
+    public var usedQuota: Int64?
+    public var cycleStartTimestamp: String?
+    public var cycleEndTimestamp: String?
+    public var serverSentTimestamp: String?
+    public var oteStatus: String?
+    public var mvStatus: String?
+    public var cappingStatus: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(totalQuota: Int64?, usedQuota: Int64?, cycleStartTimestamp: String?, cycleEndTimestamp: String?, serverSentTimestamp: String?, oteStatus: String?, mvStatus: String?, cappingStatus: String?) {
+        self.totalQuota = totalQuota
+        self.usedQuota = usedQuota
+        self.cycleStartTimestamp = cycleStartTimestamp
+        self.cycleEndTimestamp = cycleEndTimestamp
+        self.serverSentTimestamp = serverSentTimestamp
+        self.oteStatus = oteStatus
+        self.mvStatus = mvStatus
+        self.cappingStatus = cappingStatus
+    }
+}
+
+
+
+extension RolleysMessageCapInfo: Equatable, Hashable {
+    public static func ==(lhs: RolleysMessageCapInfo, rhs: RolleysMessageCapInfo) -> Bool {
+        if lhs.totalQuota != rhs.totalQuota {
+            return false
+        }
+        if lhs.usedQuota != rhs.usedQuota {
+            return false
+        }
+        if lhs.cycleStartTimestamp != rhs.cycleStartTimestamp {
+            return false
+        }
+        if lhs.cycleEndTimestamp != rhs.cycleEndTimestamp {
+            return false
+        }
+        if lhs.serverSentTimestamp != rhs.serverSentTimestamp {
+            return false
+        }
+        if lhs.oteStatus != rhs.oteStatus {
+            return false
+        }
+        if lhs.mvStatus != rhs.mvStatus {
+            return false
+        }
+        if lhs.cappingStatus != rhs.cappingStatus {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(totalQuota)
+        hasher.combine(usedQuota)
+        hasher.combine(cycleStartTimestamp)
+        hasher.combine(cycleEndTimestamp)
+        hasher.combine(serverSentTimestamp)
+        hasher.combine(oteStatus)
+        hasher.combine(mvStatus)
+        hasher.combine(cappingStatus)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysMessageCapInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysMessageCapInfo {
+        return
+            try RolleysMessageCapInfo(
+                totalQuota: FfiConverterOptionInt64.read(from: &buf), 
+                usedQuota: FfiConverterOptionInt64.read(from: &buf), 
+                cycleStartTimestamp: FfiConverterOptionString.read(from: &buf), 
+                cycleEndTimestamp: FfiConverterOptionString.read(from: &buf), 
+                serverSentTimestamp: FfiConverterOptionString.read(from: &buf), 
+                oteStatus: FfiConverterOptionString.read(from: &buf), 
+                mvStatus: FfiConverterOptionString.read(from: &buf), 
+                cappingStatus: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysMessageCapInfo, into buf: inout [UInt8]) {
+        FfiConverterOptionInt64.write(value.totalQuota, into: &buf)
+        FfiConverterOptionInt64.write(value.usedQuota, into: &buf)
+        FfiConverterOptionString.write(value.cycleStartTimestamp, into: &buf)
+        FfiConverterOptionString.write(value.cycleEndTimestamp, into: &buf)
+        FfiConverterOptionString.write(value.serverSentTimestamp, into: &buf)
+        FfiConverterOptionString.write(value.oteStatus, into: &buf)
+        FfiConverterOptionString.write(value.mvStatus, into: &buf)
+        FfiConverterOptionString.write(value.cappingStatus, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysMessageCapInfo_lift(_ buf: RustBuffer) throws -> RolleysMessageCapInfo {
+    return try FfiConverterTypeRolleysMessageCapInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysMessageCapInfo_lower(_ value: RolleysMessageCapInfo) -> RustBuffer {
+    return FfiConverterTypeRolleysMessageCapInfo.lower(value)
+}
+
+
+public struct RolleysMessageReaction {
+    public var chatJid: String
+    public var messageId: String
+    public var targetFromMe: Bool
+    public var targetParticipant: String?
+    public var sender: String
+    public var senderFromMe: Bool
+    /**
+     * Emoji; empty when the reaction was removed.
+     */
+    public var text: String
+    public var removed: Bool
+    public var senderTimestampMs: Int64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(chatJid: String, messageId: String, targetFromMe: Bool, targetParticipant: String?, sender: String, senderFromMe: Bool, 
+        /**
+         * Emoji; empty when the reaction was removed.
+         */text: String, removed: Bool, senderTimestampMs: Int64?) {
+        self.chatJid = chatJid
+        self.messageId = messageId
+        self.targetFromMe = targetFromMe
+        self.targetParticipant = targetParticipant
+        self.sender = sender
+        self.senderFromMe = senderFromMe
+        self.text = text
+        self.removed = removed
+        self.senderTimestampMs = senderTimestampMs
+    }
+}
+
+
+
+extension RolleysMessageReaction: Equatable, Hashable {
+    public static func ==(lhs: RolleysMessageReaction, rhs: RolleysMessageReaction) -> Bool {
+        if lhs.chatJid != rhs.chatJid {
+            return false
+        }
+        if lhs.messageId != rhs.messageId {
+            return false
+        }
+        if lhs.targetFromMe != rhs.targetFromMe {
+            return false
+        }
+        if lhs.targetParticipant != rhs.targetParticipant {
+            return false
+        }
+        if lhs.sender != rhs.sender {
+            return false
+        }
+        if lhs.senderFromMe != rhs.senderFromMe {
+            return false
+        }
+        if lhs.text != rhs.text {
+            return false
+        }
+        if lhs.removed != rhs.removed {
+            return false
+        }
+        if lhs.senderTimestampMs != rhs.senderTimestampMs {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(chatJid)
+        hasher.combine(messageId)
+        hasher.combine(targetFromMe)
+        hasher.combine(targetParticipant)
+        hasher.combine(sender)
+        hasher.combine(senderFromMe)
+        hasher.combine(text)
+        hasher.combine(removed)
+        hasher.combine(senderTimestampMs)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRolleysMessageReaction: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RolleysMessageReaction {
+        return
+            try RolleysMessageReaction(
+                chatJid: FfiConverterString.read(from: &buf), 
+                messageId: FfiConverterString.read(from: &buf), 
+                targetFromMe: FfiConverterBool.read(from: &buf), 
+                targetParticipant: FfiConverterOptionString.read(from: &buf), 
+                sender: FfiConverterString.read(from: &buf), 
+                senderFromMe: FfiConverterBool.read(from: &buf), 
+                text: FfiConverterString.read(from: &buf), 
+                removed: FfiConverterBool.read(from: &buf), 
+                senderTimestampMs: FfiConverterOptionInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RolleysMessageReaction, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.chatJid, into: &buf)
+        FfiConverterString.write(value.messageId, into: &buf)
+        FfiConverterBool.write(value.targetFromMe, into: &buf)
+        FfiConverterOptionString.write(value.targetParticipant, into: &buf)
+        FfiConverterString.write(value.sender, into: &buf)
+        FfiConverterBool.write(value.senderFromMe, into: &buf)
+        FfiConverterString.write(value.text, into: &buf)
+        FfiConverterBool.write(value.removed, into: &buf)
+        FfiConverterOptionInt64.write(value.senderTimestampMs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysMessageReaction_lift(_ buf: RustBuffer) throws -> RolleysMessageReaction {
+    return try FfiConverterTypeRolleysMessageReaction.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRolleysMessageReaction_lower(_ value: RolleysMessageReaction) -> RustBuffer {
+    return FfiConverterTypeRolleysMessageReaction.lower(value)
 }
 
 
@@ -6747,6 +7225,110 @@ public enum RolleysEvent {
     )
     case mediaProgress(taskId: String, direction: String, bytesTransferred: UInt64, totalBytes: UInt64, percentage: Float
     )
+    /**
+     * Credentials were persisted (Baileys `creds.update`).
+     */
+    case credsUpdate
+    /**
+     * Group created or joined (Baileys `groups.upsert`).
+     */
+    case groupsUpsert(groups: [RolleysGroupMetadata]
+    )
+    /**
+     * Partial group change (Baileys `groups.update`).
+     */
+    case groupsUpdate(update: RolleysGroupUpdate
+    )
+    /**
+     * Baileys `group-participants.update`; `action` is add/remove/leave/promote/demote/modify.
+     */
+    case groupParticipantsUpdate(groupJid: String, author: String?, participants: [RolleysGroupParticipant], action: String
+    )
+    /**
+     * Baileys `group.join-request`.
+     */
+    case groupJoinRequest(groupJid: String, author: String?, participant: String, participantPn: String?, action: String, method: String?
+    )
+    /**
+     * Baileys `group.member-tag.update`.
+     */
+    case groupMemberTagUpdate(groupJid: String, participant: String, participantAlt: String?, label: String, messageTimestamp: UInt64
+    )
+    /**
+     * Baileys `newsletter.reaction`.
+     */
+    case newsletterReaction(newsletterJid: String, serverId: String, code: String?, count: UInt32?, removed: Bool
+    )
+    /**
+     * Baileys `newsletter.view`.
+     */
+    case newsletterView(newsletterJid: String, serverId: String, count: UInt32
+    )
+    /**
+     * Baileys `newsletter-participants.update`.
+     */
+    case newsletterParticipantsUpdate(newsletterJid: String, author: String?, user: String, action: String, newRole: String?
+    )
+    /**
+     * Baileys `newsletter-settings.update`.
+     */
+    case newsletterSettingsUpdate(newsletterJid: String, name: String?, description: String?
+    )
+    /**
+     * Baileys `chats.upsert`.
+     */
+    case chatsUpsert(chats: [RolleysChatUpsert]
+    )
+    /**
+     * Baileys `chats.delete`.
+     */
+    case chatsDelete(jids: [String]
+    )
+    /**
+     * Baileys `chats.lock`.
+     */
+    case chatsLock(jid: String, locked: Bool
+    )
+    /**
+     * Baileys `settings.update`.
+     */
+    case settingsUpdate(setting: String, value: String
+    )
+    /**
+     * Baileys `lid-mapping.update`.
+     */
+    case lidMappingUpdate(lid: String, pn: String
+    )
+    /**
+     * Baileys `contacts.upsert`.
+     */
+    case contactsUpsert(contacts: [RolleysContact]
+    )
+    /**
+     * Baileys `messages.delete` (deleted for me).
+     */
+    case messagesDelete(chatJid: String, messageId: String, fromMe: Bool
+    )
+    /**
+     * Baileys `messages.update` with `starred`.
+     */
+    case messageStarred(chatJid: String, messageId: String, fromMe: Bool, starred: Bool
+    )
+    /**
+     * Baileys `messages.reaction`.
+     */
+    case messagesReaction(reaction: RolleysMessageReaction
+    )
+    /**
+     * Baileys `messaging-history.status`: `status` is "complete" or "paused".
+     */
+    case messagingHistoryStatus(syncType: Int32, status: String, explicit: Bool
+    )
+    /**
+     * Baileys `message-capping.update`.
+     */
+    case messageCappingUpdate(info: RolleysMessageCapInfo
+    )
 }
 
 
@@ -6835,6 +7417,68 @@ public struct FfiConverterTypeRolleysEvent: FfiConverterRustBuffer {
         )
         
         case 26: return .mediaProgress(taskId: try FfiConverterString.read(from: &buf), direction: try FfiConverterString.read(from: &buf), bytesTransferred: try FfiConverterUInt64.read(from: &buf), totalBytes: try FfiConverterUInt64.read(from: &buf), percentage: try FfiConverterFloat.read(from: &buf)
+        )
+        
+        case 27: return .credsUpdate
+        
+        case 28: return .groupsUpsert(groups: try FfiConverterSequenceTypeRolleysGroupMetadata.read(from: &buf)
+        )
+        
+        case 29: return .groupsUpdate(update: try FfiConverterTypeRolleysGroupUpdate.read(from: &buf)
+        )
+        
+        case 30: return .groupParticipantsUpdate(groupJid: try FfiConverterString.read(from: &buf), author: try FfiConverterOptionString.read(from: &buf), participants: try FfiConverterSequenceTypeRolleysGroupParticipant.read(from: &buf), action: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 31: return .groupJoinRequest(groupJid: try FfiConverterString.read(from: &buf), author: try FfiConverterOptionString.read(from: &buf), participant: try FfiConverterString.read(from: &buf), participantPn: try FfiConverterOptionString.read(from: &buf), action: try FfiConverterString.read(from: &buf), method: try FfiConverterOptionString.read(from: &buf)
+        )
+        
+        case 32: return .groupMemberTagUpdate(groupJid: try FfiConverterString.read(from: &buf), participant: try FfiConverterString.read(from: &buf), participantAlt: try FfiConverterOptionString.read(from: &buf), label: try FfiConverterString.read(from: &buf), messageTimestamp: try FfiConverterUInt64.read(from: &buf)
+        )
+        
+        case 33: return .newsletterReaction(newsletterJid: try FfiConverterString.read(from: &buf), serverId: try FfiConverterString.read(from: &buf), code: try FfiConverterOptionString.read(from: &buf), count: try FfiConverterOptionUInt32.read(from: &buf), removed: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 34: return .newsletterView(newsletterJid: try FfiConverterString.read(from: &buf), serverId: try FfiConverterString.read(from: &buf), count: try FfiConverterUInt32.read(from: &buf)
+        )
+        
+        case 35: return .newsletterParticipantsUpdate(newsletterJid: try FfiConverterString.read(from: &buf), author: try FfiConverterOptionString.read(from: &buf), user: try FfiConverterString.read(from: &buf), action: try FfiConverterString.read(from: &buf), newRole: try FfiConverterOptionString.read(from: &buf)
+        )
+        
+        case 36: return .newsletterSettingsUpdate(newsletterJid: try FfiConverterString.read(from: &buf), name: try FfiConverterOptionString.read(from: &buf), description: try FfiConverterOptionString.read(from: &buf)
+        )
+        
+        case 37: return .chatsUpsert(chats: try FfiConverterSequenceTypeRolleysChatUpsert.read(from: &buf)
+        )
+        
+        case 38: return .chatsDelete(jids: try FfiConverterSequenceString.read(from: &buf)
+        )
+        
+        case 39: return .chatsLock(jid: try FfiConverterString.read(from: &buf), locked: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 40: return .settingsUpdate(setting: try FfiConverterString.read(from: &buf), value: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 41: return .lidMappingUpdate(lid: try FfiConverterString.read(from: &buf), pn: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 42: return .contactsUpsert(contacts: try FfiConverterSequenceTypeRolleysContact.read(from: &buf)
+        )
+        
+        case 43: return .messagesDelete(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), fromMe: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 44: return .messageStarred(chatJid: try FfiConverterString.read(from: &buf), messageId: try FfiConverterString.read(from: &buf), fromMe: try FfiConverterBool.read(from: &buf), starred: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 45: return .messagesReaction(reaction: try FfiConverterTypeRolleysMessageReaction.read(from: &buf)
+        )
+        
+        case 46: return .messagingHistoryStatus(syncType: try FfiConverterInt32.read(from: &buf), status: try FfiConverterString.read(from: &buf), explicit: try FfiConverterBool.read(from: &buf)
+        )
+        
+        case 47: return .messageCappingUpdate(info: try FfiConverterTypeRolleysMessageCapInfo.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -7005,6 +7649,144 @@ public struct FfiConverterTypeRolleysEvent: FfiConverterRustBuffer {
             FfiConverterUInt64.write(bytesTransferred, into: &buf)
             FfiConverterUInt64.write(totalBytes, into: &buf)
             FfiConverterFloat.write(percentage, into: &buf)
+            
+        
+        case .credsUpdate:
+            writeInt(&buf, Int32(27))
+        
+        
+        case let .groupsUpsert(groups):
+            writeInt(&buf, Int32(28))
+            FfiConverterSequenceTypeRolleysGroupMetadata.write(groups, into: &buf)
+            
+        
+        case let .groupsUpdate(update):
+            writeInt(&buf, Int32(29))
+            FfiConverterTypeRolleysGroupUpdate.write(update, into: &buf)
+            
+        
+        case let .groupParticipantsUpdate(groupJid,author,participants,action):
+            writeInt(&buf, Int32(30))
+            FfiConverterString.write(groupJid, into: &buf)
+            FfiConverterOptionString.write(author, into: &buf)
+            FfiConverterSequenceTypeRolleysGroupParticipant.write(participants, into: &buf)
+            FfiConverterString.write(action, into: &buf)
+            
+        
+        case let .groupJoinRequest(groupJid,author,participant,participantPn,action,method):
+            writeInt(&buf, Int32(31))
+            FfiConverterString.write(groupJid, into: &buf)
+            FfiConverterOptionString.write(author, into: &buf)
+            FfiConverterString.write(participant, into: &buf)
+            FfiConverterOptionString.write(participantPn, into: &buf)
+            FfiConverterString.write(action, into: &buf)
+            FfiConverterOptionString.write(method, into: &buf)
+            
+        
+        case let .groupMemberTagUpdate(groupJid,participant,participantAlt,label,messageTimestamp):
+            writeInt(&buf, Int32(32))
+            FfiConverterString.write(groupJid, into: &buf)
+            FfiConverterString.write(participant, into: &buf)
+            FfiConverterOptionString.write(participantAlt, into: &buf)
+            FfiConverterString.write(label, into: &buf)
+            FfiConverterUInt64.write(messageTimestamp, into: &buf)
+            
+        
+        case let .newsletterReaction(newsletterJid,serverId,code,count,removed):
+            writeInt(&buf, Int32(33))
+            FfiConverterString.write(newsletterJid, into: &buf)
+            FfiConverterString.write(serverId, into: &buf)
+            FfiConverterOptionString.write(code, into: &buf)
+            FfiConverterOptionUInt32.write(count, into: &buf)
+            FfiConverterBool.write(removed, into: &buf)
+            
+        
+        case let .newsletterView(newsletterJid,serverId,count):
+            writeInt(&buf, Int32(34))
+            FfiConverterString.write(newsletterJid, into: &buf)
+            FfiConverterString.write(serverId, into: &buf)
+            FfiConverterUInt32.write(count, into: &buf)
+            
+        
+        case let .newsletterParticipantsUpdate(newsletterJid,author,user,action,newRole):
+            writeInt(&buf, Int32(35))
+            FfiConverterString.write(newsletterJid, into: &buf)
+            FfiConverterOptionString.write(author, into: &buf)
+            FfiConverterString.write(user, into: &buf)
+            FfiConverterString.write(action, into: &buf)
+            FfiConverterOptionString.write(newRole, into: &buf)
+            
+        
+        case let .newsletterSettingsUpdate(newsletterJid,name,description):
+            writeInt(&buf, Int32(36))
+            FfiConverterString.write(newsletterJid, into: &buf)
+            FfiConverterOptionString.write(name, into: &buf)
+            FfiConverterOptionString.write(description, into: &buf)
+            
+        
+        case let .chatsUpsert(chats):
+            writeInt(&buf, Int32(37))
+            FfiConverterSequenceTypeRolleysChatUpsert.write(chats, into: &buf)
+            
+        
+        case let .chatsDelete(jids):
+            writeInt(&buf, Int32(38))
+            FfiConverterSequenceString.write(jids, into: &buf)
+            
+        
+        case let .chatsLock(jid,locked):
+            writeInt(&buf, Int32(39))
+            FfiConverterString.write(jid, into: &buf)
+            FfiConverterBool.write(locked, into: &buf)
+            
+        
+        case let .settingsUpdate(setting,value):
+            writeInt(&buf, Int32(40))
+            FfiConverterString.write(setting, into: &buf)
+            FfiConverterString.write(value, into: &buf)
+            
+        
+        case let .lidMappingUpdate(lid,pn):
+            writeInt(&buf, Int32(41))
+            FfiConverterString.write(lid, into: &buf)
+            FfiConverterString.write(pn, into: &buf)
+            
+        
+        case let .contactsUpsert(contacts):
+            writeInt(&buf, Int32(42))
+            FfiConverterSequenceTypeRolleysContact.write(contacts, into: &buf)
+            
+        
+        case let .messagesDelete(chatJid,messageId,fromMe):
+            writeInt(&buf, Int32(43))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterString.write(messageId, into: &buf)
+            FfiConverterBool.write(fromMe, into: &buf)
+            
+        
+        case let .messageStarred(chatJid,messageId,fromMe,starred):
+            writeInt(&buf, Int32(44))
+            FfiConverterString.write(chatJid, into: &buf)
+            FfiConverterString.write(messageId, into: &buf)
+            FfiConverterBool.write(fromMe, into: &buf)
+            FfiConverterBool.write(starred, into: &buf)
+            
+        
+        case let .messagesReaction(reaction):
+            writeInt(&buf, Int32(45))
+            FfiConverterTypeRolleysMessageReaction.write(reaction, into: &buf)
+            
+        
+        case let .messagingHistoryStatus(syncType,status,explicit):
+            writeInt(&buf, Int32(46))
+            FfiConverterInt32.write(syncType, into: &buf)
+            FfiConverterString.write(status, into: &buf)
+            FfiConverterBool.write(explicit, into: &buf)
+            
+        
+        case let .messageCappingUpdate(info):
+            writeInt(&buf, Int32(47))
+            FfiConverterTypeRolleysMessageCapInfo.write(info, into: &buf)
             
         }
     }
@@ -7673,6 +8455,31 @@ fileprivate struct FfiConverterSequenceTypeRolleysChat: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeRolleysChatUpsert: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysChatUpsert]
+
+    public static func write(_ value: [RolleysChatUpsert], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRolleysChatUpsert.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysChatUpsert] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RolleysChatUpsert]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRolleysChatUpsert.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeRolleysCommunityParticipant: FfiConverterRustBuffer {
     typealias SwiftType = [RolleysCommunityParticipant]
 
@@ -7715,6 +8522,31 @@ fileprivate struct FfiConverterSequenceTypeRolleysCommunitySubgroup: FfiConverte
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeRolleysCommunitySubgroup.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeRolleysContact: FfiConverterRustBuffer {
+    typealias SwiftType = [RolleysContact]
+
+    public static func write(_ value: [RolleysContact], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRolleysContact.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RolleysContact] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RolleysContact]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRolleysContact.read(from: &buf))
         }
         return seq
     }

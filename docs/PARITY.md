@@ -73,11 +73,11 @@ Rincian per area ada di rencana kerja; ringkasannya:
 | Binding | Status | Catatan |
 |---|---|---|
 | napi | partial | ~150 method; kurang send tipe baru, status media, newsletter admin, pairing/QR |
-| ffi (uniffi) | partial | mirip napi |
+| ffi (uniffi) | partial | semua event core diteruskan (`RolleysEvent`, 2026-10-23); method masih tertinggal |
 | cabi | partial | tanpa callback event; banyak fungsi grup/kirim hilang (verifikasi terhadap `bindings/c/baileys.h`) |
 
 `CredsUpdate` baru dipancarkan dari loop koneksi (pairing, LID, companion finish); jalur `save_creds` lain di `client/` belum.
-Binding: napi mengirim event baru sebagai `{event:"raw"}`; ffi melewatinya sampai Fase 5.
+Binding: napi mengirim event baru sebagai `{event:"raw"}`; ffi meneruskan semuanya sebagai varian `RolleysEvent` bertipe.
 
 Live-suite (`live-suite`, akun uji sendiri): pesan teks/react/edit/revoke/poll/vote terbukti diterima server
 (`Receipt` `server_ack` untuk id yang dikembalikan; `error_*` dianggap gagal). Belum ada kontrol negatif yang

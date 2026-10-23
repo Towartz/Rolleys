@@ -605,6 +605,205 @@ pub enum RolleysEvent {
         total_bytes: u64,
         percentage: f32,
     },
+    /// Credentials were persisted (Baileys `creds.update`).
+    CredsUpdate,
+    /// Group created or joined (Baileys `groups.upsert`).
+    GroupsUpsert {
+        groups: Vec<RolleysGroupMetadata>,
+    },
+    /// Partial group change (Baileys `groups.update`).
+    GroupsUpdate {
+        update: RolleysGroupUpdate,
+    },
+    /// Baileys `group-participants.update`; `action` is add/remove/leave/promote/demote/modify.
+    GroupParticipantsUpdate {
+        group_jid: String,
+        author: Option<String>,
+        participants: Vec<RolleysGroupParticipant>,
+        action: String,
+    },
+    /// Baileys `group.join-request`.
+    GroupJoinRequest {
+        group_jid: String,
+        author: Option<String>,
+        participant: String,
+        participant_pn: Option<String>,
+        action: String,
+        method: Option<String>,
+    },
+    /// Baileys `group.member-tag.update`.
+    GroupMemberTagUpdate {
+        group_jid: String,
+        participant: String,
+        participant_alt: Option<String>,
+        label: String,
+        message_timestamp: u64,
+    },
+    /// Baileys `newsletter.reaction`.
+    NewsletterReaction {
+        newsletter_jid: String,
+        server_id: String,
+        code: Option<String>,
+        count: Option<u32>,
+        removed: bool,
+    },
+    /// Baileys `newsletter.view`.
+    NewsletterView {
+        newsletter_jid: String,
+        server_id: String,
+        count: u32,
+    },
+    /// Baileys `newsletter-participants.update`.
+    NewsletterParticipantsUpdate {
+        newsletter_jid: String,
+        author: Option<String>,
+        user: String,
+        action: String,
+        new_role: Option<String>,
+    },
+    /// Baileys `newsletter-settings.update`.
+    NewsletterSettingsUpdate {
+        newsletter_jid: String,
+        name: Option<String>,
+        description: Option<String>,
+    },
+    /// Baileys `chats.upsert`.
+    ChatsUpsert {
+        chats: Vec<RolleysChatUpsert>,
+    },
+    /// Baileys `chats.delete`.
+    ChatsDelete {
+        jids: Vec<String>,
+    },
+    /// Baileys `chats.lock`.
+    ChatsLock {
+        jid: String,
+        locked: bool,
+    },
+    /// Baileys `settings.update`.
+    SettingsUpdate {
+        setting: String,
+        value: String,
+    },
+    /// Baileys `lid-mapping.update`.
+    LidMappingUpdate {
+        lid: String,
+        pn: String,
+    },
+    /// Baileys `contacts.upsert`.
+    ContactsUpsert {
+        contacts: Vec<RolleysContact>,
+    },
+    /// Baileys `messages.delete` (deleted for me).
+    MessagesDelete {
+        chat_jid: String,
+        message_id: String,
+        from_me: bool,
+    },
+    /// Baileys `messages.update` with `starred`.
+    MessageStarred {
+        chat_jid: String,
+        message_id: String,
+        from_me: bool,
+        starred: bool,
+    },
+    /// Baileys `messages.reaction`.
+    MessagesReaction {
+        reaction: RolleysMessageReaction,
+    },
+    /// Baileys `messaging-history.status`: `status` is "complete" or "paused".
+    MessagingHistoryStatus {
+        sync_type: i32,
+        status: String,
+        explicit: bool,
+    },
+    /// Baileys `message-capping.update`.
+    MessageCappingUpdate {
+        info: RolleysMessageCapInfo,
+    },
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysGroupUpdate {
+    pub id: String,
+    pub author: Option<String>,
+    pub subject: Option<String>,
+    pub subject_owner: Option<String>,
+    pub subject_time: Option<i64>,
+    pub description: Option<String>,
+    pub description_deleted: bool,
+    pub description_id: Option<String>,
+    pub announce: Option<bool>,
+    pub restrict: Option<bool>,
+    pub join_approval_mode: Option<bool>,
+    pub member_add_mode: Option<String>,
+    pub ephemeral_duration: Option<u32>,
+    pub invite_code: Option<String>,
+}
+
+impl From<baileys_core::events::GroupUpdate> for RolleysGroupUpdate {
+    fn from(u: baileys_core::events::GroupUpdate) -> Self {
+        Self {
+            id: u.id,
+            author: u.author,
+            subject: u.subject,
+            subject_owner: u.subject_owner,
+            subject_time: u.subject_time,
+            description: u.description,
+            description_deleted: u.description_deleted,
+            description_id: u.description_id,
+            announce: u.announce,
+            restrict: u.restrict,
+            join_approval_mode: u.join_approval_mode,
+            member_add_mode: u.member_add_mode,
+            ephemeral_duration: u.ephemeral_duration,
+            invite_code: u.invite_code,
+        }
+    }
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysChatUpsert {
+    pub jid: String,
+    pub name: Option<String>,
+    pub conversation_timestamp: Option<i64>,
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysMessageReaction {
+    pub chat_jid: String,
+    pub message_id: String,
+    pub target_from_me: bool,
+    pub target_participant: Option<String>,
+    pub sender: String,
+    pub sender_from_me: bool,
+    /// Emoji; empty when the reaction was removed.
+    pub text: String,
+    pub removed: bool,
+    pub sender_timestamp_ms: Option<i64>,
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysMessageCapInfo {
+    pub total_quota: Option<i64>,
+    pub used_quota: Option<i64>,
+    pub cycle_start_timestamp: Option<String>,
+    pub cycle_end_timestamp: Option<String>,
+    pub server_sent_timestamp: Option<String>,
+    pub ote_status: Option<String>,
+    pub mv_status: Option<String>,
+    pub capping_status: Option<String>,
+}
+
+impl From<baileys_store::StoredContact> for RolleysContact {
+    fn from(c: baileys_store::StoredContact) -> Self {
+        Self {
+            jid: c.jid,
+            name: c.name,
+            push_name: c.push_name,
+            lid: c.lid,
+        }
+    }
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
@@ -916,29 +1115,177 @@ impl RolleysClient {
                         total_bytes,
                         percentage,
                     },
-                    // TODO(parity phase 5): expose these through RolleysEvent once the
-                    // Swift/Kotlin bindings are regenerated.
-                    BaileysEvent::CredsUpdate
-                    | BaileysEvent::GroupsUpsert { .. }
-                    | BaileysEvent::GroupsUpdate { .. }
-                    | BaileysEvent::GroupParticipantsUpdate { .. }
-                    | BaileysEvent::GroupJoinRequest { .. }
-                    | BaileysEvent::NewsletterReaction { .. }
-                    | BaileysEvent::NewsletterView { .. }
-                    | BaileysEvent::NewsletterParticipantsUpdate { .. }
-                    | BaileysEvent::NewsletterSettingsUpdate { .. }
-                    | BaileysEvent::ChatsDelete { .. }
-                    | BaileysEvent::ChatsLock { .. }
-                    | BaileysEvent::SettingsUpdate { .. }
-                    | BaileysEvent::LidMappingUpdate { .. }
-                    | BaileysEvent::ContactsUpsert { .. }
-                    | BaileysEvent::MessagesDelete { .. }
-                    | BaileysEvent::MessageStarred { .. }
-                    | BaileysEvent::ChatsUpsert { .. }
-                    | BaileysEvent::MessagesReaction { .. }
-                    | BaileysEvent::MessagingHistoryStatus { .. }
-                    | BaileysEvent::MessageCappingUpdate { .. }
-                    | BaileysEvent::GroupMemberTagUpdate { .. } => continue,
+                    BaileysEvent::CredsUpdate => RolleysEvent::CredsUpdate,
+                    BaileysEvent::GroupsUpsert { groups } => RolleysEvent::GroupsUpsert {
+                        groups: groups.into_iter().map(Into::into).collect(),
+                    },
+                    BaileysEvent::GroupsUpdate { update } => RolleysEvent::GroupsUpdate {
+                        update: update.into(),
+                    },
+                    BaileysEvent::GroupParticipantsUpdate {
+                        group_jid,
+                        author,
+                        participants,
+                        action,
+                    } => RolleysEvent::GroupParticipantsUpdate {
+                        group_jid,
+                        author,
+                        participants: participants.into_iter().map(Into::into).collect(),
+                        action,
+                    },
+                    BaileysEvent::GroupJoinRequest {
+                        group_jid,
+                        author,
+                        participant,
+                        participant_pn,
+                        action,
+                        method,
+                    } => RolleysEvent::GroupJoinRequest {
+                        group_jid,
+                        author,
+                        participant,
+                        participant_pn,
+                        action,
+                        method,
+                    },
+                    BaileysEvent::GroupMemberTagUpdate {
+                        group_jid,
+                        participant,
+                        participant_alt,
+                        label,
+                        message_timestamp,
+                    } => RolleysEvent::GroupMemberTagUpdate {
+                        group_jid,
+                        participant,
+                        participant_alt,
+                        label,
+                        message_timestamp,
+                    },
+                    BaileysEvent::NewsletterReaction {
+                        newsletter_jid,
+                        server_id,
+                        code,
+                        count,
+                        removed,
+                    } => RolleysEvent::NewsletterReaction {
+                        newsletter_jid,
+                        server_id,
+                        code,
+                        count,
+                        removed,
+                    },
+                    BaileysEvent::NewsletterView {
+                        newsletter_jid,
+                        server_id,
+                        count,
+                    } => RolleysEvent::NewsletterView {
+                        newsletter_jid,
+                        server_id,
+                        count,
+                    },
+                    BaileysEvent::NewsletterParticipantsUpdate {
+                        newsletter_jid,
+                        author,
+                        user,
+                        action,
+                        new_role,
+                    } => RolleysEvent::NewsletterParticipantsUpdate {
+                        newsletter_jid,
+                        author,
+                        user,
+                        action,
+                        new_role,
+                    },
+                    BaileysEvent::NewsletterSettingsUpdate {
+                        newsletter_jid,
+                        name,
+                        description,
+                    } => RolleysEvent::NewsletterSettingsUpdate {
+                        newsletter_jid,
+                        name,
+                        description,
+                    },
+                    BaileysEvent::ChatsUpsert { chats } => RolleysEvent::ChatsUpsert {
+                        chats: chats
+                            .into_iter()
+                            .map(|c| RolleysChatUpsert {
+                                jid: c.jid,
+                                name: c.name,
+                                conversation_timestamp: c.conversation_timestamp,
+                            })
+                            .collect(),
+                    },
+                    BaileysEvent::ChatsDelete { jids } => RolleysEvent::ChatsDelete { jids },
+                    BaileysEvent::ChatsLock { jid, locked } => {
+                        RolleysEvent::ChatsLock { jid, locked }
+                    }
+                    BaileysEvent::SettingsUpdate { setting, value } => {
+                        RolleysEvent::SettingsUpdate { setting, value }
+                    }
+                    BaileysEvent::LidMappingUpdate { lid, pn } => {
+                        RolleysEvent::LidMappingUpdate { lid, pn }
+                    }
+                    BaileysEvent::ContactsUpsert { contacts } => RolleysEvent::ContactsUpsert {
+                        contacts: contacts.into_iter().map(Into::into).collect(),
+                    },
+                    BaileysEvent::MessagesDelete {
+                        chat_jid,
+                        message_id,
+                        from_me,
+                    } => RolleysEvent::MessagesDelete {
+                        chat_jid,
+                        message_id,
+                        from_me,
+                    },
+                    BaileysEvent::MessageStarred {
+                        chat_jid,
+                        message_id,
+                        from_me,
+                        starred,
+                    } => RolleysEvent::MessageStarred {
+                        chat_jid,
+                        message_id,
+                        from_me,
+                        starred,
+                    },
+                    BaileysEvent::MessagesReaction { reaction: r } => {
+                        RolleysEvent::MessagesReaction {
+                            reaction: RolleysMessageReaction {
+                                chat_jid: r.chat_jid,
+                                message_id: r.message_id,
+                                target_from_me: r.target_from_me,
+                                target_participant: r.target_participant,
+                                sender: r.sender,
+                                sender_from_me: r.sender_from_me,
+                                text: r.text,
+                                removed: r.removed,
+                                sender_timestamp_ms: r.sender_timestamp_ms,
+                            },
+                        }
+                    }
+                    BaileysEvent::MessagingHistoryStatus {
+                        sync_type,
+                        status,
+                        explicit,
+                    } => RolleysEvent::MessagingHistoryStatus {
+                        sync_type,
+                        status,
+                        explicit,
+                    },
+                    BaileysEvent::MessageCappingUpdate { info: i } => {
+                        RolleysEvent::MessageCappingUpdate {
+                            info: RolleysMessageCapInfo {
+                                total_quota: i.total_quota,
+                                used_quota: i.used_quota,
+                                cycle_start_timestamp: i.cycle_start_timestamp,
+                                cycle_end_timestamp: i.cycle_end_timestamp,
+                                server_sent_timestamp: i.server_sent_timestamp,
+                                ote_status: i.ote_status,
+                                mv_status: i.mv_status,
+                                capping_status: i.capping_status,
+                            },
+                        }
+                    }
                 };
 
                 listener.on_event(ffi_event);
