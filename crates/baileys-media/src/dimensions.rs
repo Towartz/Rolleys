@@ -109,6 +109,41 @@ pub fn scale_image_for_status(image_bytes: &[u8], is_hd: bool) -> Result<Vec<u8>
     Ok(out_bytes)
 }
 
+/// Prepares an image as a WhatsApp profile picture like Baileys' `generateProfilePicture`: a
+/// centred square crop scaled to `size` x `size` pixels, encoded as JPEG (quality 50).
+pub fn generate_profile_picture(image_bytes: &[u8], size: u32) -> Result<Vec<u8>, MediaError> {
+    use image::codecs::jpeg::JpegEncoder;
+    use image::ExtendedColorType;
+
+    if image_bytes.is_empty() {
+        return Err(MediaError::DecryptionFailed(
+            "Empty image bytes for profile picture".to_string(),
+        ));
+    }
+    let img = image::load_from_memory(image_bytes).map_err(|e| {
+        MediaError::DecryptionFailed(format!("Failed to decode profile picture: {}", e))
+    })?;
+
+    let edge = img.width().min(img.height());
+    let square = img.crop_imm(
+        (img.width() - edge) / 2,
+        (img.height() - edge) / 2,
+        edge,
+        edge,
+    );
+    let rgb = square
+        .resize_exact(size, size, FilterType::Lanczos3)
+        .to_rgb8();
+
+    let mut out = Vec::new();
+    JpegEncoder::new_with_quality(&mut out, 50)
+        .encode(rgb.as_raw(), size, size, ExtendedColorType::Rgb8)
+        .map_err(|e| {
+            MediaError::EncryptionFailed(format!("Failed to encode profile picture: {}", e))
+        })?;
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -161,5 +196,38 @@ mod tests {
 
         let scaled_sd = scale_image_for_status(&jpeg_buf, false).unwrap();
         assert_eq!(scaled_sd.len(), jpeg_buf.len());
+    }
+
+    #[test]
+    fn profile_picture_is_a_centred_square_jpeg() {
+        // 300x200 PNG: red left third, green middle third, blue right third.
+        let mut img = image::RgbImage::new(300, 200);
+        for (x, _, px) in img.enumerate_pixels_mut() {
+            *px = match x / 100 {
+                0 => image::Rgb([255, 0, 0]),
+                1 => image::Rgb([0, 255, 0]),
+                _ => image::Rgb([0, 0, 255]),
+            };
+        }
+        let mut png = Vec::new();
+        image::DynamicImage::ImageRgb8(img)
+            .write_to(&mut Cursor::new(&mut png), ImageFormat::Png)
+            .unwrap();
+
+        let jpeg = generate_profile_picture(&png, 64).unwrap();
+        assert_eq!(&jpeg[..3], &[0xFF, 0xD8, 0xFF], "JPEG magic");
+        let dims = extract_image_dimensions(&jpeg).unwrap();
+        assert_eq!((dims.width, dims.height), (64, 64));
+
+        // The 200x200 centre of a 300x200 image is the green third plus slivers of its neighbours.
+        let decoded = image::load_from_memory(&jpeg).unwrap().to_rgb8();
+        let centre = decoded.get_pixel(32, 32);
+        assert!(
+            centre[1] > 200 && centre[0] < 60 && centre[2] < 60,
+            "centre should be green: {centre:?}"
+        );
+
+        assert!(generate_profile_picture(&[], 64).is_err());
+        assert!(generate_profile_picture(b"not an image", 64).is_err());
     }
 }

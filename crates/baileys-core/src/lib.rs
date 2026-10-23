@@ -26,6 +26,7 @@ pub mod polls;
 pub mod privacy;
 pub mod proto_builders;
 pub mod proto_recognizer;
+pub mod receipts;
 pub mod registration;
 pub mod reporting;
 pub mod retry;

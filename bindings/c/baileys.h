@@ -413,6 +413,16 @@ BAILEYS_API int baileys_client_newsletter_demote(BaileysClientHandle* handle, co
 BAILEYS_API int baileys_client_newsletter_change_owner(BaileysClientHandle* handle, const char* jid, const char* new_owner_jid);
 /* Marks channel posts as viewed. */
 BAILEYS_API int baileys_client_newsletter_view_receipt(BaileysClientHandle* handle, const char* jid, const uint64_t* server_ids, size_t server_ids_count);
+/* Changes name, description and/or picture (base64 JPEG, empty string removes) in one request. */
+BAILEYS_API int baileys_client_newsletter_update(BaileysClientHandle* handle, const char* jid, const char* update);
+/* Sets the channel description. */
+BAILEYS_API int baileys_client_newsletter_update_description(BaileysClientHandle* handle, const char* jid, const char* description);
+/* Sets the channel picture from any image (cropped square, 640 px JPEG). */
+BAILEYS_API int baileys_client_newsletter_update_picture(BaileysClientHandle* handle, const char* jid, const uint8_t* image, size_t image_len);
+/* Removes the channel picture. */
+BAILEYS_API int baileys_client_newsletter_remove_picture(BaileysClientHandle* handle, const char* jid);
+/* Subscriber count of a channel, -1 on failure. */
+BAILEYS_API int64_t baileys_client_newsletter_subscribers(BaileysClientHandle* handle, const char* jid);
 /* Posts an image to a channel. */
 BAILEYS_API char* baileys_client_newsletter_send_image(BaileysClientHandle* handle, const char* jid, const uint8_t* image, size_t image_len, const char* caption);
 /* Shares a channel post as a status story. */
@@ -421,6 +431,28 @@ BAILEYS_API char* baileys_client_newsletter_send_status_story(BaileysClientHandl
 BAILEYS_API char* baileys_client_newsletter_send_image_status_story(BaileysClientHandle* handle, const uint8_t* image, size_t image_len, const char* caption, const char* newsletter_jid, int32_t server_msg_id, const char* newsletter_name, const char* const* status_recipients, size_t status_recipients_count);
 /* Subscribes to live channel updates; returns the duration or NULL. */
 BAILEYS_API char* baileys_client_subscribe_newsletter_updates(BaileysClientHandle* handle, const char* newsletter_jid);
+/* Marks many messages read at once; JSON array of {remote_jid, id, participant, from_me}. Uses read-self when read receipts are off. */
+BAILEYS_API int baileys_client_read_messages(BaileysClientHandle* handle, const char* keys);
+/* Sets our label in a group (30 characters at most). */
+BAILEYS_API char* baileys_client_update_member_label(BaileysClientHandle* handle, const char* group_jid, const char* label);
+/* Asks our phone to resend a message that arrived undecryptable. */
+BAILEYS_API char* baileys_client_request_placeholder_resend(BaileysClientHandle* handle, const char* chat_jid, const char* msg_id, bool from_me, const char* participant);
+/* Default disappearing timer for new chats (0 = off). */
+BAILEYS_API int baileys_client_update_default_disappearing_mode(BaileysClientHandle* handle, uint32_t duration_secs);
+/* Default disappearing timer of users; JSON array of [jid, seconds, set_at]. */
+BAILEYS_API char* baileys_client_fetch_disappearing_duration(BaileysClientHandle* handle, const char* const* jids, size_t jids_count);
+/* Adds or edits a contact; JSON {full_name, first_name, lid_jid, pn_jid, username, save_on_primary_addressbook}. */
+BAILEYS_API int baileys_client_add_or_edit_contact(BaileysClientHandle* handle, const char* jid, const char* contact);
+/* Removes a contact (it must exist in the synced app state). */
+BAILEYS_API int baileys_client_remove_contact(BaileysClientHandle* handle, const char* jid);
+/* Adds or edits a quick reply (WhatsApp Business); returns its id. */
+BAILEYS_API char* baileys_client_add_or_edit_quick_reply(BaileysClientHandle* handle, const char* timestamp, const char* shortcut, const char* message);
+/* Deletes a quick reply by its id. */
+BAILEYS_API int baileys_client_remove_quick_reply(BaileysClientHandle* handle, const char* timestamp);
+/* Details of an order, using the token from the order message. */
+BAILEYS_API char* baileys_client_get_order_details(BaileysClientHandle* handle, const char* order_id, const char* token_base64);
+/* Updates our business profile; JSON {address, email, description, websites, hours}; unset fields stay. */
+BAILEYS_API int baileys_client_update_business_profile(BaileysClientHandle* handle, const char* update);
 /* Posts an audio status; audience NULL means all contacts. */
 BAILEYS_API char* baileys_client_send_status_audio(BaileysClientHandle* handle, const uint8_t* audio, size_t audio_len, uint32_t seconds, const char* mimetype, const char* const* audience, size_t audience_count);
 /* Posts a link status. */

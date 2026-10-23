@@ -658,6 +658,85 @@ impl BaileysClient {
         }
         Ok(())
     }
+    /// Changes several channel fields in one request (Baileys `newsletterUpdate`).
+    pub async fn newsletter_update(
+        &self,
+        jid: &str,
+        update: &crate::newsletter::NewsletterUpdate,
+    ) -> Result<(), CoreError> {
+        let normalized = if !jid.contains('@') {
+            format!("{}@newsletter", jid)
+        } else {
+            jid.to_string()
+        };
+        let vars = crate::newsletter::build_newsletter_update_vars(&normalized, update);
+        let iq =
+            crate::newsletter::build_mex_iq(crate::newsletter::MUTATION_UPDATE_NEWSLETTER, vars);
+        let res = self.send_iq(iq, Duration::from_secs(15)).await?;
+        let data = crate::newsletter::parse_mex_response(&res)?;
+        debug!("newsletter_update response data: {data}");
+        if let Ok(Some(mut stored)) = self.store.get_newsletter(&normalized).await {
+            if let Some(name) = &update.name {
+                stored.name = name.clone();
+            }
+            if let Some(description) = &update.description {
+                stored.description = Some(description.clone());
+            }
+            let _ = self.store.save_newsletter(&stored).await;
+        }
+        Ok(())
+    }
+    /// Sets the channel description (Baileys `newsletterUpdateDescription`).
+    pub async fn newsletter_update_description(
+        &self,
+        jid: &str,
+        description: &str,
+    ) -> Result<(), CoreError> {
+        self.newsletter_update(
+            jid,
+            &crate::newsletter::NewsletterUpdate {
+                description: Some(description.to_string()),
+                ..Default::default()
+            },
+        )
+        .await
+    }
+    /// Sets the channel picture from any decodable image (cropped square, 640 px JPEG).
+    pub async fn newsletter_update_picture(
+        &self,
+        jid: &str,
+        image_bytes: &[u8],
+    ) -> Result<(), CoreError> {
+        use base64::Engine;
+        let jpeg = baileys_media::generate_profile_picture(image_bytes, 640)
+            .map_err(|e| CoreError::Media(e.to_string()))?;
+        self.newsletter_update(
+            jid,
+            &crate::newsletter::NewsletterUpdate {
+                picture: Some(base64::engine::general_purpose::STANDARD.encode(jpeg)),
+                ..Default::default()
+            },
+        )
+        .await
+    }
+    /// Removes the channel picture (Baileys `newsletterRemovePicture`).
+    pub async fn newsletter_remove_picture(&self, jid: &str) -> Result<(), CoreError> {
+        self.newsletter_update(
+            jid,
+            &crate::newsletter::NewsletterUpdate {
+                picture: Some(String::new()),
+                ..Default::default()
+            },
+        )
+        .await
+    }
+    /// Number of subscribers of a channel (Baileys `newsletterSubscribers`).
+    ///
+    /// Read from the channel metadata: the dedicated subscribers query Baileys uses is answered
+    /// with an admin object on the live service and carries no count.
+    pub async fn newsletter_subscribers(&self, jid: &str) -> Result<u64, CoreError> {
+        Ok(self.newsletter_query_metadata(jid).await?.subscribers_count)
+    }
     /// Promotes a subscriber to admin in a WhatsApp Channel.
     pub async fn newsletter_promote(&self, jid: &str, user_jid: &str) -> Result<(), CoreError> {
         let normalized = if !jid.contains('@') {

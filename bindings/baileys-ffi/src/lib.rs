@@ -4165,6 +4165,336 @@ impl RolleysClient {
     }
 }
 
+/// A contact saved from the phone's address book (Baileys `ContactAction`).
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysContactEdit {
+    pub full_name: Option<String>,
+    pub first_name: Option<String>,
+    pub lid_jid: Option<String>,
+    pub pn_jid: Option<String>,
+    pub username: Option<String>,
+    pub save_on_primary_addressbook: Option<bool>,
+}
+
+/// A message to mark as read (Baileys `WAMessageKey`).
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysReadKey {
+    pub remote_jid: String,
+    pub id: String,
+    pub participant: Option<String>,
+    pub from_me: bool,
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysDisappearingDuration {
+    pub jid: String,
+    pub duration_secs: u32,
+    pub set_at: u64,
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysOrderProduct {
+    pub id: String,
+    pub name: String,
+    pub image_url: String,
+    pub price: i64,
+    pub currency: String,
+    pub quantity: i64,
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysOrderDetails {
+    pub total: i64,
+    pub currency: String,
+    pub products: Vec<RolleysOrderProduct>,
+}
+
+/// One day of business hours; `mode` is specific_hours, open_24h or appointment_only.
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysBusinessHoursDay {
+    pub day: String,
+    pub mode: String,
+    pub open_time_in_minutes: Option<String>,
+    pub close_time_in_minutes: Option<String>,
+}
+
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysBusinessHours {
+    pub timezone: String,
+    pub days: Vec<RolleysBusinessHoursDay>,
+}
+
+/// Business profile fields to change; unset fields stay as they are.
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysBusinessProfileUpdate {
+    pub address: Option<String>,
+    pub email: Option<String>,
+    pub description: Option<String>,
+    pub websites: Option<Vec<String>>,
+    pub hours: Option<RolleysBusinessHours>,
+}
+
+/// Channel fields to change; `picture` is base64 JPEG, an empty string removes it.
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct RolleysNewsletterUpdate {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub picture: Option<String>,
+}
+
+#[uniffi::export]
+impl RolleysClient {
+    /// Adds or edits a contact (Baileys `addOrEditContact`).
+    pub fn add_or_edit_contact(
+        &self,
+        jid: String,
+        contact: RolleysContactEdit,
+    ) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        let contact = baileys_core::syncd::ContactEdit {
+            full_name: contact.full_name,
+            first_name: contact.first_name,
+            lid_jid: contact.lid_jid,
+            pn_jid: contact.pn_jid,
+            username: contact.username,
+            save_on_primary_addressbook: contact.save_on_primary_addressbook,
+        };
+        self.runtime
+            .block_on(async move { client.add_or_edit_contact(&jid, &contact).await })
+            .map_err(op_err)
+    }
+
+    /// Removes a contact; it must exist in the synced app state.
+    pub fn remove_contact(&self, jid: String) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.remove_contact(&jid).await })
+            .map_err(op_err)
+    }
+
+    /// Adds or edits a quick reply (WhatsApp Business); returns its id.
+    pub fn add_or_edit_quick_reply(
+        &self,
+        timestamp: Option<String>,
+        shortcut: String,
+        message: String,
+    ) -> Result<String, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move {
+                client
+                    .add_or_edit_quick_reply(timestamp.as_deref(), &shortcut, &message)
+                    .await
+            })
+            .map_err(op_err)
+    }
+
+    pub fn remove_quick_reply(&self, timestamp: String) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.remove_quick_reply(&timestamp).await })
+            .map_err(op_err)
+    }
+
+    /// Changes name, description and/or picture of a channel in one request.
+    pub fn newsletter_update(
+        &self,
+        jid: String,
+        update: RolleysNewsletterUpdate,
+    ) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        let update = baileys_core::newsletter::NewsletterUpdate {
+            name: update.name,
+            description: update.description,
+            picture: update.picture,
+        };
+        self.runtime
+            .block_on(async move { client.newsletter_update(&jid, &update).await })
+            .map_err(op_err)
+    }
+
+    pub fn newsletter_update_description(
+        &self,
+        jid: String,
+        description: String,
+    ) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move {
+                client
+                    .newsletter_update_description(&jid, &description)
+                    .await
+            })
+            .map_err(op_err)
+    }
+
+    /// Sets the channel picture from any decodable image (cropped square, 640 px JPEG).
+    pub fn newsletter_update_picture(
+        &self,
+        jid: String,
+        image_bytes: Vec<u8>,
+    ) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.newsletter_update_picture(&jid, &image_bytes).await })
+            .map_err(op_err)
+    }
+
+    pub fn newsletter_remove_picture(&self, jid: String) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.newsletter_remove_picture(&jid).await })
+            .map_err(op_err)
+    }
+
+    pub fn newsletter_subscribers(&self, jid: String) -> Result<u64, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.newsletter_subscribers(&jid).await })
+            .map_err(op_err)
+    }
+
+    /// Marks many messages as read at once; uses read-self when read receipts are off.
+    pub fn read_messages(&self, keys: Vec<RolleysReadKey>) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        let keys: Vec<baileys_core::receipts::ReadKey> = keys
+            .into_iter()
+            .map(|k| baileys_core::receipts::ReadKey {
+                remote_jid: k.remote_jid,
+                id: k.id,
+                participant: k.participant,
+                from_me: k.from_me,
+            })
+            .collect();
+        self.runtime
+            .block_on(async move { client.read_messages(&keys).await })
+            .map_err(op_err)
+    }
+
+    /// Sets our label in a group (30 characters at most).
+    pub fn update_member_label(
+        &self,
+        group_jid: String,
+        label: String,
+    ) -> Result<String, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.update_member_label(&group_jid, &label).await })
+            .map_err(op_err)
+    }
+
+    /// Asks our phone to resend a message that arrived undecryptable.
+    pub fn request_placeholder_resend(
+        &self,
+        chat_jid: String,
+        message_id: String,
+        from_me: bool,
+        participant: Option<String>,
+    ) -> Result<String, FfiError> {
+        let client = self.client.clone();
+        let key = baileys_core::baileys_proto::proto::MessageKey {
+            remote_jid: Some(chat_jid),
+            from_me: Some(from_me),
+            id: Some(message_id),
+            participant,
+        };
+        self.runtime
+            .block_on(async move { client.request_placeholder_resend(&key).await })
+            .map_err(op_err)
+    }
+
+    /// Default disappearing timer for new chats (0 = off).
+    pub fn update_default_disappearing_mode(&self, duration_secs: u32) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.update_default_disappearing_mode(duration_secs).await })
+            .map_err(op_err)
+    }
+
+    pub fn fetch_disappearing_duration(
+        &self,
+        jids: Vec<String>,
+    ) -> Result<Vec<RolleysDisappearingDuration>, FfiError> {
+        let client = self.client.clone();
+        self.runtime.block_on(async move {
+            let refs: Vec<&str> = jids.iter().map(String::as_str).collect();
+            let rows = client
+                .fetch_disappearing_duration(&refs)
+                .await
+                .map_err(op_err)?;
+            Ok(rows
+                .into_iter()
+                .map(|(jid, duration_secs, set_at)| RolleysDisappearingDuration {
+                    jid,
+                    duration_secs,
+                    set_at,
+                })
+                .collect())
+        })
+    }
+
+    /// Details of an order, using the token carried by the order message.
+    pub fn get_order_details(
+        &self,
+        order_id: String,
+        token_base64: String,
+    ) -> Result<RolleysOrderDetails, FfiError> {
+        let client = self.client.clone();
+        self.runtime.block_on(async move {
+            let d = client
+                .get_order_details(&order_id, &token_base64)
+                .await
+                .map_err(op_err)?;
+            Ok(RolleysOrderDetails {
+                total: d.total,
+                currency: d.currency,
+                products: d
+                    .products
+                    .into_iter()
+                    .map(|p| RolleysOrderProduct {
+                        id: p.id,
+                        name: p.name,
+                        image_url: p.image_url,
+                        price: p.price,
+                        currency: p.currency,
+                        quantity: p.quantity,
+                    })
+                    .collect(),
+            })
+        })
+    }
+
+    /// Updates our business profile; unset fields stay as they are.
+    pub fn update_business_profile(
+        &self,
+        update: RolleysBusinessProfileUpdate,
+    ) -> Result<(), FfiError> {
+        let client = self.client.clone();
+        let update = baileys_core::commerce::BusinessProfileUpdate {
+            address: update.address,
+            email: update.email,
+            description: update.description,
+            websites: update.websites,
+            hours: update.hours.map(|h| baileys_core::commerce::BusinessHours {
+                timezone: h.timezone,
+                days: h
+                    .days
+                    .into_iter()
+                    .map(|d| baileys_core::commerce::BusinessHoursDay {
+                        day: d.day,
+                        mode: d.mode,
+                        open_time_in_minutes: d.open_time_in_minutes,
+                        close_time_in_minutes: d.close_time_in_minutes,
+                    })
+                    .collect(),
+            }),
+        };
+        self.runtime
+            .block_on(async move { client.update_business_profile(&update).await })
+            .map_err(op_err)
+    }
+}
+
 #[cfg(test)]
 mod parity_tests {
     /// Core client methods deliberately not exposed through FFI.

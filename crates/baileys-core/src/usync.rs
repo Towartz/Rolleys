@@ -305,6 +305,89 @@ pub fn parse_usync_lid_response(node: &BinaryNode) -> Result<Vec<(String, String
     Ok(mappings)
 }
 
+/// Builds a USync IQ stanza to query the default disappearing-messages timer of users.
+pub fn build_usync_disappearing_mode_iq(jids: &[&str]) -> BinaryNode {
+    let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+    let sid = format!("usync-disappearing-{:X}", rand::random::<u32>());
+
+    let user_nodes: Vec<BinaryNode> = jids
+        .iter()
+        .map(|&jid| {
+            let normalized = if !jid.contains('@') {
+                format!("{}@{}", jid, S_WHATSAPP_NET)
+            } else {
+                jid.to_string()
+            };
+            BinaryNode::new("user").with_attr("jid", normalized)
+        })
+        .collect();
+
+    BinaryNode::new("iq")
+        .with_attr("to", S_WHATSAPP_NET)
+        .with_attr("type", "get")
+        .with_attr("xmlns", "usync")
+        .with_attr("id", &iq_id)
+        .with_child(
+            BinaryNode::new("usync")
+                .with_attr("sid", sid)
+                .with_attr("mode", "query")
+                .with_attr("last", "true")
+                .with_attr("index", "0")
+                .with_attr("context", "interactive")
+                .with_child(
+                    BinaryNode::new("query").with_child(BinaryNode::new("disappearing_mode")),
+                )
+                .with_child(BinaryNode::new("list").with_children(user_nodes)),
+        )
+}
+
+/// Parses a disappearing-mode USync response into `(user_jid, duration_secs, set_at_timestamp)`.
+pub fn parse_usync_disappearing_mode_response(
+    node: &BinaryNode,
+) -> Result<Vec<(String, u32, u64)>, CoreError> {
+    let usync_node = node.get_child("usync").unwrap_or(node);
+    let Some(list_node) = usync_node.get_child("list") else {
+        return Ok(Vec::new());
+    };
+    let mut results = Vec::new();
+    for user_node in list_node.get_children().iter().filter(|c| c.tag == "user") {
+        let Some(jid) = user_node.get_attr("jid") else {
+            continue;
+        };
+        if let Some(mode) = user_node.get_child("disappearing_mode") {
+            if let Some(err) = mode.get_attr("error") {
+                return Err(CoreError::Protocol(format!(
+                    "disappearing_mode query failed for {jid}: {err}"
+                )));
+            }
+            let duration = mode
+                .get_attr("duration")
+                .and_then(|d| d.parse::<u32>().ok())
+                .unwrap_or(0);
+            let set_at = mode
+                .get_attr("t")
+                .and_then(|t| t.parse::<u64>().ok())
+                .unwrap_or(0);
+            results.push((jid.to_string(), duration, set_at));
+        }
+    }
+    Ok(results)
+}
+
+/// Builds the IQ that sets our default disappearing-messages timer for new chats
+/// (`0` turns it off).
+pub fn build_default_disappearing_mode_iq(duration_secs: u32) -> BinaryNode {
+    let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+    BinaryNode::new("iq")
+        .with_attr("xmlns", "disappearing_mode")
+        .with_attr("to", S_WHATSAPP_NET)
+        .with_attr("type", "set")
+        .with_attr("id", &iq_id)
+        .with_child(
+            BinaryNode::new("disappearing_mode").with_attr("duration", duration_secs.to_string()),
+        )
+}
+
 /// Builds a USync IQ stanza to query user About / Status strings.
 pub fn build_usync_status_iq(jids: &[&str]) -> BinaryNode {
     let iq_id = format!("3EB0{:X}", rand::random::<u64>());
@@ -727,5 +810,63 @@ mod tests {
             Some("62812345678@s.whatsapp.net".to_string())
         );
         assert_eq!(resolved.verified_name, Some("Alice Store".to_string()));
+    }
+
+    #[test]
+    fn disappearing_mode_query_and_response() {
+        let iq = build_usync_disappearing_mode_iq(&["628111", "629@s.whatsapp.net"]);
+        let usync = iq.get_child("usync").unwrap();
+        assert!(usync
+            .get_child("query")
+            .unwrap()
+            .get_child("disappearing_mode")
+            .is_some());
+        let jids: Vec<_> = usync
+            .get_child("list")
+            .unwrap()
+            .get_children()
+            .iter()
+            .map(|u| u.get_attr("jid").unwrap().to_string())
+            .collect();
+        assert_eq!(jids, vec!["628111@s.whatsapp.net", "629@s.whatsapp.net"]);
+
+        let response = BinaryNode::new("iq").with_child(
+            BinaryNode::new("usync").with_child(
+                BinaryNode::new("list").with_child(
+                    BinaryNode::new("user")
+                        .with_attr("jid", "628111@s.whatsapp.net")
+                        .with_child(
+                            BinaryNode::new("disappearing_mode")
+                                .with_attr("duration", "86400")
+                                .with_attr("t", "1700000000"),
+                        ),
+                ),
+            ),
+        );
+        assert_eq!(
+            parse_usync_disappearing_mode_response(&response).unwrap(),
+            vec![("628111@s.whatsapp.net".to_string(), 86400, 1_700_000_000)]
+        );
+
+        let failed = BinaryNode::new("iq").with_child(
+            BinaryNode::new("usync").with_child(
+                BinaryNode::new("list").with_child(
+                    BinaryNode::new("user")
+                        .with_attr("jid", "1@s.whatsapp.net")
+                        .with_child(BinaryNode::new("disappearing_mode").with_attr("error", "401")),
+                ),
+            ),
+        );
+        assert!(parse_usync_disappearing_mode_response(&failed).is_err());
+
+        let set = build_default_disappearing_mode_iq(604800);
+        assert_eq!(set.get_attr("xmlns"), Some("disappearing_mode"));
+        assert_eq!(set.get_attr("type"), Some("set"));
+        assert_eq!(
+            set.get_child("disappearing_mode")
+                .unwrap()
+                .get_attr("duration"),
+            Some("604800")
+        );
     }
 }

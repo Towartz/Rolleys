@@ -168,9 +168,12 @@ impl BaileysClient {
             iq_node = iq_node.with_attr("target", normalized);
         }
 
+        // Like Baileys' generateProfilePicture: centred square, 640 px, JPEG.
+        let jpeg = baileys_media::generate_profile_picture(image_bytes, 640)
+            .map_err(|e| CoreError::Media(e.to_string()))?;
         let picture_node = BinaryNode::new("picture")
             .with_attr("type", "image")
-            .with_bytes_content(image_bytes.to_vec());
+            .with_bytes_content(jpeg);
 
         iq_node = iq_node.with_child(picture_node);
         self.send_iq(iq_node, Duration::from_secs(15)).await?;
@@ -253,6 +256,26 @@ impl BaileysClient {
         let iq_node = crate::usync::build_usync_contact_iq(numbers);
         let res = self.send_iq(iq_node, Duration::from_secs(15)).await?;
         crate::usync::parse_usync_contact_response(&res)
+    }
+    /// Sets the default disappearing-messages timer applied to new chats (`0` turns it off)
+    /// (Baileys `updateDefaultDisappearingMode`).
+    pub async fn update_default_disappearing_mode(
+        &self,
+        duration_secs: u32,
+    ) -> Result<(), CoreError> {
+        let iq = crate::usync::build_default_disappearing_mode_iq(duration_secs);
+        self.send_iq(iq, Duration::from_secs(10)).await?;
+        Ok(())
+    }
+    /// Default disappearing-messages timer of users, as `(jid, duration_secs, set_at)`
+    /// (Baileys `fetchDisappearingDuration`).
+    pub async fn fetch_disappearing_duration(
+        &self,
+        jids: &[&str],
+    ) -> Result<Vec<(String, u32, u64)>, CoreError> {
+        let iq = crate::usync::build_usync_disappearing_mode_iq(jids);
+        let res = self.send_iq(iq, Duration::from_secs(15)).await?;
+        crate::usync::parse_usync_disappearing_mode_response(&res)
     }
     /// Configures disappearing messages ephemeral timer for a 1:1 or group chat.
     /// Duration in seconds: 0 (Off), 86400 (24h), 604800 (7d), 7776000 (90d).

@@ -1343,8 +1343,13 @@ impl BaileysClient {
         };
         let socket = socket_opt.ok_or_else(|| CoreError::Network("Client not connected".into()))?;
 
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
         let mut node = BinaryNode::new("receipt")
             .with_attr("id", msg_id)
+            .with_attr("t", now.to_string())
             .with_attr("to", remote_jid)
             .with_attr("type", "read");
 
@@ -1354,6 +1359,97 @@ impl BaileysClient {
 
         self.metrics().record_msg_out();
         socket.send_node(node).await
+    }
+    /// Sets our label ("member tag") in a group, at most 30 characters (Baileys `updateMemberLabel`).
+    pub async fn update_member_label(
+        &self,
+        group_jid: &str,
+        label: &str,
+    ) -> Result<String, CoreError> {
+        use baileys_proto::proto::message::{protocol_message, ProtocolMessage};
+        let label: String = label.chars().take(30).collect();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        let msg = Message {
+            protocol_message: Some(Box::new(ProtocolMessage {
+                r#type: Some(protocol_message::Type::GroupMemberLabelChange as i32),
+                member_label: Some(baileys_proto::proto::MemberLabel {
+                    label: Some(label),
+                    label_timestamp: Some(now),
+                }),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let meta = BinaryNode::new("meta")
+            .with_attr("tag_reason", "user_update")
+            .with_attr("appdata", "member_tag");
+        self.send_message_with_options(
+            group_jid,
+            msg,
+            MessageOptions::default().with_additional_node(meta),
+        )
+        .await
+    }
+    /// Asks our phone to resend a message that arrived as an undecryptable placeholder
+    /// (Baileys `requestPlaceholderResend`).
+    pub async fn request_placeholder_resend(
+        &self,
+        key: &baileys_proto::proto::MessageKey,
+    ) -> Result<String, CoreError> {
+        use baileys_proto::proto::message::{
+            peer_data_operation_request_message::PlaceholderMessageResendRequest, protocol_message,
+            PeerDataOperationRequestMessage, PeerDataOperationRequestType, ProtocolMessage,
+        };
+        let request = Message {
+            protocol_message: Some(Box::new(ProtocolMessage {
+                r#type: Some(protocol_message::Type::PeerDataOperationRequestMessage as i32),
+                peer_data_operation_request_message: Some(PeerDataOperationRequestMessage {
+                    peer_data_operation_request_type: Some(
+                        PeerDataOperationRequestType::PlaceholderMessageResend as i32,
+                    ),
+                    placeholder_message_resend_request: vec![PlaceholderMessageResendRequest {
+                        message_key: Some(key.clone()),
+                    }],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        self.send_peer_message(request).await
+    }
+    /// Marks many messages as read at once (Baileys `readMessages`). Keys may belong to different
+    /// chats and authors; our own messages are skipped. Uses `read-self` instead of `read` when our
+    /// privacy settings hide read receipts, so the sender is not told. Does nothing in ghost mode.
+    pub async fn read_messages(&self, keys: &[crate::receipts::ReadKey]) -> Result<(), CoreError> {
+        if self.is_ghost_mode() {
+            return Ok(());
+        }
+        let groups = crate::receipts::aggregate_keys_not_from_me(keys);
+        if groups.is_empty() {
+            return Ok(());
+        }
+        let socket = {
+            let lock = self.socket.lock().await;
+            lock.clone()
+        }
+        .ok_or_else(|| CoreError::Network("Client not connected".into()))?;
+        let privacy = self.fetch_privacy_settings().await?;
+        let receipt_type = crate::receipts::read_receipt_type(privacy.readreceipts.as_deref());
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        for group in &groups {
+            if let Some(node) = crate::receipts::build_read_receipt(group, receipt_type, now) {
+                self.metrics().record_msg_out();
+                socket.send_node(node).await?;
+            }
+        }
+        Ok(())
     }
     /// Sends a text message quoting/replying to a previous message.
     pub async fn send_text_message_with_quote(

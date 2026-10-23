@@ -145,7 +145,7 @@ fn usage() {
     println!("  -p, --phone <NUMBER>  Number to pair by code (or env LIVE_PHONE)");
     println!("  -s, --db <PATH>       Session database (default .sessions/live_suite.db)");
     println!("      --clean           Delete the session first (forces re-pairing)");
-    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, media, groups, community, newsletter, privacy");
+    println!("      --only <AREA>     Run one area: core, messaging, rich, chat, appstate, reaction, history, account, media, groups, community, newsletter, privacy");
     println!("      --community       Also run community scenarios (leaves a stub community)");
     println!(
         "      --chat-group <NAME>  Run chat scenarios on an existing group (no messages sent)"
@@ -289,6 +289,7 @@ async fn main() {
     run_community(&mut suite).await;
     run_newsletter(&mut suite).await;
     run_privacy(&mut suite, &self_jid).await;
+    run_account(&mut suite, &self_jid).await;
 
     report(&suite.results, json);
     let failed = suite.results.iter().any(|r| r.status == Status::Fail);
@@ -743,6 +744,9 @@ async fn run_newsletter(s: &mut Suite) {
         for name in [
             "query metadata",
             "rename",
+            "description",
+            "picture set → removed",
+            "subscribers",
             "post → visible",
             "react → visible",
             "view receipt",
@@ -777,6 +781,71 @@ async fn run_newsletter(s: &mut Suite) {
         })
         .await
         .map(|_| "renamed".to_string())
+    })
+    .await;
+
+    let j = jid.clone();
+    s.step("newsletter", "description", move |c| async move {
+        let text = "live-suite description";
+        c.newsletter_update_description(&j, text).await.map_err(e)?;
+        eventually("description in query_metadata", || {
+            let (c, j) = (c.clone(), j.clone());
+            async move {
+                let meta = c.newsletter_query_metadata(&j).await.map_err(e)?;
+                Ok((meta.description.as_deref() == Some(text)).then_some(()))
+            }
+        })
+        .await
+        .map(|_| "description updated".to_string())
+    })
+    .await;
+
+    let j = jid.clone();
+    s.step("newsletter", "picture set → removed", move |c| async move {
+        c.newsletter_update_picture(&j, &TINY_PNG)
+            .await
+            .map_err(e)?;
+        eventually("picture url in query_metadata", || {
+            let (c, j) = (c.clone(), j.clone());
+            async move {
+                let meta = c.newsletter_query_metadata(&j).await.map_err(e)?;
+                Ok(meta.picture_url.filter(|u| !u.is_empty()))
+            }
+        })
+        .await?;
+        c.newsletter_remove_picture(&j).await.map_err(e)?;
+        eventually("picture gone from query_metadata", || {
+            let (c, j) = (c.clone(), j.clone());
+            async move {
+                let meta = c.newsletter_query_metadata(&j).await.map_err(e)?;
+                Ok(meta.picture_url.is_none_or(|u| u.is_empty()).then_some(()))
+            }
+        })
+        .await
+        .map(|_| "picture set, seen, removed".to_string())
+    })
+    .await;
+
+    let j = jid.clone();
+    s.step("newsletter", "subscribers", move |c| async move {
+        let own = c.newsletter_subscribers(&j).await.map_err(e)?;
+        // The list of followed channels carries no counts, so ask each channel directly; at least
+        // one followed channel must report subscribers, which proves the count is really read.
+        let followed = c.newsletter_get_subscribed().await.map_err(e)?;
+        let mut best: Option<(String, u64)> = None;
+        for m in followed.iter().filter(|m| m.jid != j).take(8) {
+            let n = c.newsletter_subscribers(&m.jid).await.map_err(e)?;
+            if best.as_ref().is_none_or(|(_, b)| n > *b) {
+                best = Some((m.jid.clone(), n));
+            }
+        }
+        match best {
+            Some((jid, n)) if n > 0 => Ok(format!("own {own}, {jid} has {n}")),
+            Some((jid, _)) => Err(format!(
+                "none of the followed channels reported subscribers (best: {jid})"
+            )),
+            None => Err("not following any other channel to compare against".into()),
+        }
     })
     .await;
 
@@ -1228,6 +1297,57 @@ async fn run_chat(s: &mut Suite, self_jid: &str) {
         s.skip("chat", "unstar (restore)", why);
     }
 
+    // Contacts live in critical_unblock_low and use REMOVE, which no other step exercises.
+    let store_c = s.store.clone();
+    s.step(
+        "chat",
+        "contact add → remove (chain matches snapshot)",
+        move |c| async move {
+            use baileys_core::syncd::{ContactEdit, CRITICAL_UNBLOCK_LOW};
+            let cols = [CRITICAL_UNBLOCK_LOW];
+            let jid = "6280000000001@s.whatsapp.net";
+            let edit = ContactEdit {
+                full_name: Some("Live Suite Test".into()),
+                first_name: Some("Live".into()),
+                pn_jid: Some(jid.into()),
+                // WhatsApp-level contact only; nothing is written to the phone's address book.
+                save_on_primary_addressbook: Some(false),
+                ..Default::default()
+            };
+            // Start from the server's truth so the chained hash is built on a complete state.
+            c.resync_app_state(&cols, true).await.map_err(e)?;
+            c.add_or_edit_contact(jid, &edit).await.map_err(e)?;
+            c.remove_contact(jid).await.map_err(e)?;
+            let chained = app_state_fingerprint(&store_c, &cols).await?;
+            c.resync_app_state(&cols, true).await.map_err(e)?;
+            let rebuilt = app_state_fingerprint(&store_c, &cols).await?;
+            for (a, b) in chained.iter().zip(&rebuilt) {
+                if a.1 != b.1 {
+                    return Err(format!(
+                        "{}: server at v{} but we chained to v{} (changed elsewhere; rerun)",
+                        a.0, b.1, a.1
+                    ));
+                }
+                if a.2 != b.2 || a.3 != b.3 {
+                    return Err(format!(
+                        "{} v{}: chained hash/entries ({}.., {}) differ from snapshot ({}.., {})",
+                        a.0,
+                        a.1,
+                        &a.2[..16],
+                        a.3,
+                        &b.2[..16],
+                        b.3
+                    ));
+                }
+            }
+            Ok(format!(
+                "{} v{} {} entries, hash identical",
+                rebuilt[0].0, rebuilt[0].1, rebuilt[0].3
+            ))
+        },
+    )
+    .await;
+
     // The server cannot check our LTHash, so rebuild the collections from its snapshot and require
     // the state we chained locally (version, hash, entry count) to be identical. This is what
     // catches a wrong hash that the individual acks above cannot.
@@ -1482,6 +1602,63 @@ async fn run_history(s: &mut Suite) {
     .await;
 }
 
+async fn run_account(s: &mut Suite, self_jid: &str) {
+    println!("== account settings (restored after each step) ==");
+    if !s.selected("account") {
+        return;
+    }
+    let me = self_jid.to_string();
+    s.step(
+        "account",
+        "default disappearing mode (set → restore)",
+        move |c| async move {
+            let current = |c: Arc<BaileysClient>, me: String| async move {
+                let rows = c
+                    .fetch_disappearing_duration(&[me.as_str()])
+                    .await
+                    .map_err(e)?;
+                Ok::<_, String>(rows.first().map(|r| r.1))
+            };
+            let before = current(c.clone(), me.clone())
+                .await?
+                .ok_or("no disappearing_mode row for ourselves")?;
+            let wanted = if before == 86_400 { 604_800 } else { 86_400 };
+            c.update_default_disappearing_mode(wanted)
+                .await
+                .map_err(e)?;
+            let seen = eventually("new default timer", || {
+                let (c, me) = (c.clone(), me.clone());
+                async move { Ok(current(c, me).await?.filter(|d| *d == wanted)) }
+            })
+            .await;
+            // Always put the account back, even when the check above failed.
+            let restore = c.update_default_disappearing_mode(before).await.map_err(e);
+            seen?;
+            restore?;
+            Ok(format!("{before}s → {wanted}s → {before}s"))
+        },
+    )
+    .await;
+
+    let me = self_jid.to_string();
+    s.step(
+        "account",
+        "placeholder resend request",
+        move |c| async move {
+            use baileys_core::baileys_proto::proto::MessageKey;
+            let key = MessageKey {
+                remote_jid: Some(me.clone()),
+                from_me: Some(false),
+                id: Some("LIVESUITE-NO-SUCH-MESSAGE".to_string()),
+                participant: None,
+            };
+            let (id, st) = send_acked(&c, || c.request_placeholder_resend(&key)).await?;
+            Ok(format!("id={id} {st}"))
+        },
+    )
+    .await;
+}
+
 async fn run_groups(s: &mut Suite) {
     println!("== groups (self-created) ==");
     if !s.selected("groups") {
@@ -1529,6 +1706,8 @@ async fn run_groups(s: &mut Suite) {
             "subject → groups.update",
             "description → groups.update",
             "announce → groups.update",
+            "picture set → removed",
+            "member label",
             "invite code",
             "fetch all participating",
         ] {
@@ -1602,6 +1781,44 @@ async fn run_groups(s: &mut Suite) {
             .await
             .map_err(e)?;
         Ok("announce on observed, restored".into())
+    })
+    .await;
+
+    let g = gid.clone();
+    s.step("groups", "picture set → removed", move |c| async move {
+        // The server answers 404 item-not-found when a group has no picture (Baileys throws on it
+        // too), so for polling that means "no picture yet".
+        async fn picture(c: &BaileysClient, g: &str) -> Result<Option<String>, String> {
+            match c.profile_picture_url(g, "image").await {
+                Ok(url) => Ok(url),
+                Err(err) if err.to_string().contains("item-not-found") => Ok(None),
+                Err(err) => Err(err.to_string()),
+            }
+        }
+        c.update_profile_picture(Some(&g), &TINY_PNG)
+            .await
+            .map_err(|err| format!("setting the picture failed: {err}"))?;
+        eventually("group picture url", || {
+            let (c, g) = (c.clone(), g.clone());
+            async move { picture(&c, &g).await }
+        })
+        .await?;
+        c.remove_profile_picture(Some(&g))
+            .await
+            .map_err(|err| format!("removing the picture failed: {err}"))?;
+        eventually("group picture removed", || {
+            let (c, g) = (c.clone(), g.clone());
+            async move { Ok(picture(&c, &g).await?.is_none().then_some(())) }
+        })
+        .await
+        .map(|_| "picture set, seen, removed".to_string())
+    })
+    .await;
+
+    let g = gid.clone();
+    s.step("groups", "member label", move |c| async move {
+        let (id, st) = send_acked(&c, || c.update_member_label(&g, "live-suite")).await?;
+        Ok(format!("id={id} {st}"))
     })
     .await;
 

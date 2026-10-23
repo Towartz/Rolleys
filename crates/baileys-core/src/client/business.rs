@@ -3,6 +3,27 @@
 use super::*;
 
 impl BaileysClient {
+    /// Fetches the details of an order; `token_base64` is the token carried by the order message
+    /// (Baileys `getOrderDetails`).
+    pub async fn get_order_details(
+        &self,
+        order_id: &str,
+        token_base64: &str,
+    ) -> Result<crate::commerce::OrderDetails, CoreError> {
+        let iq = crate::commerce::build_order_details_iq(order_id, token_base64);
+        let res = self.send_iq(iq, Duration::from_secs(15)).await?;
+        crate::commerce::parse_order_details(&res)
+    }
+    /// Updates our WhatsApp Business profile; only the fields that are set change
+    /// (Baileys `updateBussinesProfile`).
+    pub async fn update_business_profile(
+        &self,
+        update: &crate::commerce::BusinessProfileUpdate,
+    ) -> Result<(), CoreError> {
+        let iq = crate::commerce::build_business_profile_update_iq(update);
+        self.send_iq(iq, Duration::from_secs(15)).await?;
+        Ok(())
+    }
     /// Returns all WhatsApp Business labels from local store.
     pub async fn get_labels(&self) -> Result<Vec<StoredLabel>, CoreError> {
         self.store

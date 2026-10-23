@@ -56,22 +56,7 @@ const NOT_EXPOSED = {
   wamBuffer: 'internal telemetry',
   ws: 'the websocket lives in Rust',
 
-  // Baileys features the Rust core does not implement yet.
-  addOrEditContact: 'not implemented in core',
-  removeContact: 'not implemented in core',
-  addOrEditQuickReply: 'not implemented in core',
-  removeQuickReply: 'not implemented in core',
-  getOrderDetails: 'not implemented in core',
-  updateBussinesProfile: 'not implemented in core',
-  updateMemberLabel: 'not implemented in core',
-  updateDefaultDisappearingMode: 'not implemented in core',
-  fetchDisappearingDuration: 'not implemented in core',
-  requestPlaceholderResend: 'not implemented in core',
-  newsletterUpdate: 'not implemented in core',
-  newsletterUpdateDescription: 'not implemented in core',
-  newsletterUpdatePicture: 'not implemented in core',
-  newsletterRemovePicture: 'not implemented in core',
-  newsletterSubscribers: 'not implemented in core',
+  // Baileys features the Rust core does not implement fully.
   updateCoverPhoto: 'core takes an already uploaded photo id, not media',
 };
 
@@ -119,20 +104,22 @@ test('Baileys-named calls map arguments to the native order', () => {
   ]);
 });
 
-test('readMessages and star iterate over Baileys keys', async () => {
+test('readMessages hands the keys to the native batch call and star iterates', async () => {
   const calls = [];
   const client = new Proxy({}, { get: (_, name) => async (...args) => calls.push([name, args]) });
   const sock = createSockApi(client, new EventEmitter());
 
   await sock.readMessages([
     { remoteJid: 'a@s.whatsapp.net', id: 'M1' },
-    { remoteJid: 'g@g.us', id: 'M2', participant: 'p@lid' },
+    { remoteJid: 'g@g.us', id: 'M2', participant: 'p@lid', fromMe: false },
   ]);
   await sock.star('a@s.whatsapp.net', [{ id: 'M1', fromMe: true }], true);
 
   assert.deepEqual(calls, [
-    ['sendReadReceipt', ['a@s.whatsapp.net', 'M1', null]],
-    ['sendReadReceipt', ['g@g.us', 'M2', 'p@lid']],
+    ['readMessages', [[
+      { remoteJid: 'a@s.whatsapp.net', id: 'M1', participant: null, fromMe: false },
+      { remoteJid: 'g@g.us', id: 'M2', participant: 'p@lid', fromMe: false },
+    ]]],
     ['chatModifyStar', ['a@s.whatsapp.net', 'M1', true, true]],
   ]);
 });

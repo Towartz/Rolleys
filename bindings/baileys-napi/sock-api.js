@@ -315,11 +315,16 @@ function createSockApi(client, ev) {
     },
 
     // Read receipts and stars (Baileys keys: { remoteJid, id, participant, fromMe })
-    readMessages: async (keys) => {
-      for (const k of keys) {
-        await client.sendReadReceipt(k.remoteJid, k.id, k.participant || null);
-      }
-    },
+    // One receipt per chat/author, `read-self` when our read receipts are off (Baileys readMessages).
+    readMessages: (keys) =>
+      client.readMessages(
+        keys.map((k) => ({
+          remoteJid: k.remoteJid,
+          id: k.id,
+          participant: k.participant || null,
+          fromMe: !!k.fromMe,
+        }))
+      ),
     star: async (jid, messages, star) => {
       for (const m of messages) {
         await client.chatModifyStar(jid, m.id, !!m.fromMe, !!star);
@@ -385,6 +390,47 @@ function createSockApi(client, ev) {
         typeof key === 'string' ? key : key.remoteJid
       ),
 
+    // Contacts, quick replies, account
+    addOrEditContact: (jid, contact) =>
+      client.addOrEditContact(jid, {
+        fullName: contact.fullName ?? null,
+        firstName: contact.firstName ?? null,
+        lidJid: contact.lidJid ?? null,
+        pnJid: contact.pnJid ?? null,
+        username: contact.username ?? null,
+        saveOnPrimaryAddressbook: contact.saveOnPrimaryAddressbook ?? null,
+      }),
+    removeContact: (jid) => client.removeContact(jid),
+    addOrEditQuickReply: (quickReply) =>
+      client.addOrEditQuickReply(quickReply.timestamp ?? null, quickReply.shortcut || '', quickReply.message || ''),
+    removeQuickReply: (timestamp) => client.removeQuickReply(timestamp),
+    updateDefaultDisappearingMode: (duration) => client.updateDefaultDisappearingMode(duration),
+    fetchDisappearingDuration: async (...jids) => {
+      const rows = await client.fetchDisappearingDuration(jids.flat());
+      return rows.map((r) => ({ id: r.jid, disappearingMode: { duration: r.durationSecs, setAt: new Date(r.setAt * 1000) } }));
+    },
+    getOrderDetails: (orderId, tokenBase64) => client.getOrderDetails(orderId, tokenBase64),
+    updateBussinesProfile: (args) => client.updateBusinessProfile({
+      address: args.address ?? null,
+      email: args.email ?? null,
+      description: args.description ?? null,
+      websites: args.websites ?? null,
+      hours: args.hours
+        ? {
+            timezone: args.hours.timezone,
+            days: args.hours.days.map((d) => ({
+              day: d.day,
+              mode: d.mode,
+              openTimeInMinutes: d.openTimeInMinutes ?? null,
+              closeTimeInMinutes: d.closeTimeInMinutes ?? null,
+            })),
+          }
+        : null,
+    }),
+    updateMemberLabel: (jid, memberLabel) => client.updateMemberLabel(jid, memberLabel),
+    requestPlaceholderResend: (key) =>
+      client.requestPlaceholderResend(key.remoteJid, key.id, !!key.fromMe, key.participant || null),
+
     // Newsletters (channels)
     newsletterCreate: (name, description) => client.newsletterCreate(name, description || null),
     newsletterMetadata: (type, key) => client.newsletterQueryMetadata(key),
@@ -394,6 +440,16 @@ function createSockApi(client, ev) {
     newsletterUnmute: (jid) => client.newsletterMute(jid, false),
     newsletterUpdateName: (jid, name) => client.newsletterUpdateName(jid, name),
     newsletterDelete: (jid) => client.newsletterDelete(jid),
+    newsletterUpdate: (jid, updates) =>
+      client.newsletterUpdate(jid, {
+        name: updates.name ?? null,
+        description: updates.description ?? null,
+        picture: updates.picture ?? null,
+      }),
+    newsletterUpdateDescription: (jid, description) => client.newsletterUpdateDescription(jid, description),
+    newsletterUpdatePicture: (jid, content) => client.newsletterUpdatePicture(jid, Buffer.from(content)),
+    newsletterRemovePicture: (jid) => client.newsletterRemovePicture(jid),
+    newsletterSubscribers: async (jid) => ({ subscribers: Number(await client.newsletterSubscribers(jid)) }),
     newsletterReactMessage: (jid, serverId, reaction) => client.newsletterReact(jid, Number(serverId), reaction || ''),
     newsletterFetchMessages: (jid, count, since) => client.newsletterFetchMessages(jid, count, since || null),
     newsletterAdminCount: (jid) => client.newsletterAdminCount(jid),

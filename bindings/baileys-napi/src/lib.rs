@@ -3540,6 +3540,300 @@ impl RolleysClient {
     }
 }
 
+/// A contact saved from the phone's address book (Baileys `ContactAction`).
+#[napi(object)]
+pub struct NapiContactEdit {
+    pub full_name: Option<String>,
+    pub first_name: Option<String>,
+    pub lid_jid: Option<String>,
+    pub pn_jid: Option<String>,
+    pub username: Option<String>,
+    pub save_on_primary_addressbook: Option<bool>,
+}
+
+/// A message to mark as read (Baileys `WAMessageKey`).
+#[napi(object)]
+pub struct NapiReadKey {
+    pub remote_jid: String,
+    pub id: String,
+    pub participant: Option<String>,
+    pub from_me: Option<bool>,
+}
+
+#[napi(object)]
+pub struct NapiDisappearingDuration {
+    pub jid: String,
+    pub duration_secs: u32,
+    pub set_at: i64,
+}
+
+#[napi(object)]
+pub struct NapiOrderProduct {
+    pub id: String,
+    pub name: String,
+    pub image_url: String,
+    pub price: i64,
+    pub currency: String,
+    pub quantity: i64,
+}
+
+#[napi(object)]
+pub struct NapiOrderDetails {
+    pub total: i64,
+    pub currency: String,
+    pub products: Vec<NapiOrderProduct>,
+}
+
+/// One day of business hours; `mode` is specific_hours, open_24h or appointment_only.
+#[napi(object)]
+pub struct NapiBusinessHoursDay {
+    pub day: String,
+    pub mode: String,
+    pub open_time_in_minutes: Option<String>,
+    pub close_time_in_minutes: Option<String>,
+}
+
+#[napi(object)]
+pub struct NapiBusinessHours {
+    pub timezone: String,
+    pub days: Vec<NapiBusinessHoursDay>,
+}
+
+/// Business profile fields to change; unset fields stay as they are.
+#[napi(object)]
+pub struct NapiBusinessProfileUpdate {
+    pub address: Option<String>,
+    pub email: Option<String>,
+    pub description: Option<String>,
+    pub websites: Option<Vec<String>>,
+    pub hours: Option<NapiBusinessHours>,
+}
+
+/// Channel fields to change; `picture` is base64 JPEG, an empty string removes it.
+#[napi(object)]
+pub struct NapiNewsletterUpdate {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub picture: Option<String>,
+}
+
+#[napi]
+impl RolleysClient {
+    #[napi]
+    pub async fn add_or_edit_contact(&self, jid: String, contact: NapiContactEdit) -> Result<()> {
+        let contact = baileys_core::syncd::ContactEdit {
+            full_name: contact.full_name,
+            first_name: contact.first_name,
+            lid_jid: contact.lid_jid,
+            pn_jid: contact.pn_jid,
+            username: contact.username,
+            save_on_primary_addressbook: contact.save_on_primary_addressbook,
+        };
+        self.run_async(move |c| async move { c.add_or_edit_contact(&jid, &contact).await })
+            .await
+    }
+
+    /// Removes a contact; it must exist in the synced app state.
+    #[napi]
+    pub async fn remove_contact(&self, jid: String) -> Result<()> {
+        self.run_async(move |c| async move { c.remove_contact(&jid).await })
+            .await
+    }
+
+    /// Adds or edits a quick reply (WhatsApp Business); returns its id.
+    #[napi]
+    pub async fn add_or_edit_quick_reply(
+        &self,
+        timestamp: Option<String>,
+        shortcut: String,
+        message: String,
+    ) -> Result<String> {
+        self.run_async(move |c| async move {
+            c.add_or_edit_quick_reply(timestamp.as_deref(), &shortcut, &message)
+                .await
+        })
+        .await
+    }
+
+    #[napi]
+    pub async fn remove_quick_reply(&self, timestamp: String) -> Result<()> {
+        self.run_async(move |c| async move { c.remove_quick_reply(&timestamp).await })
+            .await
+    }
+
+    /// Changes name, description and/or picture of a channel in one request.
+    #[napi]
+    pub async fn newsletter_update(&self, jid: String, update: NapiNewsletterUpdate) -> Result<()> {
+        let update = baileys_core::newsletter::NewsletterUpdate {
+            name: update.name,
+            description: update.description,
+            picture: update.picture,
+        };
+        self.run_async(move |c| async move { c.newsletter_update(&jid, &update).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn newsletter_update_description(
+        &self,
+        jid: String,
+        description: String,
+    ) -> Result<()> {
+        self.run_async(
+            move |c| async move { c.newsletter_update_description(&jid, &description).await },
+        )
+        .await
+    }
+
+    /// Sets the channel picture from any decodable image (cropped square, 640 px JPEG).
+    #[napi]
+    pub async fn newsletter_update_picture(&self, jid: String, image: Buffer) -> Result<()> {
+        let bytes: Vec<u8> = image.as_ref().to_vec();
+        self.run_async(move |c| async move { c.newsletter_update_picture(&jid, &bytes).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn newsletter_remove_picture(&self, jid: String) -> Result<()> {
+        self.run_async(move |c| async move { c.newsletter_remove_picture(&jid).await })
+            .await
+    }
+
+    #[napi]
+    pub async fn newsletter_subscribers(&self, jid: String) -> Result<i64> {
+        self.run_async(
+            move |c| async move { c.newsletter_subscribers(&jid).await.map(|n| n as i64) },
+        )
+        .await
+    }
+
+    /// Marks many messages as read at once; uses read-self when read receipts are off.
+    #[napi]
+    pub async fn read_messages(&self, keys: Vec<NapiReadKey>) -> Result<()> {
+        let keys: Vec<baileys_core::receipts::ReadKey> = keys
+            .into_iter()
+            .map(|k| baileys_core::receipts::ReadKey {
+                remote_jid: k.remote_jid,
+                id: k.id,
+                participant: k.participant,
+                from_me: k.from_me.unwrap_or(false),
+            })
+            .collect();
+        self.run_async(move |c| async move { c.read_messages(&keys).await })
+            .await
+    }
+
+    /// Sets our label in a group (30 characters at most).
+    #[napi]
+    pub async fn update_member_label(&self, group_jid: String, label: String) -> Result<String> {
+        self.run_async(move |c| async move { c.update_member_label(&group_jid, &label).await })
+            .await
+    }
+
+    /// Asks our phone to resend a message that arrived undecryptable.
+    #[napi]
+    pub async fn request_placeholder_resend(
+        &self,
+        chat_jid: String,
+        message_id: String,
+        from_me: Option<bool>,
+        participant: Option<String>,
+    ) -> Result<String> {
+        let key = baileys_core::baileys_proto::proto::MessageKey {
+            remote_jid: Some(chat_jid),
+            from_me: Some(from_me.unwrap_or(false)),
+            id: Some(message_id),
+            participant,
+        };
+        self.run_async(move |c| async move { c.request_placeholder_resend(&key).await })
+            .await
+    }
+
+    /// Default disappearing timer for new chats (0 = off).
+    #[napi]
+    pub async fn update_default_disappearing_mode(&self, duration_secs: u32) -> Result<()> {
+        self.run_async(
+            move |c| async move { c.update_default_disappearing_mode(duration_secs).await },
+        )
+        .await
+    }
+
+    #[napi]
+    pub async fn fetch_disappearing_duration(
+        &self,
+        jids: Vec<String>,
+    ) -> Result<Vec<NapiDisappearingDuration>> {
+        let rows = self
+            .run_async(move |c| async move {
+                let refs: Vec<&str> = jids.iter().map(String::as_str).collect();
+                c.fetch_disappearing_duration(&refs).await
+            })
+            .await?;
+        Ok(rows
+            .into_iter()
+            .map(|(jid, duration_secs, set_at)| NapiDisappearingDuration {
+                jid,
+                duration_secs,
+                set_at: set_at as i64,
+            })
+            .collect())
+    }
+
+    /// Details of an order, using the token carried by the order message.
+    #[napi]
+    pub async fn get_order_details(
+        &self,
+        order_id: String,
+        token_base64: String,
+    ) -> Result<NapiOrderDetails> {
+        let d = self
+            .run_async(move |c| async move { c.get_order_details(&order_id, &token_base64).await })
+            .await?;
+        Ok(NapiOrderDetails {
+            total: d.total,
+            currency: d.currency,
+            products: d
+                .products
+                .into_iter()
+                .map(|p| NapiOrderProduct {
+                    id: p.id,
+                    name: p.name,
+                    image_url: p.image_url,
+                    price: p.price,
+                    currency: p.currency,
+                    quantity: p.quantity,
+                })
+                .collect(),
+        })
+    }
+
+    /// Updates our business profile; unset fields stay as they are.
+    #[napi]
+    pub async fn update_business_profile(&self, update: NapiBusinessProfileUpdate) -> Result<()> {
+        let update = baileys_core::commerce::BusinessProfileUpdate {
+            address: update.address,
+            email: update.email,
+            description: update.description,
+            websites: update.websites,
+            hours: update.hours.map(|h| baileys_core::commerce::BusinessHours {
+                timezone: h.timezone,
+                days: h
+                    .days
+                    .into_iter()
+                    .map(|d| baileys_core::commerce::BusinessHoursDay {
+                        day: d.day,
+                        mode: d.mode,
+                        open_time_in_minutes: d.open_time_in_minutes,
+                        close_time_in_minutes: d.close_time_in_minutes,
+                    })
+                    .collect(),
+            }),
+        };
+        self.run_async(move |c| async move { c.update_business_profile(&update).await })
+            .await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use baileys_core::BaileysEvent;

@@ -743,6 +743,109 @@ impl BaileysClient {
 
         Ok(())
     }
+    /// Adds or edits a contact in the phone's address book (Baileys `addOrEditContact`).
+    pub async fn add_or_edit_contact(
+        &self,
+        jid: &str,
+        contact: &crate::syncd::ContactEdit,
+    ) -> Result<(), CoreError> {
+        let normalized = if !jid.contains('@') {
+            format!("{}@s.whatsapp.net", jid.trim_start_matches('+'))
+        } else {
+            jid.to_string()
+        };
+        self.dispatch_syncd_patch(
+            crate::syncd::CRITICAL_UNBLOCK_LOW,
+            |key_id, key_data, state_hash, ver| {
+                crate::syncd::create_contact_patch(
+                    &normalized,
+                    Some(contact),
+                    key_id,
+                    key_data,
+                    state_hash,
+                    ver,
+                )
+            },
+        )
+        .await?;
+        let name = contact
+            .full_name
+            .clone()
+            .or_else(|| contact.first_name.clone());
+        let _ = self
+            .store
+            .save_contact(&baileys_store::StoredContact {
+                jid: normalized,
+                name: name.clone(),
+                push_name: name,
+                lid: contact.lid_jid.clone(),
+            })
+            .await;
+        Ok(())
+    }
+    /// Removes a contact from the phone's address book (Baileys `removeContact`).
+    ///
+    /// Fails when the contact is not in the synced app state (run `resync_app_state` first).
+    /// The local contact record is kept: the store has no way to delete one.
+    pub async fn remove_contact(&self, jid: &str) -> Result<(), CoreError> {
+        let normalized = if !jid.contains('@') {
+            format!("{}@s.whatsapp.net", jid.trim_start_matches('+'))
+        } else {
+            jid.to_string()
+        };
+        self.dispatch_syncd_patch(
+            crate::syncd::CRITICAL_UNBLOCK_LOW,
+            |key_id, key_data, state_hash, ver| {
+                crate::syncd::create_contact_patch(
+                    &normalized,
+                    None,
+                    key_id,
+                    key_data,
+                    state_hash,
+                    ver,
+                )
+            },
+        )
+        .await
+    }
+    /// Adds or edits a quick reply (WhatsApp Business). Returns its timestamp id, which is
+    /// `timestamp` when editing and the current time when `None` creates a new one.
+    pub async fn add_or_edit_quick_reply(
+        &self,
+        timestamp: Option<&str>,
+        shortcut: &str,
+        message: &str,
+    ) -> Result<String, CoreError> {
+        let id = timestamp.map(str::to_string).unwrap_or_else(|| {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+                .to_string()
+        });
+        self.dispatch_syncd_patch(
+            crate::syncd::REGULAR,
+            |key_id, key_data, state_hash, ver| {
+                crate::syncd::create_quick_reply_patch(
+                    &id, shortcut, message, false, key_id, key_data, state_hash, ver,
+                )
+            },
+        )
+        .await?;
+        Ok(id)
+    }
+    /// Deletes a quick reply by its timestamp id (Baileys `removeQuickReply`).
+    pub async fn remove_quick_reply(&self, timestamp: &str) -> Result<(), CoreError> {
+        self.dispatch_syncd_patch(
+            crate::syncd::REGULAR,
+            |key_id, key_data, state_hash, ver| {
+                crate::syncd::create_quick_reply_patch(
+                    timestamp, "", "", true, key_id, key_data, state_hash, ver,
+                )
+            },
+        )
+        .await
+    }
     /// Marks a chat as read or unread across devices.
     pub async fn chat_modify_mark_unread(
         &self,

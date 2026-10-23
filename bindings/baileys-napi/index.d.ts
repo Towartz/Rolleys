@@ -407,6 +407,28 @@ export interface WASocket {
   newsletterChangeOwner(jid: string, newOwnerJid: string): Promise<void>;
   newsletterDemote(jid: string, userJid: string): Promise<void>;
   subscribeNewsletterUpdates(jid: string): Promise<any>;
+  newsletterUpdate(jid: string, updates: { name?: string; description?: string; picture?: string }): Promise<void>;
+  newsletterUpdateDescription(jid: string, description: string): Promise<void>;
+  newsletterUpdatePicture(jid: string, content: Buffer | Uint8Array): Promise<void>;
+  newsletterRemovePicture(jid: string): Promise<void>;
+  newsletterSubscribers(jid: string): Promise<{ subscribers: number }>;
+
+  addOrEditContact(jid: string, contact: { fullName?: string; firstName?: string; lidJid?: string; pnJid?: string; username?: string; saveOnPrimaryAddressbook?: boolean }): Promise<void>;
+  removeContact(jid: string): Promise<void>;
+  addOrEditQuickReply(quickReply: { shortcut: string; message: string; timestamp?: string }): Promise<string>;
+  removeQuickReply(timestamp: string): Promise<void>;
+  updateDefaultDisappearingMode(duration: number): Promise<void>;
+  fetchDisappearingDuration(...jids: string[]): Promise<{ id: string; disappearingMode: { duration: number; setAt: Date } }[]>;
+  getOrderDetails(orderId: string, tokenBase64: string): Promise<{ total: number; currency: string; products: { id: string; name: string; imageUrl: string; price: number; currency: string; quantity: number }[] }>;
+  updateBussinesProfile(args: {
+    address?: string;
+    email?: string;
+    description?: string;
+    websites?: string[];
+    hours?: { timezone: string; days: ({ day: string; mode: 'specific_hours'; openTimeInMinutes: string; closeTimeInMinutes: string } | { day: string; mode: 'open_24h' | 'appointment_only' })[] };
+  }): Promise<void>;
+  updateMemberLabel(jid: string, memberLabel: string): Promise<string>;
+  requestPlaceholderResend(key: { remoteJid: string; id: string; fromMe?: boolean; participant?: string }): Promise<string>;
 }
 
 export function makeWASocket(config?: WASocketConfig): WASocket;

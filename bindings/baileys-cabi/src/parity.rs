@@ -2454,6 +2454,147 @@ pub unsafe extern "C" fn baileys_client_newsletter_view_receipt(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn baileys_client_newsletter_update(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+    update: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let update: baileys_core::newsletter::NewsletterUpdate = match cstr_opt(update) {
+        Some(Some(j)) => match serde_json::from_str(&j) {
+            Ok(v) => v,
+            Err(e) => {
+                set_last_error(format!("update: {e}"));
+                return -1;
+            }
+        },
+        _ => {
+            invalid_arg("update");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.newsletter_update(&jid, &update).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_newsletter_update_description(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+    description: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let description = match cstr_opt(description) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("description");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.newsletter_update_description(&jid, &description).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_newsletter_update_picture(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+    image: *const u8,
+    image_len: usize,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let image = match byte_slice(image, image_len) {
+        Some(v) => v.to_vec(),
+        None => {
+            invalid_arg("image");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.newsletter_update_picture(&jid, &image).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_newsletter_remove_picture(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.newsletter_remove_picture(&jid).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_newsletter_subscribers(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+) -> i64 {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.newsletter_subscribers(&jid).await.map(|n| n as i64) });
+    finish_i64(res)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn baileys_client_newsletter_send_image(
     handle: *mut BaileysClientHandle,
     jid: *const c_char,
@@ -2641,6 +2782,329 @@ pub unsafe extern "C" fn baileys_client_subscribe_newsletter_updates(
         .runtime
         .block_on(async move { c.subscribe_newsletter_updates(&newsletter_jid).await });
     finish_ostr(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_read_messages(
+    handle: *mut BaileysClientHandle,
+    keys: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let keys: Vec<baileys_core::receipts::ReadKey> = match cstr_opt(keys) {
+        Some(Some(j)) => match serde_json::from_str(&j) {
+            Ok(v) => v,
+            Err(e) => {
+                set_last_error(format!("keys: {e}"));
+                return -1;
+            }
+        },
+        _ => {
+            invalid_arg("keys");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.read_messages(&keys).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_update_member_label(
+    handle: *mut BaileysClientHandle,
+    group_jid: *const c_char,
+    label: *const c_char,
+) -> *mut c_char {
+    let Some(h) = handle_ref(handle) else {
+        return std::ptr::null_mut();
+    };
+    let group_jid = match cstr_opt(group_jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("group_jid");
+            return std::ptr::null_mut();
+        }
+    };
+    let label = match cstr_opt(label) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("label");
+            return std::ptr::null_mut();
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.update_member_label(&group_jid, &label).await });
+    finish_str(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_request_placeholder_resend(
+    handle: *mut BaileysClientHandle,
+    chat_jid: *const c_char,
+    msg_id: *const c_char,
+    from_me: bool,
+    participant: *const c_char,
+) -> *mut c_char {
+    let Some(h) = handle_ref(handle) else {
+        return std::ptr::null_mut();
+    };
+    let chat_jid = match cstr_opt(chat_jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("chat_jid");
+            return std::ptr::null_mut();
+        }
+    };
+    let msg_id = match cstr_opt(msg_id) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("msg_id");
+            return std::ptr::null_mut();
+        }
+    };
+    let participant = match cstr_opt(participant) {
+        Some(v) => v,
+        None => {
+            invalid_arg("participant");
+            return std::ptr::null_mut();
+        }
+    };
+    let c = h.client.clone();
+    let res = h.runtime.block_on(async move {
+        {
+            let key = baileys_core::baileys_proto::proto::MessageKey {
+                remote_jid: Some(chat_jid),
+                from_me: Some(from_me),
+                id: Some(msg_id),
+                participant,
+            };
+            c.request_placeholder_resend(&key).await
+        }
+    });
+    finish_str(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_update_default_disappearing_mode(
+    handle: *mut BaileysClientHandle,
+    duration_secs: u32,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.update_default_disappearing_mode(duration_secs).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_fetch_disappearing_duration(
+    handle: *mut BaileysClientHandle,
+    jids: *const *const c_char,
+    jids_count: usize,
+) -> *mut c_char {
+    let Some(h) = handle_ref(handle) else {
+        return std::ptr::null_mut();
+    };
+    let jids = match str_array(jids, jids_count) {
+        Some(v) => v,
+        None => {
+            invalid_arg("jids");
+            return std::ptr::null_mut();
+        }
+    };
+    let c = h.client.clone();
+    let res = h.runtime.block_on(async move {
+        {
+            let refs: Vec<&str> = jids.iter().map(String::as_str).collect();
+            c.fetch_disappearing_duration(&refs).await
+        }
+    });
+    finish_json(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_add_or_edit_contact(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+    contact: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let contact: baileys_core::syncd::ContactEdit = match cstr_opt(contact) {
+        Some(Some(j)) => match serde_json::from_str(&j) {
+            Ok(v) => v,
+            Err(e) => {
+                set_last_error(format!("contact: {e}"));
+                return -1;
+            }
+        },
+        _ => {
+            invalid_arg("contact");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.add_or_edit_contact(&jid, &contact).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_remove_contact(
+    handle: *mut BaileysClientHandle,
+    jid: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let jid = match cstr_opt(jid) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("jid");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.remove_contact(&jid).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_add_or_edit_quick_reply(
+    handle: *mut BaileysClientHandle,
+    timestamp: *const c_char,
+    shortcut: *const c_char,
+    message: *const c_char,
+) -> *mut c_char {
+    let Some(h) = handle_ref(handle) else {
+        return std::ptr::null_mut();
+    };
+    let timestamp = match cstr_opt(timestamp) {
+        Some(v) => v,
+        None => {
+            invalid_arg("timestamp");
+            return std::ptr::null_mut();
+        }
+    };
+    let shortcut = match cstr_opt(shortcut) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("shortcut");
+            return std::ptr::null_mut();
+        }
+    };
+    let message = match cstr_opt(message) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("message");
+            return std::ptr::null_mut();
+        }
+    };
+    let c = h.client.clone();
+    let res = h.runtime.block_on(async move {
+        c.add_or_edit_quick_reply(timestamp.as_deref(), &shortcut, &message)
+            .await
+    });
+    finish_str(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_remove_quick_reply(
+    handle: *mut BaileysClientHandle,
+    timestamp: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let timestamp = match cstr_opt(timestamp) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("timestamp");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.remove_quick_reply(&timestamp).await });
+    finish_unit(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_get_order_details(
+    handle: *mut BaileysClientHandle,
+    order_id: *const c_char,
+    token_base64: *const c_char,
+) -> *mut c_char {
+    let Some(h) = handle_ref(handle) else {
+        return std::ptr::null_mut();
+    };
+    let order_id = match cstr_opt(order_id) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("order_id");
+            return std::ptr::null_mut();
+        }
+    };
+    let token_base64 = match cstr_opt(token_base64) {
+        Some(Some(v)) => v,
+        _ => {
+            invalid_arg("token_base64");
+            return std::ptr::null_mut();
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.get_order_details(&order_id, &token_base64).await });
+    finish_json(res)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn baileys_client_update_business_profile(
+    handle: *mut BaileysClientHandle,
+    update: *const c_char,
+) -> c_int {
+    let Some(h) = handle_ref(handle) else {
+        return -1;
+    };
+    let update: baileys_core::commerce::BusinessProfileUpdate = match cstr_opt(update) {
+        Some(Some(j)) => match serde_json::from_str(&j) {
+            Ok(v) => v,
+            Err(e) => {
+                set_last_error(format!("update: {e}"));
+                return -1;
+            }
+        },
+        _ => {
+            invalid_arg("update");
+            return -1;
+        }
+    };
+    let c = h.client.clone();
+    let res = h
+        .runtime
+        .block_on(async move { c.update_business_profile(&update).await });
+    finish_unit(res)
 }
 
 #[no_mangle]

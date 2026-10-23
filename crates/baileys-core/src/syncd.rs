@@ -345,6 +345,7 @@ impl DecodedSyncdMutation {
     }
 }
 
+#[derive(Debug)]
 pub struct SyncdPatchResult {
     pub patch: SyncdPatch,
     pub new_hash: Vec<u8>,
@@ -385,8 +386,18 @@ where
         res = build(&base, state.version)?;
     }
     let (index_mac, value_mac) = res.mutation_macs().ok_or_else(no_macs)?;
+    let is_remove = res.patch.mutations.first().and_then(|m| m.operation) == Some(1);
     let mut index_value_map = state.index_value_map.clone();
-    index_value_map.insert(index_mac, value_mac);
+    if is_remove {
+        // Baileys refuses this too: there is nothing on the server to remove.
+        if index_value_map.remove(&index_mac).is_none() {
+            return Err(CoreError::Protocol(
+                "Cannot remove an app-state entry that does not exist".into(),
+            ));
+        }
+    } else {
+        index_value_map.insert(index_mac, value_mac);
+    }
     let next = LTHashState {
         version: res.next_version,
         hash: res.new_hash.clone(),
@@ -459,12 +470,13 @@ pub fn encode_syncd_patch(
         vec![0u8; 128]
     };
 
+    // SET adds this value. REMOVE adds nothing: the value being removed was already subtracted from
+    // `state_hash` by `apply_local_patch` (it is the previous value of the same index).
     let new_hash = if operation == 0 {
         LTHashAntiTampering::subtract_then_add(&base_hash, &[], &[value_mac])
             .map_err(|e| CoreError::Crypto(format!("LTHash error: {}", e)))?
     } else {
-        LTHashAntiTampering::subtract_then_add(&base_hash, &[value_mac], &[])
-            .map_err(|e| CoreError::Crypto(format!("LTHash error: {}", e)))?
+        base_hash.clone()
     };
 
     let next_version = current_version + 1;
@@ -850,6 +862,101 @@ pub fn create_star_patch(
         action_value,
         2, // apiVersion 2
         0, // SET
+        key_id,
+        key_data,
+        state_hash,
+        current_version,
+    )
+}
+
+/// Fields of a contact saved on the phone's address book (`ContactAction`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ContactEdit {
+    pub full_name: Option<String>,
+    pub first_name: Option<String>,
+    pub lid_jid: Option<String>,
+    pub pn_jid: Option<String>,
+    pub username: Option<String>,
+    pub save_on_primary_addressbook: Option<bool>,
+}
+
+/// Constructs a contact add/edit (`Some`) or removal (`None`) patch (Baileys `addOrEditContact` /
+/// `removeContact`, collection `critical_unblock_low`, api version 2).
+pub fn create_contact_patch(
+    jid: &str,
+    contact: Option<&ContactEdit>,
+    key_id: &[u8],
+    key_data: &[u8],
+    state_hash: &[u8],
+    current_version: u64,
+) -> Result<SyncdPatchResult, CoreError> {
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let action = contact
+        .map(|c| sync_action_value::ContactAction {
+            full_name: c.full_name.clone(),
+            first_name: c.first_name.clone(),
+            lid_jid: c.lid_jid.clone(),
+            pn_jid: c.pn_jid.clone(),
+            username: c.username.clone(),
+            save_on_primary_addressbook: c.save_on_primary_addressbook,
+            birthday: None,
+        })
+        .unwrap_or_default();
+    let action_value = SyncActionValue {
+        timestamp: Some(now as i64),
+        contact_action: Some(action),
+        ..Default::default()
+    };
+    encode_syncd_patch(
+        CRITICAL_UNBLOCK_LOW,
+        &["contact", jid],
+        action_value,
+        2,
+        if contact.is_some() { 0 } else { 1 },
+        key_id,
+        key_data,
+        state_hash,
+        current_version,
+    )
+}
+
+/// Constructs a quick-reply add/edit/delete patch (Baileys `addOrEditQuickReply` /
+/// `removeQuickReply`, collection `regular`, api version 2). `timestamp` identifies the reply.
+pub fn create_quick_reply_patch(
+    timestamp: &str,
+    shortcut: &str,
+    message: &str,
+    deleted: bool,
+    key_id: &[u8],
+    key_data: &[u8],
+    state_hash: &[u8],
+    current_version: u64,
+) -> Result<SyncdPatchResult, CoreError> {
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let action_value = SyncActionValue {
+        timestamp: Some(now as i64),
+        quick_reply_action: Some(sync_action_value::QuickReplyAction {
+            shortcut: Some(shortcut.to_string()),
+            message: Some(message.to_string()),
+            keywords: Vec::new(),
+            count: Some(0),
+            deleted: Some(deleted),
+            associated_label_ids: Vec::new(),
+        }),
+        ..Default::default()
+    };
+    encode_syncd_patch(
+        REGULAR,
+        &["quick_reply", timestamp],
+        action_value,
+        2,
+        0,
         key_id,
         key_data,
         state_hash,
@@ -1742,5 +1849,108 @@ mod tests {
         // Nothing recognisable stays `Other`.
         let m = mutation(&["somethingNew", jid], SyncActionValue::default());
         assert!(matches!(m.parse_action(), SyncdAction::Other { .. }));
+    }
+
+    #[test]
+    fn contact_remove_patch_matches_decoder() {
+        let key_id = [1u8, 2, 3, 4, 5, 6];
+        let key_data = [9u8; 32];
+        let resolver = |id: &[u8]| (id == key_id).then(|| key_data.to_vec());
+        let jid = "628111@s.whatsapp.net";
+        let edit = ContactEdit {
+            full_name: Some("Test Person".into()),
+            first_name: Some("Test".into()),
+            pn_jid: Some(jid.into()),
+            ..Default::default()
+        };
+
+        // Add, then edit (same index), then remove: each step must agree with the decoder.
+        let s0 = LTHashState {
+            version: 3,
+            ..Default::default()
+        };
+        let mut state = s0;
+        for (step, contact) in [
+            ("add", Some(&edit)),
+            ("edit", Some(&edit)),
+            ("remove", None),
+        ] {
+            let (patch, next) = apply_local_patch(&state, |h, v| {
+                create_contact_patch(jid, contact, &key_id, &key_data, h, v)
+            })
+            .unwrap_or_else(|e| panic!("{step}: {e}"));
+            let (decoded, muts) =
+                decode_syncd_patch(&patch.patch, CRITICAL_UNBLOCK_LOW, &state, resolver, true)
+                    .unwrap_or_else(|e| panic!("{step}: decoder rejected the patch: {e}"));
+            assert_eq!(
+                decoded.hash, next.hash,
+                "{step}: hash differs from the decoder's"
+            );
+            assert_eq!(
+                decoded.index_value_map, next.index_value_map,
+                "{step}: index map differs"
+            );
+            assert_eq!(muts.len(), 1);
+            state = next;
+        }
+        assert!(
+            state.index_value_map.is_empty(),
+            "removing the only entry empties the map"
+        );
+        assert_eq!(
+            state.hash,
+            vec![0u8; 128],
+            "an empty collection hashes to zero"
+        );
+    }
+
+    #[test]
+    fn removing_a_missing_entry_is_an_error() {
+        let key_id = [1u8, 2, 3, 4, 5, 6];
+        let key_data = [9u8; 32];
+        let err = apply_local_patch(&LTHashState::default(), |h, v| {
+            create_contact_patch("1@s.whatsapp.net", None, &key_id, &key_data, h, v)
+        })
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("does not exist"), "{err}");
+    }
+
+    #[test]
+    fn quick_reply_patch_decodes() {
+        let key_id = [1u8, 2, 3, 4, 5, 6];
+        let key_data = [9u8; 32];
+        let resolver = |id: &[u8]| (id == key_id).then(|| key_data.to_vec());
+        let state = LTHashState::default();
+        let (patch, next) = apply_local_patch(&state, |h, v| {
+            create_quick_reply_patch(
+                "1700000000",
+                "/hi",
+                "Hello!",
+                false,
+                &key_id,
+                &key_data,
+                h,
+                v,
+            )
+        })
+        .unwrap();
+        let (decoded, muts) =
+            decode_syncd_patch(&patch.patch, REGULAR, &state, resolver, true).unwrap();
+        assert_eq!(decoded.hash, next.hash);
+        let action = muts[0]
+            .sync_action
+            .value
+            .as_ref()
+            .unwrap()
+            .quick_reply_action
+            .as_ref()
+            .unwrap();
+        assert_eq!(action.shortcut.as_deref(), Some("/hi"));
+        assert_eq!(action.message.as_deref(), Some("Hello!"));
+        assert_eq!(
+            muts[0].index,
+            vec!["quick_reply".to_string(), "1700000000".to_string()]
+        );
     }
 }

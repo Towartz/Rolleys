@@ -594,6 +594,275 @@ pub fn build_remove_cover_photo_iq(photo_id: &str) -> BinaryNode {
         .with_child(profile)
 }
 
+/// One product line of an order (Baileys `OrderProduct`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrderProduct {
+    pub id: String,
+    pub name: String,
+    pub image_url: String,
+    pub price: i64,
+    pub currency: String,
+    pub quantity: i64,
+}
+
+/// Full details of an order (Baileys `OrderDetails`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrderDetails {
+    pub total: i64,
+    pub currency: String,
+    pub products: Vec<OrderProduct>,
+}
+
+fn child_text(node: &BinaryNode, tag: &str) -> Option<String> {
+    let child = node.get_child(tag)?;
+    child.content_as_string().map(String::from).or_else(|| {
+        child
+            .content_as_bytes()
+            .map(|b| String::from_utf8_lossy(b).into_owned())
+    })
+}
+
+/// Builds the IQ that fetches an order by id; `token_base64` comes from the order message.
+pub fn build_order_details_iq(order_id: &str, token_base64: &str) -> BinaryNode {
+    let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+    BinaryNode::new("iq")
+        .with_attr("to", "s.whatsapp.net")
+        .with_attr("type", "get")
+        .with_attr("xmlns", "fb:thrift_iq")
+        .with_attr("smax_id", "5")
+        .with_attr("id", &iq_id)
+        .with_child(
+            BinaryNode::new("order")
+                .with_attr("op", "get")
+                .with_attr("id", order_id)
+                .with_child(
+                    BinaryNode::new("image_dimensions")
+                        .with_child(BinaryNode::new("width").with_bytes_content(b"100".to_vec()))
+                        .with_child(BinaryNode::new("height").with_bytes_content(b"100".to_vec())),
+                )
+                .with_child(
+                    BinaryNode::new("token").with_bytes_content(token_base64.as_bytes().to_vec()),
+                ),
+        )
+}
+
+/// Parses the reply to [`build_order_details_iq`].
+pub fn parse_order_details(node: &BinaryNode) -> Result<OrderDetails, CoreError> {
+    let order = node
+        .get_child("order")
+        .ok_or_else(|| CoreError::Protocol("Missing <order> in order details response".into()))?;
+    let num =
+        |n: &BinaryNode, tag: &str| child_text(n, tag).and_then(|v| v.trim().parse::<i64>().ok());
+    let products = order
+        .get_children()
+        .iter()
+        .filter(|c| c.tag == "product")
+        .map(|p| OrderProduct {
+            id: child_text(p, "id").unwrap_or_default(),
+            name: child_text(p, "name").unwrap_or_default(),
+            image_url: p
+                .get_child("image")
+                .and_then(|i| child_text(i, "url"))
+                .unwrap_or_default(),
+            price: num(p, "price").unwrap_or(0),
+            currency: child_text(p, "currency").unwrap_or_default(),
+            quantity: num(p, "quantity").unwrap_or(0),
+        })
+        .collect();
+    let price = order.get_child("price");
+    Ok(OrderDetails {
+        total: price.and_then(|p| num(p, "total")).unwrap_or(0),
+        currency: price
+            .and_then(|p| child_text(p, "currency"))
+            .unwrap_or_default(),
+        products,
+    })
+}
+
+/// One day of business hours. `mode` is `specific_hours`, `open_24h` or `appointment_only`;
+/// the open/close minutes (from midnight, as text) apply to `specific_hours` only.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BusinessHoursDay {
+    pub day: String,
+    pub mode: String,
+    pub open_time_in_minutes: Option<String>,
+    pub close_time_in_minutes: Option<String>,
+}
+
+/// Opening hours with their timezone (e.g. `Asia/Jakarta`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BusinessHours {
+    pub timezone: String,
+    pub days: Vec<BusinessHoursDay>,
+}
+
+/// Fields to change on our business profile (Baileys `UpdateBussinesProfileProps`); unset fields
+/// are left alone.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BusinessProfileUpdate {
+    pub address: Option<String>,
+    pub email: Option<String>,
+    pub description: Option<String>,
+    pub websites: Option<Vec<String>>,
+    pub hours: Option<BusinessHours>,
+}
+
+/// Builds the delta IQ that updates our business profile.
+pub fn build_business_profile_update_iq(update: &BusinessProfileUpdate) -> BinaryNode {
+    let mut fields: Vec<BinaryNode> = Vec::new();
+    for (tag, value) in [
+        ("address", &update.address),
+        ("email", &update.email),
+        ("description", &update.description),
+    ] {
+        if let Some(v) = value {
+            fields.push(BinaryNode::new(tag).with_string_content(v.as_str()));
+        }
+    }
+    if let Some(websites) = &update.websites {
+        for site in websites {
+            fields.push(BinaryNode::new("website").with_string_content(site.as_str()));
+        }
+    }
+    if let Some(hours) = &update.hours {
+        let days = hours
+            .days
+            .iter()
+            .map(|d| {
+                let mut cfg = BinaryNode::new("business_hours_config")
+                    .with_attr("day_of_week", d.day.as_str())
+                    .with_attr("mode", d.mode.as_str());
+                if d.mode == "specific_hours" {
+                    if let Some(open) = &d.open_time_in_minutes {
+                        cfg = cfg.with_attr("open_time", open.as_str());
+                    }
+                    if let Some(close) = &d.close_time_in_minutes {
+                        cfg = cfg.with_attr("close_time", close.as_str());
+                    }
+                }
+                cfg
+            })
+            .collect();
+        fields.push(
+            BinaryNode::new("business_hours")
+                .with_attr("timezone", hours.timezone.as_str())
+                .with_children(days),
+        );
+    }
+    let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+    BinaryNode::new("iq")
+        .with_attr("to", "s.whatsapp.net")
+        .with_attr("type", "set")
+        .with_attr("xmlns", "w:biz")
+        .with_attr("id", &iq_id)
+        .with_child(
+            BinaryNode::new("business_profile")
+                .with_attr("v", "3")
+                .with_attr("mutation_type", "delta")
+                .with_children(fields),
+        )
+}
+
+#[cfg(test)]
+mod business_tests {
+    use super::*;
+
+    #[test]
+    fn order_details_round_trip() {
+        let iq = build_order_details_iq("ORDER1", "dG9rZW4=");
+        let order = iq.get_child("order").unwrap();
+        assert_eq!(order.get_attr("op"), Some("get"));
+        assert_eq!(order.get_attr("id"), Some("ORDER1"));
+        assert_eq!(
+            order.get_child("token").unwrap().content_as_bytes(),
+            Some(&b"dG9rZW4="[..])
+        );
+
+        let text = |tag: &str, v: &str| BinaryNode::new(tag).with_string_content(v);
+        let response = BinaryNode::new("iq").with_child(
+            BinaryNode::new("order")
+                .with_child(
+                    BinaryNode::new("product")
+                        .with_child(text("id", "P1"))
+                        .with_child(text("name", "Tea"))
+                        .with_child(
+                            BinaryNode::new("image").with_child(text("url", "https://x/y.jpg")),
+                        )
+                        .with_child(text("price", "15000"))
+                        .with_child(text("currency", "IDR"))
+                        .with_child(text("quantity", "2")),
+                )
+                .with_child(
+                    BinaryNode::new("price")
+                        .with_child(text("total", "30000"))
+                        .with_child(text("currency", "IDR")),
+                ),
+        );
+        let details = parse_order_details(&response).unwrap();
+        assert_eq!(details.total, 30000);
+        assert_eq!(details.currency, "IDR");
+        assert_eq!(details.products.len(), 1);
+        assert_eq!(details.products[0].name, "Tea");
+        assert_eq!(details.products[0].image_url, "https://x/y.jpg");
+        assert_eq!(
+            (details.products[0].price, details.products[0].quantity),
+            (15000, 2)
+        );
+        assert!(parse_order_details(&BinaryNode::new("iq")).is_err());
+    }
+
+    #[test]
+    fn business_profile_update_only_sends_set_fields() {
+        let iq = build_business_profile_update_iq(&BusinessProfileUpdate {
+            description: Some("We sell tea".into()),
+            websites: Some(vec!["https://a.example".into(), "https://b.example".into()]),
+            hours: Some(BusinessHours {
+                timezone: "Asia/Jakarta".into(),
+                days: vec![
+                    BusinessHoursDay {
+                        day: "mon".into(),
+                        mode: "specific_hours".into(),
+                        open_time_in_minutes: Some("540".into()),
+                        close_time_in_minutes: Some("1020".into()),
+                    },
+                    BusinessHoursDay {
+                        day: "sun".into(),
+                        mode: "open_24h".into(),
+                        open_time_in_minutes: Some("1".into()),
+                        close_time_in_minutes: None,
+                    },
+                ],
+            }),
+            ..Default::default()
+        });
+        assert_eq!(iq.get_attr("xmlns"), Some("w:biz"));
+        let profile = iq.get_child("business_profile").unwrap();
+        assert_eq!(profile.get_attr("v"), Some("3"));
+        assert_eq!(profile.get_attr("mutation_type"), Some("delta"));
+        let tags: Vec<_> = profile
+            .get_children()
+            .iter()
+            .map(|c| c.tag.as_str())
+            .collect();
+        assert_eq!(
+            tags,
+            vec!["description", "website", "website", "business_hours"]
+        );
+        let hours = profile.get_child("business_hours").unwrap();
+        assert_eq!(hours.get_attr("timezone"), Some("Asia/Jakarta"));
+        let mon = &hours.get_children()[0];
+        assert_eq!(
+            (mon.get_attr("open_time"), mon.get_attr("close_time")),
+            (Some("540"), Some("1020"))
+        );
+        let sun = &hours.get_children()[1];
+        assert!(
+            sun.get_attr("open_time").is_none(),
+            "times only apply to specific_hours"
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

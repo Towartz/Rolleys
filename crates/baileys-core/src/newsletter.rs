@@ -52,6 +52,32 @@ pub struct NewsletterMessage {
     pub raw_proto: Vec<u8>,
 }
 
+/// Fields of a channel that can be changed with one update (Baileys `NewsletterUpdate`).
+/// `picture` is base64 JPEG, or the empty string to remove the picture.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewsletterUpdate {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub picture: Option<String>,
+}
+
+/// GraphQL variables of an update; only the fields that are set are sent, and settings are
+/// explicitly null as Baileys does.
+pub fn build_newsletter_update_vars(newsletter_jid: &str, update: &NewsletterUpdate) -> Value {
+    let mut updates = serde_json::Map::new();
+    if let Some(name) = &update.name {
+        updates.insert("name".into(), Value::String(name.clone()));
+    }
+    if let Some(description) = &update.description {
+        updates.insert("description".into(), Value::String(description.clone()));
+    }
+    if let Some(picture) = &update.picture {
+        updates.insert("picture".into(), Value::String(picture.clone()));
+    }
+    updates.insert("settings".into(), Value::Null);
+    serde_json::json!({ "newsletter_id": newsletter_jid, "updates": updates })
+}
+
 /// Builds outgoing `<iq type="get" xmlns="w:mex">` querying Meta GraphQL.
 pub fn build_mex_iq(query_id: &str, variables: Value) -> BinaryNode {
     let payload_val = serde_json::json!({
@@ -98,6 +124,27 @@ pub fn parse_mex_response(res_node: &BinaryNode) -> Result<Value, CoreError> {
     Ok(root_val.get("data").cloned().unwrap_or(root_val))
 }
 
+/// Picture/preview objects carry either a full `url` or only a `direct_path` on the media CDN;
+/// an empty `direct_path` means there is no picture.
+fn media_url(media: &Value) -> Option<String> {
+    let non_empty = |key: &str| {
+        media
+            .get(key)
+            .and_then(|v| v.as_str())
+            .filter(|v| !v.is_empty())
+            .map(str::to_string)
+    };
+    non_empty("url").or_else(|| {
+        non_empty("direct_path").map(|path| {
+            if path.starts_with('/') {
+                format!("https://{}{}", baileys_media::DEF_MEDIA_HOST, path)
+            } else {
+                format!("https://{}/{}", baileys_media::DEF_MEDIA_HOST, path)
+            }
+        })
+    })
+}
+
 /// Parses a GraphQL JSON object into a strongly typed `NewsletterMetadata`.
 pub fn parse_single_newsletter(obj: &Value) -> Option<NewsletterMetadata> {
     let jid = obj.get("id").and_then(|v| v.as_str())?.to_string();
@@ -121,17 +168,8 @@ pub fn parse_single_newsletter(obj: &Value) -> Option<NewsletterMetadata> {
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let picture_url = thread
-        .and_then(|t| t.get("picture"))
-        .and_then(|p| p.get("url"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-
-    let preview_url = thread
-        .and_then(|t| t.get("preview"))
-        .and_then(|p| p.get("url"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+    let picture_url = thread.and_then(|t| t.get("picture")).and_then(media_url);
+    let preview_url = thread.and_then(|t| t.get("preview")).and_then(media_url);
 
     let subscribers_count = thread
         .and_then(|t| t.get("subscribers_count"))
@@ -395,5 +433,58 @@ mod tests {
 
         let r = node.get_child("reaction").unwrap();
         assert_eq!(r.get_attr("code"), Some("🔥"));
+    }
+
+    #[test]
+    fn newsletter_update_vars_only_carry_set_fields() {
+        let vars = build_newsletter_update_vars(
+            "1@newsletter",
+            &NewsletterUpdate {
+                description: Some("about".into()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            vars,
+            serde_json::json!({ "newsletter_id": "1@newsletter", "updates": { "description": "about", "settings": null } })
+        );
+        // An empty picture string (remove) is still sent.
+        let vars = build_newsletter_update_vars(
+            "1@newsletter",
+            &NewsletterUpdate {
+                picture: Some(String::new()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(vars["updates"]["picture"], serde_json::json!(""));
+    }
+
+    #[test]
+    fn picture_url_comes_from_url_or_direct_path() {
+        let channel = |picture: Value| {
+            serde_json::json!({
+                "id": "1@newsletter",
+                "thread_metadata": { "name": { "text": "n" }, "picture": picture }
+            })
+        };
+        let meta = |picture| {
+            parse_single_newsletter(&channel(picture))
+                .unwrap()
+                .picture_url
+        };
+        assert_eq!(
+            meta(serde_json::json!({ "url": "https://x/p.jpg" })).as_deref(),
+            Some("https://x/p.jpg")
+        );
+        assert_eq!(
+            meta(serde_json::json!({ "direct_path": "/m1/v/p.enc", "id": "1" })).as_deref(),
+            Some("https://mmg.whatsapp.net/m1/v/p.enc")
+        );
+        assert_eq!(
+            meta(serde_json::json!({ "direct_path": "", "id": "1" })),
+            None,
+            "empty path = no picture"
+        );
+        assert_eq!(meta(serde_json::json!(null)), None);
     }
 }
