@@ -1427,8 +1427,17 @@ impl ChatStore for SqliteStore {
     async fn update_chat_unread(&self, chat_jid: &str, unread: bool) -> Result<(), StoreError> {
         let conn = self.writer();
         let unread_count = if unread { 1 } else { 0 };
+        // One conversation can be stored under both its phone-number and its LID jid, and the chat
+        // list shows the larger of the two counts, so a "read" must reach every known alias.
         conn.execute(
-            "INSERT INTO chats (jid, unread_count) VALUES (?1, ?2)
+            "INSERT INTO chats (jid, unread_count)
+             SELECT alias, ?2 FROM (
+                SELECT ?1 AS alias
+                UNION SELECT jid FROM contacts WHERE lid = ?1
+                UNION SELECT lid FROM contacts WHERE jid = ?1
+                UNION SELECT CAST(data AS TEXT) FROM session_keys WHERE key_type = 'lid-mapping' AND id = ?1
+                UNION SELECT id FROM session_keys WHERE key_type = 'lid-mapping' AND CAST(data AS TEXT) = ?1
+             ) WHERE alias IS NOT NULL
              ON CONFLICT(jid) DO UPDATE SET unread_count = excluded.unread_count",
             params![chat_jid, unread_count],
         )
@@ -3237,6 +3246,56 @@ mod tests {
             .await
             .unwrap()
             .is_empty());
+    }
+
+    #[tokio::test]
+    async fn marking_a_chat_read_clears_the_unread_count_of_its_other_alias() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let pn = "628111@s.whatsapp.net";
+        let lid = "12345@lid";
+        store
+            .save_contact(&StoredContact {
+                jid: pn.into(),
+                name: None,
+                push_name: None,
+                lid: Some(lid.into()),
+            })
+            .await
+            .unwrap();
+        let chat = |jid: &str, unread: u32| StoredChat {
+            jid: jid.into(),
+            name: None,
+            unread_count: unread,
+            last_message_timestamp: 100,
+            last_message_summary: Some("Hello".into()),
+            pinned: false,
+            archived: false,
+            mute_until: None,
+            ephemeral_expiration: 0,
+            ephemeral_setting_timestamp: None,
+        };
+        // Messages were stored under the LID, while the UI opens the chat by its phone number.
+        store.save_chat(&chat(pn, 0)).await.unwrap();
+        store.save_chat(&chat(lid, 3)).await.unwrap();
+
+        store.update_chat_unread(pn, false).await.unwrap();
+        for jid in [pn, lid] {
+            assert_eq!(
+                store.get_chat(jid).await.unwrap().unwrap().unread_count,
+                0,
+                "{jid}"
+            );
+        }
+
+        // Marking it unread again flags both rows too.
+        store.update_chat_unread(lid, true).await.unwrap();
+        for jid in [pn, lid] {
+            assert_eq!(
+                store.get_chat(jid).await.unwrap().unwrap().unread_count,
+                1,
+                "{jid}"
+            );
+        }
     }
 
     #[tokio::test]
