@@ -470,7 +470,7 @@ mod tests {
         );
 
         let protocol = Message {
-            protocol_message: Some(Box::new(Default::default())),
+            protocol_message: Some(Box::default()),
             ..Default::default()
         };
         assert!(parse_story_from_proto("p", "a@s.whatsapp.net", None, 1, &protocol).is_none());
