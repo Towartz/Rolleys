@@ -1607,7 +1607,7 @@ impl BaileysClient {
                                                                 &msg_id_story,
                                                                 &author_story,
                                                                 None,
-                                                                now_story,
+                                                                if node_ts > 0 { node_ts } else { now_story },
                                                                 &proto_for_story,
                                                             );
                                                             let _ = store_story.save_story(&story).await;

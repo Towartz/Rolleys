@@ -393,11 +393,15 @@ mod tests {
         assert_eq!(history[0].call_id, "CALL_TEST_123");
 
         // 8. Status & Broadcast Stories
+        let story_now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         let story1 = StoredStory {
             msg_id: "STORY_MSG_001".to_string(),
             author_jid: "628999999999@s.whatsapp.net".to_string(),
             author_name: Some("Alice".to_string()),
-            timestamp: 1700000040,
+            timestamp: story_now - 5,
             message_type: "text".to_string(),
             content: Some("Hello WhatsApp Status!".to_string()),
             caption: None,
@@ -408,7 +412,7 @@ mod tests {
             msg_id: "STORY_MSG_002".to_string(),
             author_jid: "628888888888@s.whatsapp.net".to_string(),
             author_name: Some("Bob".to_string()),
-            timestamp: 1700000045,
+            timestamp: story_now,
             message_type: "image".to_string(),
             content: None,
             caption: Some("Vacation photo".to_string()),

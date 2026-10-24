@@ -219,7 +219,7 @@ pub fn extract_raw_summary(proto: &Message) -> String {
     }
 
     if let Some(ref react) = proto.reaction_message {
-        let text = react.text.as_deref().unwrap_or("❤️");
+        let text = react.text.as_deref().unwrap_or("");
         let target = react
             .key
             .as_ref()
@@ -574,9 +574,53 @@ fn to_snake_case(s: &str) -> String {
     result
 }
 
-fn extract_context_info_from_json(json_val: &serde_json::Value) -> Option<ContextInfo> {
-    let mut ctx = ContextInfo::default();
-    let mut has_ctx = false;
+fn extract_context_info_from_json(
+    json_val: &serde_json::Value,
+    existing: Option<&ContextInfo>,
+) -> Result<Option<ContextInfo>, String> {
+    let explicit = json_val
+        .get("contextInfo")
+        .or_else(|| json_val.get("context_info"));
+    let mut ctx = existing.cloned().unwrap_or_default();
+    let mut has_ctx = explicit.is_some();
+    if let Some(value) = explicit {
+        let mut merged = serde_json::to_value(&ctx).map_err(|e| e.to_string())?;
+        let converted = convert_camel_to_snake_value(value);
+        let patch = converted
+            .as_object()
+            .ok_or("contextInfo must be an object")?;
+        for (key, value) in patch {
+            merged
+                .as_object_mut()
+                .ok_or("Invalid contextInfo")?
+                .insert(key.clone(), value.clone());
+        }
+        ctx = serde_json::from_value(merged).map_err(|e| format!("Invalid contextInfo: {e}"))?;
+    }
+
+    // Plugin metadata applies to all supported message shorthands, not just raw protobuf JSON.
+    if let Some(value) = json_val.get("isForwarded") {
+        ctx.is_forwarded = Some(value.as_bool().ok_or("isForwarded must be a boolean")?);
+        has_ctx = true;
+    }
+    if let Some(value) = json_val.get("forwardingScore") {
+        let score = value
+            .as_u64()
+            .and_then(|v| u32::try_from(v).ok())
+            .ok_or("forwardingScore must be an unsigned 32-bit integer")?;
+        ctx.forwarding_score = Some(score);
+        if score > 0 {
+            ctx.is_forwarded = Some(true);
+        }
+        has_ctx = true;
+    }
+    if let Some(value) = json_val.get("externalAdReply") {
+        ctx.external_ad_reply = Some(
+            serde_json::from_value(convert_camel_to_snake_value(value))
+                .map_err(|e| format!("Invalid externalAdReply: {e}"))?,
+        );
+        has_ctx = true;
+    }
 
     // 1. Mentions: mentions: ["123@s.whatsapp.net"]
     if let Some(mentions) = json_val.get("mentions").and_then(|m| m.as_array()) {
@@ -605,21 +649,161 @@ fn extract_context_info_from_json(json_val: &serde_json::Value) -> Option<Contex
             has_ctx = true;
         }
         if let Some(msg_val) = quoted.get("message") {
-            if let Ok(quoted_msg) = parse_message_from_json(msg_val) {
-                ctx.quoted_message = Some(Box::new(quoted_msg));
-                has_ctx = true;
-            }
+            let quoted_msg = parse_message_from_json(msg_val)?;
+            ctx.quoted_message = Some(Box::new(quoted_msg));
+            has_ctx = true;
         }
     }
 
     if has_ctx {
-        Some(ctx)
+        Ok(Some(ctx))
     } else {
-        None
+        Ok(None)
     }
 }
 
+fn message_context_info(message: &Message) -> Option<&ContextInfo> {
+    if let Some(inner) = message
+        .ephemeral_message
+        .as_ref()
+        .and_then(|wrapper| wrapper.message.as_deref())
+    {
+        return message_context_info(inner);
+    }
+    if let Some(inner) = message
+        .view_once_message
+        .as_ref()
+        .and_then(|wrapper| wrapper.message.as_deref())
+    {
+        return message_context_info(inner);
+    }
+    if let Some(inner) = message
+        .view_once_message_v2
+        .as_ref()
+        .and_then(|wrapper| wrapper.message.as_deref())
+    {
+        return message_context_info(inner);
+    }
+    if let Some(inner) = message
+        .document_with_caption_message
+        .as_ref()
+        .and_then(|wrapper| wrapper.message.as_deref())
+    {
+        return message_context_info(inner);
+    }
+    None::<&ContextInfo>
+        .or_else(|| {
+            message
+                .extended_text_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .image_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .video_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .audio_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .document_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .sticker_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .contact_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .contacts_array_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .location_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .live_location_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .buttons_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .interactive_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .event_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+        .or_else(|| {
+            message
+                .album_message
+                .as_ref()
+                .and_then(|body| body.context_info.as_deref())
+        })
+}
+
 fn attach_context_info(mut msg: Message, ctx: ContextInfo) -> Message {
+    if let Some(wrapper) = msg.ephemeral_message.as_mut() {
+        if let Some(inner) = wrapper.message.take() {
+            wrapper.message = Some(Box::new(attach_context_info(*inner, ctx)));
+            return msg;
+        }
+    }
+    if let Some(wrapper) = msg.view_once_message.as_mut() {
+        if let Some(inner) = wrapper.message.take() {
+            wrapper.message = Some(Box::new(attach_context_info(*inner, ctx)));
+            return msg;
+        }
+    }
+    if let Some(wrapper) = msg.view_once_message_v2.as_mut() {
+        if let Some(inner) = wrapper.message.take() {
+            wrapper.message = Some(Box::new(attach_context_info(*inner, ctx)));
+            return msg;
+        }
+    }
+    if let Some(wrapper) = msg.document_with_caption_message.as_mut() {
+        if let Some(inner) = wrapper.message.take() {
+            wrapper.message = Some(Box::new(attach_context_info(*inner, ctx)));
+            return msg;
+        }
+    }
+
     let boxed_ctx = Some(Box::new(ctx));
     if let Some(ref mut ext) = msg.extended_text_message {
         ext.context_info = boxed_ctx;
@@ -667,13 +851,15 @@ fn attach_context_info(mut msg: Message, ctx: ContextInfo) -> Message {
 /// poll, event, album, image, video, audio, document, sticker, interactive, buttons, react)
 /// into a strongly-typed protobuf Message struct with full future-proof and context support.
 pub fn parse_message_from_json(json_val: &serde_json::Value) -> Result<Message, String> {
-    let ctx_opt = extract_context_info_from_json(json_val);
+    let mut msg = parse_message_payload_from_json(json_val)?;
+    if msg == Message::default() {
+        return Err("Message JSON contains no supported payload".to_string());
+    }
+    let ctx_opt = extract_context_info_from_json(json_val, message_context_info(&msg))?;
     let view_once = json_val
         .get("viewOnce")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-
-    let mut msg = parse_message_payload_from_json(json_val)?;
 
     if let Some(ctx) = ctx_opt {
         msg = attach_context_info(msg, ctx);
@@ -1134,34 +1320,14 @@ fn parse_message_payload_from_json(json_val: &serde_json::Value) -> Result<Messa
         .get("extendedTextMessage")
         .or_else(|| json_val.get("extended_text_message"))
     {
-        let text = ext
-            .get("text")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        let matched_text = ext
-            .get("matchedText")
-            .or_else(|| ext.get("matched_text"))
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        let title = ext
-            .get("title")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        let description = ext
-            .get("description")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-
+        // Deserialize the complete structure: selecting text/title alone loses nested context,
+        // thumbnail bytes, link metadata and future protobuf fields.
+        let body = serde_json::from_value::<baileys_proto::proto::message::ExtendedTextMessage>(
+            convert_camel_to_snake_value(ext),
+        )
+        .map_err(|e| format!("Invalid extendedTextMessage: {e}"))?;
         return Ok(Message {
-            extended_text_message: Some(Box::new(
-                baileys_proto::proto::message::ExtendedTextMessage {
-                    text,
-                    matched_text,
-                    title,
-                    description,
-                    ..Default::default()
-                },
-            )),
+            extended_text_message: Some(Box::new(body)),
             ..Default::default()
         });
     }
@@ -1392,5 +1558,108 @@ mod tests {
             extract_message_summary(&m_tpl),
             "[Template Reply: tpl_1 (Yes)]"
         );
+    }
+
+    #[test]
+    fn plugin_context_preserves_forwarding_quote_and_ad_together() {
+        let message = parse_message_from_json(&serde_json::json!({
+            "text": "hello",
+            "forwardingScore": 999,
+            "externalAdReply": {"title": "Example", "body": "Preview", "mediaType": 1},
+            "mentions": ["123@s.whatsapp.net"],
+            "quoted": {"key": {"id": "quoted-1", "participant": "456@s.whatsapp.net"},
+                       "message": {"text": "earlier"}}
+        }))
+        .unwrap();
+        let ctx = message.extended_text_message.unwrap().context_info.unwrap();
+        assert_eq!(ctx.forwarding_score, Some(999));
+        assert_eq!(ctx.is_forwarded, Some(true));
+        assert_eq!(ctx.stanza_id.as_deref(), Some("quoted-1"));
+        assert_eq!(ctx.mentioned_jid, vec!["123@s.whatsapp.net"]);
+        assert_eq!(
+            ctx.external_ad_reply.unwrap().title.as_deref(),
+            Some("Example")
+        );
+    }
+
+    #[test]
+    fn proto_json_can_omit_unset_and_repeated_fields() {
+        let message = parse_message_from_json(&serde_json::json!({
+            "extendedTextMessage": {"text": "hello", "contextInfo": {"forwardingScore": 2}}
+        }))
+        .unwrap();
+        assert_eq!(
+            message
+                .extended_text_message
+                .unwrap()
+                .context_info
+                .unwrap()
+                .forwarding_score,
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn invalid_plugin_context_is_an_error_instead_of_silently_dropped() {
+        for score in [
+            serde_json::json!(-1),
+            serde_json::json!(4294967296u64),
+            serde_json::json!("many"),
+        ] {
+            assert!(parse_message_from_json(
+                &serde_json::json!({"text": "hello", "forwardingScore": score})
+            )
+            .is_err());
+        }
+        assert!(parse_message_from_json(
+            &serde_json::json!({"text": "hello", "isForwarded": "yes"})
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn root_context_overlays_preserve_existing_nested_fields() {
+        let message = parse_message_from_json(&serde_json::json!({
+            "extendedTextMessage": {"text": "hello", "contextInfo": {"expiration": 30, "isForwarded": true}},
+            "contextInfo": {"forwardingScore": 9},
+            "externalAdReply": {"title": "Preview"}
+        })).unwrap();
+        let context = message.extended_text_message.unwrap().context_info.unwrap();
+        assert_eq!(context.expiration, Some(30));
+        assert_eq!(context.forwarding_score, Some(9));
+        assert_eq!(context.is_forwarded, Some(true));
+        assert_eq!(
+            context.external_ad_reply.unwrap().title.as_deref(),
+            Some("Preview")
+        );
+    }
+
+    #[test]
+    fn context_reaches_messages_inside_futureproof_wrappers() {
+        let message = parse_message_from_json(&serde_json::json!({
+            "viewOnceMessage": {"message": {"conversation": "hello"}},
+            "forwardingScore": 4
+        }))
+        .unwrap();
+        let inner = message.view_once_message.unwrap().message.unwrap();
+        assert_eq!(
+            inner
+                .extended_text_message
+                .unwrap()
+                .context_info
+                .unwrap()
+                .forwarding_score,
+            Some(4)
+        );
+    }
+
+    #[test]
+    fn misspelled_or_empty_payloads_do_not_send_blank_messages() {
+        assert!(parse_message_from_json(&serde_json::json!({"tex": "typo"})).is_err());
+        assert!(parse_message_from_json(&serde_json::json!({})).is_err());
+        assert!(parse_message_from_json(&serde_json::json!({
+            "text": "reply", "quoted": {"message": {"tex": "typo"}}
+        }))
+        .is_err());
     }
 }
