@@ -413,7 +413,10 @@ fn upsert_chat(conn: &Connection, chat: &StoredChat) -> Result<(), StoreError> {
                     name = COALESCE(excluded.name, chats.name),
                     unread_count = excluded.unread_count,
                     last_message_timestamp = MAX(chats.last_message_timestamp, excluded.last_message_timestamp),
-                    last_message_summary = COALESCE(excluded.last_message_summary, chats.last_message_summary),
+                    last_message_summary = CASE
+                        WHEN excluded.last_message_timestamp >= chats.last_message_timestamp
+                        THEN COALESCE(excluded.last_message_summary, chats.last_message_summary)
+                        ELSE chats.last_message_summary END,
                     pinned = CASE WHEN excluded.pinned != 0 THEN excluded.pinned ELSE chats.pinned END,
                     archived = CASE WHEN excluded.archived != 0 THEN excluded.archived ELSE chats.archived END,
                     mute_until = COALESCE(excluded.mute_until, chats.mute_until),
@@ -732,7 +735,11 @@ impl ChatStore for SqliteStore {
     async fn get_chats(&self) -> Result<Vec<StoredChat>, StoreError> {
         let conn = self.reader();
         let mut stmt = conn
-            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats ORDER BY pinned DESC, last_message_timestamp DESC")
+            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp,
+                COALESCE((SELECT summary FROM messages WHERE chat_jid = chats.jid
+                    AND timestamp = chats.last_message_timestamp ORDER BY rowid DESC LIMIT 1), last_message_summary),
+                pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
+                FROM chats ORDER BY pinned DESC, last_message_timestamp DESC")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let rows = stmt
@@ -768,7 +775,11 @@ impl ChatStore for SqliteStore {
     async fn get_chat(&self, jid: &str) -> Result<Option<StoredChat>, StoreError> {
         let conn = self.reader();
         let mut stmt = conn
-            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats WHERE jid = ?1")
+            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp,
+                COALESCE((SELECT summary FROM messages WHERE chat_jid = chats.jid
+                    AND timestamp = chats.last_message_timestamp ORDER BY rowid DESC LIMIT 1), last_message_summary),
+                pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
+                FROM chats WHERE jid = ?1")
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let mut rows = stmt
@@ -1122,7 +1133,11 @@ impl ChatStore for SqliteStore {
     async fn update_chat_mute(&self, jid: &str, mute_until: Option<u64>) -> Result<(), StoreError> {
         let conn = self.writer();
         conn.execute(
-            "INSERT INTO chats (jid, mute_until) VALUES (?1, ?2)
+            // Mutations address either PN or LID. Keep both aliases consistent, including unmute.
+            "INSERT INTO chats (jid, mute_until)
+             SELECT ?1, ?2
+             UNION SELECT jid, ?2 FROM contacts WHERE jid = ?1 OR lid = ?1
+             UNION SELECT lid, ?2 FROM contacts WHERE (jid = ?1 OR lid = ?1) AND lid IS NOT NULL
              ON CONFLICT(jid) DO UPDATE SET mute_until = excluded.mute_until",
             params![jid, mute_until.map(|ts| ts as i64)],
         )
@@ -2830,6 +2845,102 @@ impl AppStateStore for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn notification_mute_updates_both_aliases_and_unmutes_without_stale_values() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let pn = "628111@s.whatsapp.net";
+        let lid = "12345@lid";
+        store
+            .save_contact(&StoredContact {
+                jid: pn.into(),
+                name: Some("Saved contact".into()),
+                push_name: None,
+                lid: Some(lid.into()),
+            })
+            .await
+            .unwrap();
+        for (target, until) in [
+            (lid, Some(u64::MAX)),
+            (pn, None),
+            (pn, Some(100)),
+            (lid, None),
+        ] {
+            store.update_chat_mute(target, until).await.unwrap();
+            for alias in [pn, lid] {
+                assert_eq!(
+                    store.get_chat(alias).await.unwrap().unwrap().mute_until,
+                    until
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn chat_preview_older_history_never_replaces_newer_summary_and_old_corruption_is_repaired(
+    ) {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let mut chat = StoredChat {
+            jid: "628111@s.whatsapp.net".into(),
+            name: None,
+            unread_count: 1,
+            last_message_timestamp: 200,
+            last_message_summary: Some("Newest".into()),
+            pinned: false,
+            archived: false,
+            mute_until: None,
+            ephemeral_expiration: 0,
+            ephemeral_setting_timestamp: None,
+        };
+        store.save_chat(&chat).await.unwrap();
+        chat.last_message_timestamp = 100;
+        chat.last_message_summary = Some("Old history".into());
+        store.save_chat(&chat).await.unwrap();
+        let saved = store.get_chat(&chat.jid).await.unwrap().unwrap();
+        assert_eq!(saved.last_message_timestamp, 200);
+        assert_eq!(saved.last_message_summary.as_deref(), Some("Newest"));
+
+        store
+            .save_message(&StoredMessage {
+                id: "latest".into(),
+                chat_jid: chat.jid.clone(),
+                sender_jid: chat.jid.clone(),
+                from_me: false,
+                timestamp: 200,
+                summary: "Newest".into(),
+                status: "received".into(),
+                has_media: false,
+                proto_bytes: vec![],
+                is_starred: false,
+                is_revoked: false,
+                is_edited: false,
+            })
+            .await
+            .unwrap();
+        store
+            .writer()
+            .execute(
+                "UPDATE chats SET last_message_summary = 'Old corrupted preview'",
+                [],
+            )
+            .unwrap();
+        assert_eq!(
+            store
+                .get_chat(&chat.jid)
+                .await
+                .unwrap()
+                .unwrap()
+                .last_message_summary
+                .as_deref(),
+            Some("Newest")
+        );
+        assert_eq!(
+            store.get_chats().await.unwrap()[0]
+                .last_message_summary
+                .as_deref(),
+            Some("Newest")
+        );
+    }
 
     #[tokio::test]
     async fn status_story_expiry_full_author_history_and_replay_preserve_viewed() {

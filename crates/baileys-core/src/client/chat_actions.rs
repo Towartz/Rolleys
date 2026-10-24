@@ -77,6 +77,7 @@ impl BaileysClient {
         };
 
         let mut summary = AppStateSyncSummary::default();
+        let mut mute_collection_complete = false;
 
         // Keep asking while the server reports more patches; each round continues from the state
         // the previous one produced.
@@ -199,7 +200,10 @@ impl BaileysClient {
                             } else {
                                 None
                             };
-                            let _ = self.store.update_chat_mute(&jid, mute_until).await;
+                            if self.store.update_chat_mute(&jid, mute_until).await.is_err() {
+                                summary.collections_failed += 1;
+                                continue;
+                            }
                             self.events.emit(BaileysEvent::ChatUpdate {
                                 jid,
                                 pinned: None,
@@ -292,6 +296,20 @@ impl BaileysClient {
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::LidMapping { lid, pn } => {
+                            if self
+                                .store
+                                .save_contact(&StoredContact {
+                                    jid: pn.clone(),
+                                    name: None,
+                                    push_name: None,
+                                    lid: Some(lid.clone()),
+                                })
+                                .await
+                                .is_err()
+                            {
+                                summary.collections_failed += 1;
+                                continue;
+                            }
                             self.events.emit(BaileysEvent::LidMappingUpdate { lid, pn });
                             summary.mutations_applied += 1;
                         }
@@ -348,6 +366,9 @@ impl BaileysClient {
                     next_pending.push(col_name.clone());
                 } else {
                     summary.collections_synced += 1;
+                    if col_name == crate::syncd::REGULAR_HIGH {
+                        mute_collection_complete = true;
+                    }
                 }
             }
 
@@ -367,10 +388,14 @@ impl BaileysClient {
         }
 
         // 6. Emit AppStateSynced event
-        self.events.emit(BaileysEvent::AppStateSynced {
-            collections_synced: summary.collections_synced,
-            mutations_applied: summary.mutations_applied,
-        });
+        // Consumers use this completion signal to release mute-sensitive notifications. A partial
+        // sync or a sync of unrelated collections does not establish authoritative mute state.
+        if mute_collection_complete && summary.collections_failed == 0 {
+            self.events.emit(BaileysEvent::AppStateSynced {
+                collections_synced: summary.collections_synced,
+                mutations_applied: summary.mutations_applied,
+            });
+        }
 
         info!(
             "AppState sync complete: {} collections synced, {} mutations applied",
@@ -489,6 +514,13 @@ impl BaileysClient {
             .update_chat_mute(&normalized, mute_until)
             .await
             .map_err(|e| CoreError::Store(e.to_string()))?;
+        self.events.emit(BaileysEvent::ChatUpdate {
+            jid: normalized.clone(),
+            pinned: None,
+            archived: None,
+            mute_until: Some(mute_until),
+            unread_count: None,
+        });
 
         // 2. Dispatch wire-level Syncd patch
         self.dispatch_syncd_patch(
