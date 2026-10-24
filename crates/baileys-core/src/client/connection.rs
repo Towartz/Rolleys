@@ -471,8 +471,13 @@ impl BaileysClient {
                                                     info!("Received identity change notification for JID: {}", from_user);
                                                     let store_id = Arc::clone(store_clone);
                                                     let target_id = from_user.clone();
+                                                    // Sessions are keyed by signal address (`user:device`), not by JID.
+                                                    let session_id = signal_clone
+                                                        .session_address(&from_user)
+                                                        .await
+                                                        .unwrap_or_else(|_| signal_clone.jid_to_signal_address(&from_user));
                                                     tokio::spawn(async move {
-                                                        let _ = store_id.remove_keys("session", std::slice::from_ref(&target_id)).await;
+                                                        let _ = store_id.remove_keys("session", &[session_id]).await;
                                                         let _ = store_id.remove_keys("tctoken", std::slice::from_ref(&target_id)).await;
                                                     });
                                                     events_clone.emit(BaileysEvent::IdentityChanged {
@@ -701,6 +706,10 @@ impl BaileysClient {
                                                     events_clone.emit(BaileysEvent::CredsUpdate);
                                                 }
                                             }
+                                            // Baileys `migrateSession(myPN, myLID)`: our own devices' sessions follow our LID too.
+                                            if let (Some(pn), Some(lid)) = (creds.me_jid.clone(), me_lid.clone()) {
+                                                remember_lid_mapping(signal_clone, store_clone.as_ref(), &pn, &lid).await;
+                                            }
 
                                             // Top up pre-keys only when the stock is low (always true right after
                                             // pairing). Uploading on every connection leaked 30 keys each time.
@@ -775,6 +784,18 @@ impl BaileysClient {
                                                     lid,
                                                 };
                                                 let _ = store_clone.save_contact(&c).await;
+                                            }
+                                            // Baileys `storeMappingFromEnvelope`: the envelope pairs the sender's LID with its
+                                            // phone number. Known before decrypting, it lets a session made at the PN address
+                                            // be found for a message sent from the LID.
+                                            if sender_jid.ends_with("@lid") {
+                                                if let Some(ref pn) = sender_pn_opt {
+                                                    remember_lid_mapping(signal_clone, store_clone.as_ref(), pn, &sender_jid).await;
+                                                }
+                                            } else if sender_jid.ends_with("@s.whatsapp.net") {
+                                                if let Some(ref lid) = sender_lid_opt {
+                                                    remember_lid_mapping(signal_clone, store_clone.as_ref(), &sender_jid, lid).await;
+                                                }
                                             }
 
                                             let is_peer_category = node.get_attr("category") == Some("peer");
@@ -1283,7 +1304,8 @@ impl BaileysClient {
                                                                                         ("<empty>".to_string(), false)
                                                                                     };
 
-                                                                                    if latest_summary.is_none() {
+                                                                                    // Stubs (no message) do not stand for the chat's last message.
+                                                                                    if latest_summary.is_none() && wmi.message.is_some() {
                                                                                         latest_summary = Some(summary.clone());
                                                                                     }
 
@@ -2074,4 +2096,30 @@ impl BaileysClient {
         }
         Ok(bots)
     }
+}
+
+/// Records a LID-PN pair (both reduced to their user JIDs) in the signal repository and the
+/// `lid-mapping` keys, writing only when the pair is new.
+async fn remember_lid_mapping(
+    signal: &SignalRepository,
+    store: &dyn BaileysStore,
+    pn: &str,
+    lid: &str,
+) {
+    let pn = baileys_binary::jid::jid_normalized_user(pn);
+    let lid = baileys_binary::jid::jid_normalized_user(lid);
+    if !pn.ends_with("@s.whatsapp.net") || !lid.ends_with("@lid") {
+        return;
+    }
+    if signal.lid_mappings().get_lid_for_pn(&pn).as_deref() == Some(lid.as_str()) {
+        return;
+    }
+    signal.lid_mappings().store_mapping(&pn, &lid);
+    let _ = store
+        .set_keys(vec![baileys_store::KeyEntry {
+            key_type: "lid-mapping".to_string(),
+            id: pn,
+            data: lid.into_bytes(),
+        }])
+        .await;
 }

@@ -839,6 +839,10 @@ impl SignalKeysStore for SqliteStore {
         let result = rows.flatten().collect();
         Ok(result)
     }
+
+    async fn get_pn_for_lid(&self, lid: &str) -> Result<Option<String>, StoreError> {
+        pn_for_lid(&self.reader(), lid)
+    }
 }
 
 #[async_trait]
@@ -860,17 +864,21 @@ impl ChatStore for SqliteStore {
         let conn = self.reader();
         let mut stmt = conn
             // App-state mutations (mute, read, pin...) and history conversations without messages
-            // leave rows for chats that have nothing in them. Like WhatsApp, the list shows a
-            // one-to-one chat only once it has a message; groups and channels always show.
+            // leave rows for chats that have nothing in them, and history sync also sends group
+            // participants' one-to-one conversations holding only stubs (stored as '<empty>').
+            // Like WhatsApp, the list shows a one-to-one chat only once it has a real message;
+            // groups and channels always show.
             .prepare_cached(
                 "SELECT jid, name, unread_count, last_message_timestamp,
                     COALESCE((SELECT summary FROM messages WHERE chat_jid = chats.jid
-                        AND timestamp = chats.last_message_timestamp ORDER BY rowid DESC LIMIT 1), last_message_summary),
+                        AND timestamp = chats.last_message_timestamp AND summary <> '<empty>'
+                        ORDER BY rowid DESC LIMIT 1), last_message_summary),
                     pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
                  FROM chats
                  WHERE jid LIKE '%@g.us' OR jid LIKE '%@newsletter'
-                    OR last_message_summary IS NOT NULL
-                    OR EXISTS (SELECT 1 FROM messages m WHERE m.chat_jid = chats.jid)
+                    OR (last_message_summary IS NOT NULL AND last_message_summary <> '<empty>')
+                    OR EXISTS (SELECT 1 FROM messages m WHERE m.chat_jid = chats.jid
+                        AND m.summary <> '<empty>')
                  ORDER BY pinned DESC, last_message_timestamp DESC",
             )
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -908,11 +916,14 @@ impl ChatStore for SqliteStore {
     async fn get_chat(&self, jid: &str) -> Result<Option<StoredChat>, StoreError> {
         let conn = self.reader();
         let mut stmt = conn
-            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp,
+            .prepare_cached(
+                "SELECT jid, name, unread_count, last_message_timestamp,
                 COALESCE((SELECT summary FROM messages WHERE chat_jid = chats.jid
-                    AND timestamp = chats.last_message_timestamp ORDER BY rowid DESC LIMIT 1), last_message_summary),
+                    AND timestamp = chats.last_message_timestamp AND summary <> '<empty>'
+                    ORDER BY rowid DESC LIMIT 1), last_message_summary),
                 pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
-                FROM chats WHERE jid = ?1")
+                FROM chats WHERE jid = ?1",
+            )
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let mut rows = stmt
@@ -3697,6 +3708,127 @@ mod tests {
         assert_eq!(chats[1].mute_until, Some(1));
         // A single lookup still finds the empty chat (its settings are needed when sending).
         assert!(store.get_chat("111@lid").await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn a_session_made_at_the_phone_number_follows_the_lid() {
+        use baileys_crypto::generate_key_pair;
+        use baileys_signal::{SessionBuilder, SessionCipher, SessionRecord, SignalRepository};
+
+        let store = std::sync::Arc::new(SqliteStore::open_in_memory().unwrap());
+        let repo = SignalRepository::new(std::sync::Arc::new(crate::SignalStoreAdapter::new(
+            store.clone(),
+        )));
+        let (me, me_spk) = (generate_key_pair(), generate_key_pair());
+        let peer = generate_key_pair();
+        let mut peer_record = SessionRecord::new();
+        SessionBuilder::init_outgoing(
+            &mut peer_record,
+            &peer,
+            &me.public_key,
+            &me_spk.public_key,
+            1,
+            None,
+            7,
+        )
+        .unwrap();
+
+        // The peer starts the session from its phone number, before its LID is known.
+        let (_, first) = SessionCipher::encrypt_message(&mut peer_record, b"one", &peer).unwrap();
+        let plain = repo
+            .decrypt_message("62811@s.whatsapp.net", "pkmsg", &first, &me, &me_spk)
+            .await
+            .unwrap();
+        assert_eq!(plain, b"one");
+        assert!(store.get_key("session", "62811:0").await.unwrap().is_some());
+
+        // Then the pair shows up, and the peer writes from its LID: the same session decrypts it.
+        store
+            .set_keys(vec![KeyEntry {
+                key_type: "lid-mapping".into(),
+                id: "62811@s.whatsapp.net".into(),
+                data: b"111@lid".to_vec(),
+            }])
+            .await
+            .unwrap();
+        let (_, reply) = repo
+            .encrypt_message("111:0@lid", b"two", &me)
+            .await
+            .unwrap();
+        let reply =
+            SessionCipher::decrypt_whisper_message(&mut peer_record, &reply, &peer).unwrap();
+        assert_eq!(reply, b"two");
+        let (kind, third) =
+            SessionCipher::encrypt_message(&mut peer_record, b"three", &peer).unwrap();
+        assert_eq!(kind, 1); // `msg`: the peer relies on the existing session
+        let plain = repo
+            .decrypt_message("111:0@lid", "msg", &third, &me, &me_spk)
+            .await
+            .unwrap();
+        assert_eq!(plain, b"three");
+
+        // The session now lives at the LID address only, and the phone number resolves to it.
+        assert!(store.get_key("session", "111:0").await.unwrap().is_some());
+        assert!(store.get_key("session", "62811:0").await.unwrap().is_none());
+        assert_eq!(
+            repo.session_address("62811@s.whatsapp.net").await.unwrap(),
+            "111:0"
+        );
+        // Without a known pair nothing moves.
+        assert_eq!(
+            repo.session_address("62899@s.whatsapp.net").await.unwrap(),
+            "62899:0"
+        );
+        assert_eq!(repo.session_address("222@lid").await.unwrap(), "222:0");
+    }
+
+    #[tokio::test]
+    async fn the_chat_list_leaves_out_chats_holding_only_stubs() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let message = |id: &str, ts: u64, summary: &str| StoredMessage {
+            id: id.into(),
+            chat_jid: "111@lid".into(),
+            sender_jid: "111@lid".into(),
+            from_me: true,
+            timestamp: ts,
+            summary: summary.into(),
+            status: "delivered".into(),
+            has_media: false,
+            proto_bytes: vec![],
+            is_starred: false,
+            is_revoked: false,
+            is_edited: false,
+        };
+        let chat = |ts: u64, summary: &str| StoredChat {
+            jid: "111@lid".into(),
+            name: None,
+            unread_count: 0,
+            last_message_timestamp: ts,
+            last_message_summary: Some(summary.into()),
+            pinned: false,
+            archived: false,
+            mute_until: None,
+            ephemeral_expiration: 0,
+            ephemeral_setting_timestamp: None,
+        };
+        // History sync sends a group participant's conversation with nothing but stubs.
+        store
+            .save_message(&message("S1", 5, "<empty>"))
+            .await
+            .unwrap();
+        store.save_chat(&chat(5, "<empty>")).await.unwrap();
+        assert!(store.get_chats().await.unwrap().is_empty());
+
+        // A real message shows the chat, and a later stub does not replace its summary.
+        store.save_message(&message("M1", 6, "hi")).await.unwrap();
+        store.save_chat(&chat(6, "hi")).await.unwrap();
+        store
+            .save_message(&message("S2", 7, "<empty>"))
+            .await
+            .unwrap();
+        let chats = store.get_chats().await.unwrap();
+        assert_eq!(chats.len(), 1);
+        assert_eq!(chats[0].last_message_summary.as_deref(), Some("hi"));
     }
 
     #[tokio::test]

@@ -295,10 +295,9 @@ impl BaileysClient {
     /// Ensures that a Signal Double Ratchet session exists for the given 1-on-1 JID.
     /// If not present, queries WhatsApp server for the recipient's prekey bundle.
     pub async fn assert_session(&self, to_jid: &str, creds: &AuthCreds) -> Result<(), CoreError> {
-        let sig_addr = self.signal.jid_to_signal_address(to_jid);
         let session = self
             .signal
-            .load_session(&sig_addr)
+            .load_session(to_jid)
             .await
             .map_err(|e| CoreError::Crypto(e.to_string()))?;
 
@@ -323,7 +322,7 @@ impl BaileysClient {
             )
             .map_err(|e| CoreError::Crypto(e.to_string()))?;
             self.signal
-                .save_session(&sig_addr, &mock_session)
+                .save_session(to_jid, &mock_session)
                 .await
                 .map_err(|e| CoreError::Crypto(e.to_string()))?;
             return Ok(());
@@ -432,7 +431,7 @@ impl BaileysClient {
         .map_err(|e| CoreError::Crypto(e.to_string()))?;
 
         self.signal
-            .save_session(&sig_addr, &new_session)
+            .save_session(to_jid, &new_session)
             .await
             .map_err(|e| CoreError::Crypto(e.to_string()))?;
 

@@ -312,6 +312,15 @@ pub trait SignalKeysStore: Send + Sync {
     async fn get_all_keys(&self, _key_type: &str) -> Result<Vec<(String, Vec<u8>)>, StoreError> {
         Ok(Vec::new())
     }
+    /// The phone-number JID paired with `lid` by the `lid-mapping` keys (id = PN, data = LID).
+    async fn get_pn_for_lid(&self, lid: &str) -> Result<Option<String>, StoreError> {
+        Ok(self
+            .get_all_keys("lid-mapping")
+            .await?
+            .into_iter()
+            .find(|(_, data)| data.as_slice() == lid.as_bytes())
+            .map(|(pn, _)| pn))
+    }
 }
 
 #[async_trait]
@@ -828,6 +837,22 @@ impl baileys_signal::SignalStore for SignalStoreAdapter {
     async fn remove_pre_key(&self, pre_key_id: u32) -> Result<(), baileys_signal::SignalError> {
         self.store
             .remove_keys("pre-key", &[pre_key_id.to_string()])
+            .await
+            .map_err(|e| baileys_signal::SignalError::Crypto(e.to_string()))
+    }
+
+    async fn get_lid_for_pn(&self, pn_jid: &str) -> Option<String> {
+        let data = self.store.get_key("lid-mapping", pn_jid).await.ok()??;
+        String::from_utf8(data).ok()
+    }
+
+    async fn get_pn_for_lid(&self, lid_jid: &str) -> Option<String> {
+        self.store.get_pn_for_lid(lid_jid).await.ok()?
+    }
+
+    async fn remove_session(&self, address: &str) -> Result<(), baileys_signal::SignalError> {
+        self.store
+            .remove_keys("session", &[address.to_string()])
             .await
             .map_err(|e| baileys_signal::SignalError::Crypto(e.to_string()))
     }

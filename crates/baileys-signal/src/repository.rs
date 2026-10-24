@@ -20,6 +20,17 @@ pub trait SignalStore: Send + Sync {
     async fn set_sender_key(&self, key_id: &str, sender_key: &[u8]) -> Result<(), SignalError>;
     async fn get_pre_key(&self, pre_key_id: u32) -> Result<Option<KeyPair>, SignalError>;
     async fn remove_pre_key(&self, pre_key_id: u32) -> Result<(), SignalError>;
+    /// The LID paired with a phone-number JID (`user@s.whatsapp.net`), when known.
+    async fn get_lid_for_pn(&self, _pn_jid: &str) -> Option<String> {
+        None
+    }
+    /// The phone-number JID paired with a LID (`user@lid`), when known.
+    async fn get_pn_for_lid(&self, _lid_jid: &str) -> Option<String> {
+        None
+    }
+    async fn remove_session(&self, _address: &str) -> Result<(), SignalError> {
+        Ok(())
+    }
 }
 
 /// High-level Signal Protocol repository managing session encryption, group keys, and LID translations.
@@ -53,8 +64,65 @@ impl SignalRepository {
         format!("{}:{}", user, device)
     }
 
+    async fn lid_for_pn(&self, pn_jid: &str) -> Option<String> {
+        if let Some(lid) = self.lid_mappings.get_lid_for_pn(pn_jid) {
+            return Some(lid);
+        }
+        let lid = self.store.get_lid_for_pn(pn_jid).await?;
+        self.lid_mappings.store_mapping(pn_jid, &lid);
+        Some(lid)
+    }
+
+    async fn pn_for_lid(&self, lid_jid: &str) -> Option<String> {
+        if let Some(pn) = self.lid_mappings.get_pn_for_lid(lid_jid) {
+            return Some(pn);
+        }
+        let pn = self.store.get_pn_for_lid(lid_jid).await?;
+        self.lid_mappings.store_mapping(&pn, lid_jid);
+        Some(pn)
+    }
+
+    /// The address the session with `jid` is kept at.
+    ///
+    /// Like Baileys, the sessions of a user whose LID is known live at the LID address, whichever
+    /// of the two JIDs a message uses. A session made at the phone-number address before the LID
+    /// was known is moved to the LID address the first time it is needed; otherwise a contact who
+    /// switched to LID addressing sends `msg` for a session we could not find. A bare address
+    /// (`user:device`) and a user without a known pair keep their own address.
+    pub async fn session_address(&self, jid: &str) -> Result<String, SignalError> {
+        let addr = self.jid_to_signal_address(jid);
+        let Some((user_part, server)) = jid.split_once('@') else {
+            return Ok(addr);
+        };
+        let user = user_part.split([':', '.']).next().unwrap_or(user_part);
+        let device = addr.rsplit(':').next().unwrap_or("0");
+        let (pn_user, lid_user) = match server {
+            "lid" => match self.pn_for_lid(&format!("{user}@lid")).await {
+                Some(pn) => (bare_user(&pn).to_string(), user.to_string()),
+                None => return Ok(addr),
+            },
+            "s.whatsapp.net" => match self.lid_for_pn(&format!("{user}@s.whatsapp.net")).await {
+                Some(lid) => (user.to_string(), bare_user(&lid).to_string()),
+                None => return Ok(addr),
+            },
+            _ => return Ok(addr),
+        };
+
+        let lid_addr = format!("{lid_user}:{device}");
+        if self.store.get_session(&lid_addr).await?.is_some() {
+            return Ok(lid_addr);
+        }
+        let pn_addr = format!("{pn_user}:{device}");
+        if let Some(bytes) = self.store.get_session(&pn_addr).await? {
+            self.store.set_session(&lid_addr, &bytes).await?;
+            self.store.remove_session(&pn_addr).await?;
+            tracing::debug!("Moved Signal session {pn_addr} to its LID address {lid_addr}");
+        }
+        Ok(lid_addr)
+    }
+
     pub async fn load_session(&self, address: &str) -> Result<SessionRecord, SignalError> {
-        let sig_addr = self.jid_to_signal_address(address);
+        let sig_addr = self.session_address(address).await?;
         match self.store.get_session(&sig_addr).await {
             Ok(Some(bytes)) => serde_json::from_slice(&bytes)
                 .map_err(|e| SignalError::Deserialization(e.to_string())),
@@ -68,7 +136,7 @@ impl SignalRepository {
         address: &str,
         record: &SessionRecord,
     ) -> Result<(), SignalError> {
-        let sig_addr = self.jid_to_signal_address(address);
+        let sig_addr = self.session_address(address).await?;
         let bytes =
             serde_json::to_vec(record).map_err(|e| SignalError::Serialization(e.to_string()))?;
         self.store.set_session(&sig_addr, &bytes).await
@@ -132,7 +200,46 @@ impl SignalRepository {
         our_identity: &KeyPair,
         our_signed_pre_key: &KeyPair,
     ) -> Result<Vec<u8>, SignalError> {
-        let mut session_record = self.load_session(jid).await?;
+        let address = self.session_address(jid).await?;
+        let result = self
+            .decrypt_at(
+                &address,
+                msg_type,
+                ciphertext,
+                our_identity,
+                our_signed_pre_key,
+            )
+            .await;
+        // A peer that has sessions at both addresses may still write with the one made at the
+        // JID's own address; try that record before giving up.
+        let own_address = self.jid_to_signal_address(jid);
+        if result.is_err()
+            && own_address != address
+            && self.store.get_session(&own_address).await?.is_some()
+        {
+            return self
+                .decrypt_at(
+                    &own_address,
+                    msg_type,
+                    ciphertext,
+                    our_identity,
+                    our_signed_pre_key,
+                )
+                .await;
+        }
+        result
+    }
+
+    /// Decrypts with the session record kept at `address` (`user:device`) and saves it back.
+    async fn decrypt_at(
+        &self,
+        address: &str,
+        msg_type: &str,
+        ciphertext: &[u8],
+        our_identity: &KeyPair,
+        our_signed_pre_key: &KeyPair,
+    ) -> Result<Vec<u8>, SignalError> {
+        let mut session_record = self.load_session(address).await?;
 
         let (plaintext, consumed_prekey) = match msg_type {
             "pkmsg" => {
@@ -185,7 +292,7 @@ impl SignalRepository {
             _ => return Err(SignalError::InvalidMessage),
         };
 
-        self.save_session(jid, &session_record).await?;
+        self.save_session(address, &session_record).await?;
 
         if let Some(consumed_id) = consumed_prekey {
             let _ = self.store.remove_pre_key(consumed_id).await;
@@ -287,6 +394,12 @@ impl SignalRepository {
             Ok(record.get_distribution_message())
         }
     }
+}
+
+/// The user part of a JID, without device or agent (`123:4@lid` -> `123`).
+fn bare_user(jid: &str) -> &str {
+    let user_part = jid.split('@').next().unwrap_or(jid);
+    user_part.split([':', '.']).next().unwrap_or(user_part)
 }
 
 fn author_jid_or_our(our_jid: &str) -> &str {

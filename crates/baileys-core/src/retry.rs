@@ -166,8 +166,7 @@ async fn assert_session_internal(
     target_jid: &str,
     creds: &AuthCreds,
 ) -> Result<(), CoreError> {
-    let sig_addr = signal.jid_to_signal_address(target_jid);
-    if let Ok(sess) = signal.load_session(&sig_addr).await {
+    if let Ok(sess) = signal.load_session(target_jid).await {
         if !sess.is_empty() {
             return Ok(());
         }
@@ -274,7 +273,7 @@ async fn assert_session_internal(
     .map_err(|e| CoreError::Crypto(e.to_string()))?;
 
     signal
-        .save_session(&sig_addr, &new_session)
+        .save_session(target_jid, &new_session)
         .await
         .map_err(|e| CoreError::Crypto(e.to_string()))?;
 

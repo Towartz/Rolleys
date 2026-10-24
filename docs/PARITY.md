@@ -254,3 +254,16 @@ pengirim ber-LID tanpa atribut PN. Schema v4 memperbaiki data lama sekali jalan.
 0 `push_name == name`, 443 nama utuh, `integrity_check` ok. `get_chats` tidak lagi mengembalikan chat 1:1 tanpa pesan
 yang dibuat oleh mutasi app-state atau percakapan history kosong (98 di DB sesi). Grup dan channel tetap tampil, dan
 `get_chat` tetap menemukan barisnya. Live: messaging 6/6, resync app-state 754 mutasi tanpa menimpa pushname.
+
+**Sesi Signal per LID dan chat stub, 2026-10-24.** Pesan pribadi dari kontak yang beralih ke alamat LID gagal didekripsi
+("No established Signal session found"), karena sesinya tersimpan di alamat PN sementara pesan datang dari LID. Seperti
+`migrateSession`/`getDecryptionJid` di Baileys, `SignalRepository::session_address` sekarang memakai alamat LID bila
+pasangan PN-LID diketahui (dari memori, kunci `lid-mapping`, atau `contacts.lid`), dan memindahkan sesi lama dari alamat
+PN saat pertama kali dibutuhkan. Bila dekripsi dengan record LID gagal, record PN dicoba sebelum menyerah. Pasangan
+dari amplop pesan (`sender_pn`, `sender_lid`, `participant_pn`, `participant_lid`) dan milik akun sendiri ikut dicatat,
+seperti `storeMappingFromEnvelope`. Notifikasi `identity` kini menghapus sesi dengan id alamatnya (dulu memakai JID,
+jadi tidak pernah terhapus). Live: 5 sesi pindah ke LID, termasuk dua pengirim yang sebelumnya gagal, 0 gagal dekripsi,
+messaging 6/6. History sync juga mengirim percakapan 1:1 peserta grup yang hanya berisi stub (disimpan sebagai
+`<empty>`). `get_chats` tidak menghitung stub sebagai pesan, dan stub tidak lagi dijadikan ringkasan chat. Di DB sesi,
+chat yang tampil turun dari 540 menjadi 170: 370 chat hanya-stub disembunyikan, sedangkan 104 chat 1:1 berisi pesan dan
+66 grup/channel tetap tampil.
