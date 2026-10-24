@@ -241,6 +241,13 @@ impl BaileysClient {
         .await
         .map_err(|e| CoreError::Media(e.to_string()))?;
 
+        // Label the audio by what it is, using the caller's mimetype only for formats we can't recognise.
+        let detected_mimetype = baileys_media::resolve_audio_mimetype(audio_bytes, mimetype);
+        let seconds = if seconds > 0 {
+            seconds
+        } else {
+            baileys_media::ogg_opus_duration_secs(audio_bytes).unwrap_or(0)
+        };
         let msg = crate::status::build_audio_status_message(
             upload_res.url,
             upload_res.direct_path,
@@ -249,7 +256,7 @@ impl BaileysClient {
             encrypted.file_enc_sha256.to_vec(),
             audio_bytes.len() as u64,
             seconds,
-            mimetype,
+            Some(detected_mimetype.as_str()),
             None,
         );
         let msg = crate::status::with_audio_ptt(msg, ptt);

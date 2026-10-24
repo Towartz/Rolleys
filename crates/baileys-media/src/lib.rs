@@ -21,6 +21,9 @@ pub const DEF_MEDIA_HOST: &str = "mmg.whatsapp.net";
 pub const DEFAULT_ORIGIN: &str = "https://web.whatsapp.com";
 pub const DEFAULT_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
+pub mod audio;
+pub use audio::*;
+
 pub mod preview;
 pub use preview::*;
 

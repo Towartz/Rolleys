@@ -307,6 +307,13 @@ impl BaileysClient {
         .await
         .map_err(|e| CoreError::Media(e.to_string()))?;
 
+        // The mimetype comes from the bytes: AAC/M4A labelled as Opus can't be played by other clients.
+        let mimetype = baileys_media::resolve_audio_mimetype(audio_bytes, None);
+        let seconds = if seconds > 0 {
+            seconds
+        } else {
+            baileys_media::ogg_opus_duration_secs(audio_bytes).unwrap_or(0)
+        };
         let proto_msg = crate::proto_builders::build_voice_note_message(
             upload_res.url,
             upload_res.direct_path,
@@ -316,7 +323,7 @@ impl BaileysClient {
             audio_bytes.len() as u64,
             seconds,
             waveform,
-            Some("audio/ogg; codecs=opus"),
+            Some(mimetype.as_str()),
         );
 
         self.send_message(&normalized_jid, proto_msg).await
@@ -387,10 +394,14 @@ impl BaileysClient {
         .await
         .map_err(|e| CoreError::Media(e.to_string()))?;
 
+        let mimetype = baileys_media::resolve_audio_mimetype(audio_bytes, None);
+        let seconds = seconds
+            .filter(|s| *s > 0)
+            .or_else(|| baileys_media::ogg_opus_duration_secs(audio_bytes));
         let proto_msg = Message {
             audio_message: Some(Box::new(AudioMessage {
                 url: upload_res.url,
-                mimetype: Some("audio/ogg; codecs=opus".to_string()),
+                mimetype: Some(mimetype),
                 file_sha256: Some(encrypted.file_sha256.to_vec()),
                 file_length: Some(audio_bytes.len() as u64),
                 seconds,
