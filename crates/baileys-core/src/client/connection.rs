@@ -757,12 +757,22 @@ impl BaileysClient {
                                             let sender_pn_opt = node.get_attr("sender_pn").or_else(|| node.get_attr("participant_pn")).map(|s| s.to_string());
                                             let sender_lid_opt = node.get_attr("sender_lid").or_else(|| node.get_attr("participant_lid")).map(|s| s.to_string());
 
-                                            if let Some(ref pn) = sender_pn_opt {
+                                            // Remember the sender's profile name. The sender is the participant in a group and
+                                            // `from` otherwise; it may be addressed by LID with or without its phone number, and
+                                            // the store files the contact under the phone number whenever that pair is known.
+                                            let sender_jid = participant_opt.clone().unwrap_or_else(|| from.clone());
+                                            let sender_is_user = sender_jid.ends_with("@s.whatsapp.net") || sender_jid.ends_with("@lid");
+                                            if sender_is_user && (notify_opt.is_some() || sender_pn_opt.is_some()) {
+                                                let (pn, lid) = if sender_jid.ends_with("@lid") {
+                                                    (sender_pn_opt.clone(), Some(sender_jid.clone()))
+                                                } else {
+                                                    (Some(sender_jid.clone()), sender_lid_opt.clone())
+                                                };
                                                 let c = baileys_store::StoredContact {
-                                                    jid: pn.clone(),
+                                                    jid: pn.or_else(|| lid.clone()).unwrap_or_default(),
                                                     name: None,
                                                     push_name: notify_opt.clone(),
-                                                    lid: sender_lid_opt.clone(),
+                                                    lid,
                                                 };
                                                 let _ = store_clone.save_contact(&c).await;
                                             }

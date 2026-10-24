@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use rusqlite::{params, Connection, OpenFlags};
+use rusqlite::{params, Connection, OpenFlags, OptionalExtension};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -218,6 +218,8 @@ const INDEXES_SQL: &str = "
     CREATE INDEX IF NOT EXISTS idx_contacts_lid ON contacts (lid) WHERE lid IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_messages_starred ON messages (timestamp DESC) WHERE is_starred = 1;
     CREATE INDEX IF NOT EXISTS idx_chats_sort ON chats (pinned DESC, last_message_timestamp DESC);
+    CREATE INDEX IF NOT EXISTS idx_lid_mapping_lid ON session_keys (CAST(data AS TEXT))
+        WHERE key_type = 'lid-mapping';
 ";
 
 /// Tuning for [`SqliteStore::open_with`]. The default suits the platform it is compiled for.
@@ -438,27 +440,132 @@ fn upsert_chat(conn: &Connection, chat: &StoredChat) -> Result<(), StoreError> {
     .map_err(db_err)
 }
 
-/// Inserts or merges one contact; shared by single and batch saves.
-fn upsert_contact(conn: &Connection, contact: &StoredContact) -> Result<(), StoreError> {
+/// Strips the device and agent from a user JID (`628123.0:12@s.whatsapp.net` -> `628123@s.whatsapp.net`).
+fn bare_user_jid(jid: &str) -> String {
+    match jid.split_once('@') {
+        Some((user, server)) => {
+            let user = user.split(':').next().unwrap_or(user);
+            let user = user.split('.').next().unwrap_or(user);
+            format!("{user}@{server}")
+        }
+        None => jid.to_string(),
+    }
+}
+
+fn is_lid_jid(jid: &str) -> bool {
+    jid.ends_with("@lid")
+}
+
+fn is_pn_jid(jid: &str) -> bool {
+    jid.ends_with("@s.whatsapp.net")
+}
+
+/// The phone-number JID known for a LID: from a contact that carries it, else from the
+/// `lid-mapping` keys (id = PN, data = LID).
+fn pn_for_lid(conn: &Connection, lid: &str) -> Result<Option<String>, StoreError> {
+    let from_contacts = conn
+        .prepare_cached(
+            "SELECT jid FROM contacts WHERE lid = ?1 AND jid LIKE '%@s.whatsapp.net' LIMIT 1",
+        )
+        .and_then(|mut stmt| stmt.query_row(params![lid], |r| r.get(0)))
+        .optional()
+        .map_err(db_err)?;
+    if from_contacts.is_some() {
+        return Ok(from_contacts);
+    }
     conn.prepare_cached(
-        "INSERT INTO contacts (jid, name, push_name, lid)
-                 VALUES (?1, ?2, ?3, ?4)
-                 ON CONFLICT(jid) DO UPDATE SET
-                    name = COALESCE(excluded.name, contacts.name),
-                    push_name = COALESCE(excluded.push_name, contacts.push_name),
-                    lid = COALESCE(excluded.lid, contacts.lid)",
+        "SELECT id FROM session_keys
+         WHERE key_type = 'lid-mapping' AND CAST(data AS TEXT) = ?1 LIMIT 1",
     )
-    .and_then(|mut stmt| {
-        stmt.execute(params![
-            contact.jid,
-            contact.name,
-            contact.push_name,
-            contact.lid
-        ])
-    })
-    .map(|_| ())
+    .and_then(|mut stmt| stmt.query_row(params![lid], |r| r.get(0)))
+    .optional()
     .map_err(db_err)
 }
+
+/// Inserts or merges one contact; shared by single and batch saves.
+///
+/// Contacts are kept per phone number: a contact given by its LID is stored under the PN when
+/// the pair is known (the LID stays in `lid`), and a row that was stored under a LID before its
+/// PN was known is folded into the PN row as soon as the pair shows up. Only a LID with no
+/// known PN keeps a row of its own, with `lid` set so lookups by LID find it.
+fn upsert_contact(conn: &Connection, contact: &StoredContact) -> Result<(), StoreError> {
+    let mut jid = bare_user_jid(&contact.jid);
+    let mut lid = contact
+        .lid
+        .as_deref()
+        .map(bare_user_jid)
+        .filter(|l| is_lid_jid(l));
+    if is_lid_jid(&jid) {
+        lid.get_or_insert_with(|| jid.clone());
+        if let Some(pn) = pn_for_lid(conn, &jid)? {
+            jid = pn;
+        }
+    }
+
+    conn.prepare_cached(
+        "INSERT INTO contacts (jid, name, push_name, lid)
+         VALUES (?1, ?2, ?3, ?4)
+         ON CONFLICT(jid) DO UPDATE SET
+            name = COALESCE(excluded.name, contacts.name),
+            push_name = COALESCE(excluded.push_name, contacts.push_name),
+            lid = COALESCE(excluded.lid, contacts.lid)",
+    )
+    .and_then(|mut stmt| stmt.execute(params![jid, contact.name, contact.push_name, lid]))
+    .map_err(db_err)?;
+
+    if let (true, Some(lid)) = (is_pn_jid(&jid), lid.as_deref()) {
+        merge_lid_row(conn, &jid, lid)?;
+    }
+    Ok(())
+}
+
+/// Folds the row stored under `lid` into the PN row: its names fill only what the PN row lacks.
+fn merge_lid_row(conn: &Connection, pn: &str, lid: &str) -> Result<(), StoreError> {
+    let merged = conn
+        .prepare_cached(
+            "UPDATE contacts SET
+                name = COALESCE(contacts.name, l.name),
+                push_name = COALESCE(contacts.push_name, l.push_name)
+             FROM (SELECT name, push_name FROM contacts WHERE jid = ?2) AS l
+             WHERE contacts.jid = ?1",
+        )
+        .and_then(|mut stmt| stmt.execute(params![pn, lid]))
+        .map_err(db_err)?;
+    if merged > 0 {
+        conn.prepare_cached("DELETE FROM contacts WHERE jid = ?1")
+            .and_then(|mut stmt| stmt.execute(params![lid]))
+            .map_err(db_err)?;
+    }
+    Ok(())
+}
+
+/// One-off repair of contacts written before v4: rows stored under a LID although the PN was
+/// known, rows without `lid`, and saved names copied into `push_name` by app-state sync.
+const CONTACTS_REPAIR_V4: &str = "
+    UPDATE contacts AS p SET
+        name = COALESCE(p.name, l.name),
+        push_name = COALESCE(p.push_name, l.push_name)
+    FROM contacts AS l
+    WHERE l.jid LIKE '%@lid' AND p.lid = l.jid AND p.jid LIKE '%@s.whatsapp.net';
+    DELETE FROM contacts WHERE jid LIKE '%@lid' AND EXISTS (
+        SELECT 1 FROM contacts p WHERE p.lid = contacts.jid AND p.jid LIKE '%@s.whatsapp.net');
+
+    INSERT INTO contacts (jid, name, push_name, lid)
+    SELECT k.id, l.name, l.push_name, l.jid
+    FROM contacts AS l
+    JOIN session_keys AS k ON k.key_type = 'lid-mapping' AND CAST(k.data AS TEXT) = l.jid
+    WHERE l.jid LIKE '%@lid'
+    ON CONFLICT(jid) DO UPDATE SET
+        name = COALESCE(contacts.name, excluded.name),
+        push_name = COALESCE(contacts.push_name, excluded.push_name),
+        lid = COALESCE(contacts.lid, excluded.lid);
+    DELETE FROM contacts WHERE jid LIKE '%@lid' AND EXISTS (
+        SELECT 1 FROM session_keys k
+        WHERE k.key_type = 'lid-mapping' AND CAST(k.data AS TEXT) = contacts.jid);
+
+    UPDATE contacts SET lid = jid WHERE jid LIKE '%@lid' AND lid IS NULL;
+    UPDATE contacts SET push_name = NULL WHERE name IS NOT NULL AND push_name = name;
+";
 
 /// Version of the schema, kept in `PRAGMA user_version`. Bump it whenever [`SCHEMA_SQL`] changes,
 /// so existing databases run it again on open, and extend [`migrate`] for changes that
@@ -467,7 +574,8 @@ fn upsert_contact(conn: &Connection, contact: &StoredContact) -> Result<(), Stor
 /// - v1: chat and message flag columns ([`COLUMNS_ADDED_IN_V1`]).
 /// - v2: indexes for contact lookup by LID and for starred messages.
 /// - v3: index for the chat list order (pinned first, then most recent).
-const SCHEMA_VERSION: u32 = 3;
+/// - v4: contacts kept per phone number ([`CONTACTS_REPAIR_V4`]) and a LID -> PN lookup index.
+const SCHEMA_VERSION: u32 = 4;
 
 /// Columns added after the first release, as `(table, definition)`. Databases from before schema
 /// versioning may or may not have them already.
@@ -554,6 +662,10 @@ fn migrate(conn: &Connection, is_new: bool) -> Result<(), StoreError> {
                 }
             }
         }
+    }
+    if current < 4 && !is_new {
+        conn.execute_batch(&format!("BEGIN; {CONTACTS_REPAIR_V4} COMMIT;"))
+            .map_err(|e| StoreError::Database(format!("migration to schema v4 failed: {e}")))?;
     }
     conn.pragma_update(None, "user_version", SCHEMA_VERSION)
         .map_err(db_err)
@@ -732,7 +844,17 @@ impl ChatStore for SqliteStore {
     async fn get_chats(&self) -> Result<Vec<StoredChat>, StoreError> {
         let conn = self.reader();
         let mut stmt = conn
-            .prepare_cached("SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp FROM chats ORDER BY pinned DESC, last_message_timestamp DESC")
+            // App-state mutations (mute, read, pin...) and history conversations without messages
+            // leave rows for chats that have nothing in them. Like WhatsApp, the list shows a
+            // one-to-one chat only once it has a message; groups and channels always show.
+            .prepare_cached(
+                "SELECT jid, name, unread_count, last_message_timestamp, last_message_summary, pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
+                 FROM chats
+                 WHERE jid LIKE '%@g.us' OR jid LIKE '%@newsletter'
+                    OR last_message_summary IS NOT NULL
+                    OR EXISTS (SELECT 1 FROM messages m WHERE m.chat_jid = chats.jid)
+                 ORDER BY pinned DESC, last_message_timestamp DESC",
+            )
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
         let rows = stmt
@@ -3033,7 +3155,7 @@ mod tests {
                 name: None,
                 unread_count: 0,
                 last_message_timestamp: i,
-                last_message_summary: None,
+                last_message_summary: Some("hi".into()),
                 pinned: false,
                 archived: false,
                 mute_until: None,
@@ -3118,6 +3240,239 @@ mod tests {
         let (devices, saved_at) = store.get_user_devices_with_time("a@lid").await.unwrap();
         assert_eq!(devices, vec![0, 3]);
         assert!(saved_at.unwrap() >= before);
+    }
+
+    fn contact(
+        jid: &str,
+        name: Option<&str>,
+        push: Option<&str>,
+        lid: Option<&str>,
+    ) -> StoredContact {
+        StoredContact {
+            jid: jid.into(),
+            name: name.map(Into::into),
+            push_name: push.map(Into::into),
+            lid: lid.map(Into::into),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_contact_first_seen_by_lid_is_folded_into_its_phone_number() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        store
+            .save_contact(&contact("111@lid", None, Some("Profile"), None))
+            .await
+            .unwrap();
+        // No PN known yet: a row of its own, findable by LID.
+        let c = store.get_contact("111@lid").await.unwrap().unwrap();
+        assert_eq!(
+            (c.jid.as_str(), c.lid.as_deref()),
+            ("111@lid", Some("111@lid"))
+        );
+
+        // The saved contact arrives with the pair: one row, under the PN, both names kept.
+        store
+            .save_contact(&contact(
+                "62811@s.whatsapp.net",
+                Some("Saved"),
+                None,
+                Some("111@lid"),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(store.get_contacts().await.unwrap().len(), 1);
+        for key in ["111@lid", "62811@s.whatsapp.net"] {
+            let c = store.get_contact(key).await.unwrap().unwrap();
+            assert_eq!(c.jid, "62811@s.whatsapp.net", "{key}");
+            assert_eq!(c.lid.as_deref(), Some("111@lid"));
+            assert_eq!(c.name.as_deref(), Some("Saved"));
+            assert_eq!(c.push_name.as_deref(), Some("Profile"));
+        }
+    }
+
+    #[tokio::test]
+    async fn a_lid_contact_goes_to_the_known_phone_number() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        // Known through a contact row...
+        store
+            .save_contact(&contact(
+                "62811@s.whatsapp.net",
+                Some("Saved"),
+                None,
+                Some("111@lid"),
+            ))
+            .await
+            .unwrap();
+        store
+            .save_contact(&contact("111@lid", None, Some("Profile"), None))
+            .await
+            .unwrap();
+        // ...or only through the lid-mapping keys.
+        store
+            .set_keys(vec![KeyEntry {
+                key_type: "lid-mapping".into(),
+                id: "62822@s.whatsapp.net".into(),
+                data: b"222@lid".to_vec(),
+            }])
+            .await
+            .unwrap();
+        store
+            .save_contact(&contact("222:3@lid", None, Some("Other"), None))
+            .await
+            .unwrap();
+
+        let mut all = store.get_contacts().await.unwrap();
+        all.sort_by(|a, b| a.jid.cmp(&b.jid));
+        assert_eq!(
+            all,
+            vec![
+                contact(
+                    "62811@s.whatsapp.net",
+                    Some("Saved"),
+                    Some("Profile"),
+                    Some("111@lid")
+                ),
+                contact("62822@s.whatsapp.net", None, Some("Other"), Some("222@lid")),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn a_saved_name_never_replaces_the_push_name_and_devices_are_dropped() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        store
+            .save_contact(&contact(
+                "62811:7@s.whatsapp.net",
+                None,
+                Some("Profile"),
+                None,
+            ))
+            .await
+            .unwrap();
+        store
+            .save_contact(&contact("62811@s.whatsapp.net", Some("Saved"), None, None))
+            .await
+            .unwrap();
+        let c = store
+            .get_contact("62811@s.whatsapp.net")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.name.as_deref(), Some("Saved"));
+        assert_eq!(c.push_name.as_deref(), Some("Profile"));
+        assert_eq!(store.get_contacts().await.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_v3_database_gets_its_contacts_repaired() {
+        let path = temp_db("contacts-v4");
+        drop(SqliteStore::open(&path).unwrap());
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "INSERT INTO contacts (jid, name, push_name, lid) VALUES
+                    ('111@lid', NULL, 'Profile A', NULL),
+                    ('62811@s.whatsapp.net', 'Saved A', NULL, '111@lid'),
+                    ('222@lid', NULL, 'Profile B', NULL),
+                    ('333@lid', NULL, 'Profile C', NULL),
+                    ('62844@s.whatsapp.net', 'Saved D', 'Saved D', '444@lid');
+                 INSERT INTO session_keys (key_type, id, data)
+                    VALUES ('lid-mapping', '62822@s.whatsapp.net', CAST('222@lid' AS BLOB));
+                 PRAGMA user_version = 3;",
+            )
+            .unwrap();
+        }
+        drop(SqliteStore::open(&path).unwrap());
+        assert_eq!(pragma::<u32>(&path, "user_version"), SCHEMA_VERSION);
+
+        let conn = Connection::open(&path).unwrap();
+        let mut stmt = conn
+            .prepare("SELECT jid, name, push_name, lid FROM contacts ORDER BY jid")
+            .unwrap();
+        let rows: Vec<StoredContact> = stmt
+            .query_map([], |r| {
+                Ok(StoredContact {
+                    jid: r.get(0)?,
+                    name: r.get(1)?,
+                    push_name: r.get(2)?,
+                    lid: r.get(3)?,
+                })
+            })
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(
+            rows,
+            vec![
+                // No PN known: stays, now findable by LID.
+                contact("333@lid", None, Some("Profile C"), Some("333@lid")),
+                // Merged with the PN row that carried its LID.
+                contact(
+                    "62811@s.whatsapp.net",
+                    Some("Saved A"),
+                    Some("Profile A"),
+                    Some("111@lid")
+                ),
+                // Moved to the PN from the lid-mapping keys.
+                contact(
+                    "62822@s.whatsapp.net",
+                    None,
+                    Some("Profile B"),
+                    Some("222@lid")
+                ),
+                // The push name that was only a copy of the saved name is cleared.
+                contact(
+                    "62844@s.whatsapp.net",
+                    Some("Saved D"),
+                    None,
+                    Some("444@lid")
+                ),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn the_chat_list_leaves_out_empty_one_to_one_chats() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        // App-state and history create rows for chats with nothing in them.
+        store
+            .update_chat_mute("62811@s.whatsapp.net", Some(1))
+            .await
+            .unwrap();
+        store.update_chat_unread("111@lid", false).await.unwrap();
+        store.update_chat_pin("120363@g.us", true).await.unwrap();
+        let listed = |chats: Vec<StoredChat>| chats.into_iter().map(|c| c.jid).collect::<Vec<_>>();
+        assert_eq!(
+            listed(store.get_chats().await.unwrap()),
+            vec!["120363@g.us"]
+        );
+
+        // The first message brings the chat in, with the state set earlier.
+        store
+            .save_message(&StoredMessage {
+                id: "M1".into(),
+                chat_jid: "62811@s.whatsapp.net".into(),
+                sender_jid: "62811@s.whatsapp.net".into(),
+                from_me: false,
+                timestamp: 5,
+                summary: "hi".into(),
+                status: "received".into(),
+                has_media: false,
+                proto_bytes: vec![],
+                is_starred: false,
+                is_revoked: false,
+                is_edited: false,
+            })
+            .await
+            .unwrap();
+        let chats = store.get_chats().await.unwrap();
+        assert_eq!(
+            listed(chats.clone()),
+            vec!["120363@g.us", "62811@s.whatsapp.net"]
+        );
+        assert_eq!(chats[1].mute_until, Some(1));
+        // A single lookup still finds the empty chat (its settings are needed when sending).
+        assert!(store.get_chat("111@lid").await.unwrap().is_some());
     }
 
     #[tokio::test]

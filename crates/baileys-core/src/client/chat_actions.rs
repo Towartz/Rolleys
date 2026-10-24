@@ -246,15 +246,14 @@ impl BaileysClient {
                             });
                             summary.mutations_applied += 1;
                         }
-                        crate::syncd::SyncdAction::Contact { id, name, lid, .. } => {
-                            let contact = baileys_store::StoredContact {
-                                jid: id.clone(),
-                                name: name.clone(),
-                                push_name: name.clone(),
-                                lid,
-                            };
-                            let _ = self.store.save_contact(&contact).await;
-                            self.events.emit(BaileysEvent::ContactUpdate { contact });
+                        crate::syncd::SyncdAction::Contact {
+                            id,
+                            name,
+                            lid,
+                            phone_number,
+                            ..
+                        } => {
+                            self.apply_contact_action(id, name, lid, phone_number).await;
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::MarkChatAsRead { jid, read } => {
@@ -300,16 +299,7 @@ impl BaileysClient {
                             name,
                             username: _,
                         } => {
-                            let contact = baileys_store::StoredContact {
-                                jid: lid.clone(),
-                                name: name.clone(),
-                                push_name: name,
-                                lid: Some(lid),
-                            };
-                            let _ = self.store.save_contact(&contact).await;
-                            self.events.emit(BaileysEvent::ContactsUpsert {
-                                contacts: vec![contact],
-                            });
+                            self.apply_lid_contact_action(lid, name).await;
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::DeleteMessageForMe {
@@ -776,13 +766,68 @@ impl BaileysClient {
             .store
             .save_contact(&baileys_store::StoredContact {
                 jid: normalized,
-                name: name.clone(),
-                push_name: name,
+                name,
+                push_name: None,
                 lid: contact.lid_jid.clone(),
             })
             .await;
         Ok(())
     }
+    /// Stores an app-state `contact` action (an address-book entry) and reports it.
+    ///
+    /// The address-book name is `name` only: the profile name (push name) comes from the
+    /// contact's own messages and is never overwritten. The contact is kept per phone number,
+    /// as Baileys' `processContactAction` reports it, with its LID alongside.
+    pub(crate) async fn apply_contact_action(
+        &self,
+        id: String,
+        name: Option<String>,
+        lid: Option<String>,
+        phone_number: Option<String>,
+    ) {
+        let lid = lid.or_else(|| id.ends_with("@lid").then(|| id.clone()));
+        let contact = baileys_store::StoredContact {
+            jid: phone_number.clone().unwrap_or(id),
+            name,
+            push_name: None,
+            lid,
+        };
+        let _ = self.store.save_contact(&contact).await;
+        if let (Some(pn), Some(lid)) = (phone_number, contact.lid.clone()) {
+            self.events.emit(BaileysEvent::LidMappingUpdate { lid, pn });
+        }
+        let contact = self.stored_contact_or(contact).await;
+        self.events.emit(BaileysEvent::ContactUpdate { contact });
+    }
+
+    /// Stores an app-state `lidContact` action: a name for a LID, filed under the phone number
+    /// when the store knows it.
+    pub(crate) async fn apply_lid_contact_action(&self, lid: String, name: Option<String>) {
+        let contact = baileys_store::StoredContact {
+            jid: lid.clone(),
+            name,
+            push_name: None,
+            lid: Some(lid),
+        };
+        let _ = self.store.save_contact(&contact).await;
+        let contact = self.stored_contact_or(contact).await;
+        self.events.emit(BaileysEvent::ContactsUpsert {
+            contacts: vec![contact],
+        });
+    }
+
+    /// What the store now holds for a contact just saved (PN, LID and the kept push name).
+    async fn stored_contact_or(
+        &self,
+        saved: baileys_store::StoredContact,
+    ) -> baileys_store::StoredContact {
+        let key = saved.lid.clone().unwrap_or_else(|| saved.jid.clone());
+        match self.store.get_contact(&key).await {
+            Ok(Some(stored)) => stored,
+            _ => saved,
+        }
+    }
+
     /// Removes a contact from the phone's address book (Baileys `removeContact`).
     ///
     /// Fails when the contact is not in the synced app state (run `resync_app_state` first).
@@ -881,5 +926,91 @@ impl BaileysClient {
         .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod contact_action_tests {
+    use super::*;
+    use baileys_store::{ChatStore, SqliteStore, StoredContact};
+
+    fn client(store: &std::sync::Arc<SqliteStore>) -> BaileysClient {
+        let config = crate::BaileysConfigBuilder::new()
+            .with_websocket_url("mock://contacts")
+            .build();
+        BaileysClient::new(store.clone(), config)
+    }
+
+    #[tokio::test]
+    async fn a_saved_contact_keeps_the_push_name_and_is_filed_under_the_phone_number() {
+        let store = std::sync::Arc::new(SqliteStore::open_in_memory().unwrap());
+        // The profile name arrived first, from a message sent by the contact's LID.
+        store
+            .save_contact(&StoredContact {
+                jid: "111@lid".into(),
+                name: None,
+                push_name: Some("Profile".into()),
+                lid: None,
+            })
+            .await
+            .unwrap();
+        let client = client(&store);
+        let mut events = client.events();
+
+        // The address book entry is indexed by LID and carries the phone number.
+        client
+            .apply_contact_action(
+                "111@lid".into(),
+                Some("Saved".into()),
+                None,
+                Some("62811@s.whatsapp.net".into()),
+            )
+            .await;
+
+        let expected = StoredContact {
+            jid: "62811@s.whatsapp.net".into(),
+            name: Some("Saved".into()),
+            push_name: Some("Profile".into()),
+            lid: Some("111@lid".into()),
+        };
+        assert_eq!(store.get_contacts().await.unwrap(), vec![expected.clone()]);
+        assert!(matches!(
+            events.recv().await.unwrap(),
+            BaileysEvent::LidMappingUpdate { ref lid, ref pn } if lid == "111@lid" && pn == "62811@s.whatsapp.net"
+        ));
+        match events.recv().await.unwrap() {
+            BaileysEvent::ContactUpdate { contact } => assert_eq!(contact, expected),
+            other => panic!("unexpected event {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_lid_contact_name_goes_to_the_known_phone_number() {
+        let store = std::sync::Arc::new(SqliteStore::open_in_memory().unwrap());
+        store
+            .save_contact(&StoredContact {
+                jid: "62811@s.whatsapp.net".into(),
+                name: None,
+                push_name: Some("Profile".into()),
+                lid: Some("111@lid".into()),
+            })
+            .await
+            .unwrap();
+        let client = client(&store);
+        let mut events = client.events();
+
+        client
+            .apply_lid_contact_action("111@lid".into(), Some("Saved".into()))
+            .await;
+
+        let stored = store.get_contacts().await.unwrap();
+        assert_eq!(stored.len(), 1);
+        assert_eq!(stored[0].jid, "62811@s.whatsapp.net");
+        assert_eq!(stored[0].name.as_deref(), Some("Saved"));
+        assert_eq!(stored[0].push_name.as_deref(), Some("Profile"));
+        match events.recv().await.unwrap() {
+            BaileysEvent::ContactsUpsert { contacts } => assert_eq!(contacts, stored),
+            other => panic!("unexpected event {other:?}"),
+        }
     }
 }

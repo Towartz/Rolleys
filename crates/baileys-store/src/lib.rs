@@ -241,10 +241,8 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(fetched_contact.name.as_deref(), Some("Test Contact"));
-        assert_eq!(
-            fetched_contact.lid.as_deref(),
-            Some("92810518745139:37@lid")
-        );
+        // A contact is one person: the device suffix of the LID is not part of it.
+        assert_eq!(fetched_contact.lid.as_deref(), Some("92810518745139@lid"));
 
         // 4. Save and query newsletters
         let nl = StoredNewsletter {

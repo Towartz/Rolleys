@@ -243,3 +243,14 @@ dihapus, sehingga tiap kirim meminta pre-key bundle perangkat yang tak ada. Kini
 Salinan `.sessions/live_suite.db` (629 chat, 2203 kontak, 1823 LID) naik ke v2 dengan `integrity_check` ok: open pertama
 17 ms (membangun index sekali), open berikutnya 2 ms. Kompilasi silang Android/iOS belum diverifikasi di mesin ini (target
 tidak terpasang); pilihan default per platform hanya `cfg!` tanpa kode khusus platform.
+
+**Kontak per PN dan daftar chat, 2026-10-24.** Nama buku alamat dari app-state (`contact`, `lidContact`) dan
+`add_or_edit_contact` dulu juga ditulis ke `push_name`, sehingga pushname asli tertimpa (440 dari 443 kontak bernama).
+Sekarang hanya `name` yang diisi, seperti `processContactAction` di Baileys. Kontak disimpan per nomor (PN): kontak yang
+datang lewat LID diterjemahkan ke PN dari `contacts.lid` atau kunci `lid-mapping`, dan baris yang terlanjur disimpan di
+bawah LID digabung ke baris PN begitu pasangannya diketahui. Hanya LID yang nomornya belum diketahui yang punya baris
+sendiri (dengan `lid` terisi). Suffix device tidak lagi ikut tersimpan. Pushname dari pesan kini juga disimpan untuk
+pengirim ber-LID tanpa atribut PN. Schema v4 memperbaiki data lama sekali jalan. Di DB sesi: 5 baris LID jadi 1 yatim,
+0 `push_name == name`, 443 nama utuh, `integrity_check` ok. `get_chats` tidak lagi mengembalikan chat 1:1 tanpa pesan
+yang dibuat oleh mutasi app-state atau percakapan history kosong (98 di DB sesi). Grup dan channel tetap tampil, dan
+`get_chat` tetap menemukan barisnya. Live: messaging 6/6, resync app-state 754 mutasi tanpa menimpa pushname.
