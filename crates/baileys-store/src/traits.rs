@@ -219,17 +219,40 @@ pub struct StoredCall {
     pub duration: Option<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct StoredStory {
     pub msg_id: String,
     pub author_jid: String,
     pub author_name: Option<String>,
     pub timestamp: u64,
-    pub message_type: String, // "text", "image", "video", "audio"
+    /// "text", "image", "video", "audio", "ptv", "sticker" or "document".
+    pub message_type: String,
     pub content: Option<String>,
     pub caption: Option<String>,
     pub has_media: bool,
     pub viewed: bool,
+    /// Text status colours (ARGB) and font index.
+    #[serde(default)]
+    pub background_argb: Option<u32>,
+    #[serde(default)]
+    pub text_argb: Option<u32>,
+    #[serde(default)]
+    pub font: Option<i32>,
+    #[serde(default)]
+    pub mimetype: Option<String>,
+    /// Audio/video length in seconds.
+    #[serde(default)]
+    pub seconds: Option<u32>,
+    /// Audio recorded as a voice note rather than a music/audio file.
+    #[serde(default)]
+    pub is_ptt: bool,
+    #[serde(default)]
+    pub width: Option<u32>,
+    #[serde(default)]
+    pub height: Option<u32>,
+    /// Embedded JPEG preview. Only written; list queries leave it empty, use `get_story_thumbnail`.
+    #[serde(default)]
+    pub thumbnail: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -564,6 +587,13 @@ pub trait AppStateStore: Send + Sync {
         _author_jid: &str,
     ) -> Result<Vec<StoredStory>, StoreError> {
         Ok(Vec::new())
+    }
+    async fn get_story_thumbnail(&self, _msg_id: &str) -> Result<Option<Vec<u8>>, StoreError> {
+        Ok(None)
+    }
+    /// Removes a story its author deleted.
+    async fn delete_story(&self, _msg_id: &str) -> Result<(), StoreError> {
+        Ok(())
     }
     async fn mark_story_viewed(&self, _msg_id: &str) -> Result<(), StoreError> {
         Ok(())

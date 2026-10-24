@@ -116,7 +116,16 @@ const SCHEMA_SQL: &str = "
         content TEXT,
         caption TEXT,
         has_media INTEGER NOT NULL DEFAULT 0,
-        viewed INTEGER NOT NULL DEFAULT 0
+        viewed INTEGER NOT NULL DEFAULT 0,
+        background_argb INTEGER,
+        text_argb INTEGER,
+        font INTEGER,
+        mimetype TEXT,
+        seconds INTEGER,
+        is_ptt INTEGER NOT NULL DEFAULT 0,
+        width INTEGER,
+        height INTEGER,
+        thumbnail BLOB
     );
     CREATE INDEX IF NOT EXISTS idx_status_stories_ts ON status_stories(timestamp DESC);
     CREATE INDEX IF NOT EXISTS idx_status_stories_author ON status_stories(author_jid);
@@ -590,7 +599,21 @@ const CONTACTS_REPAIR_V4: &str = "
 /// - v2: indexes for contact lookup by LID and for starred messages.
 /// - v3: index for the chat list order (pinned first, then most recent).
 /// - v4: contacts kept per phone number ([`CONTACTS_REPAIR_V4`]) and a LID -> PN lookup index.
-const SCHEMA_VERSION: u32 = 4;
+/// - v5: status story details (colours, font, media type details, embedded thumbnail).
+const SCHEMA_VERSION: u32 = 5;
+
+/// Story columns added in v5.
+const COLUMNS_ADDED_IN_V5: &[(&str, &str)] = &[
+    ("status_stories", "background_argb INTEGER"),
+    ("status_stories", "text_argb INTEGER"),
+    ("status_stories", "font INTEGER"),
+    ("status_stories", "mimetype TEXT"),
+    ("status_stories", "seconds INTEGER"),
+    ("status_stories", "is_ptt INTEGER NOT NULL DEFAULT 0"),
+    ("status_stories", "width INTEGER"),
+    ("status_stories", "height INTEGER"),
+    ("status_stories", "thumbnail BLOB"),
+];
 
 /// Columns added after the first release, as `(table, definition)`. Databases from before schema
 /// versioning may or may not have them already.
@@ -681,6 +704,19 @@ fn migrate(conn: &Connection, is_new: bool) -> Result<(), StoreError> {
     if current < 4 && !is_new {
         conn.execute_batch(&format!("BEGIN; {CONTACTS_REPAIR_V4} COMMIT;"))
             .map_err(|e| StoreError::Database(format!("migration to schema v4 failed: {e}")))?;
+    }
+    if current < 5 && !is_new {
+        for (table, definition) in COLUMNS_ADDED_IN_V5 {
+            match conn.execute(&format!("ALTER TABLE {table} ADD COLUMN {definition}"), []) {
+                Ok(_) => {}
+                Err(e) if e.to_string().contains("duplicate column name") => {}
+                Err(e) => {
+                    return Err(StoreError::Database(format!(
+                        "migration to schema v5 failed on {table} ({definition}): {e}"
+                    )))
+                }
+            }
+        }
     }
     conn.pragma_update(None, "user_version", SCHEMA_VERSION)
         .map_err(db_err)
@@ -2147,8 +2183,9 @@ impl AppStateStore for SqliteStore {
         let conn = self.writer();
         conn.execute(
             "INSERT INTO status_stories (
-                msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed,
+                background_argb, text_argb, font, mimetype, seconds, is_ptt, width, height, thumbnail
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
              ON CONFLICT(msg_id) DO UPDATE SET
                 author_jid = excluded.author_jid,
                 author_name = COALESCE(excluded.author_name, status_stories.author_name),
@@ -2157,7 +2194,16 @@ impl AppStateStore for SqliteStore {
                 content = excluded.content,
                 caption = excluded.caption,
                 has_media = excluded.has_media,
-                viewed = MAX(status_stories.viewed, excluded.viewed)",
+                viewed = MAX(status_stories.viewed, excluded.viewed),
+                background_argb = excluded.background_argb,
+                text_argb = excluded.text_argb,
+                font = excluded.font,
+                mimetype = excluded.mimetype,
+                seconds = excluded.seconds,
+                is_ptt = excluded.is_ptt,
+                width = excluded.width,
+                height = excluded.height,
+                thumbnail = COALESCE(excluded.thumbnail, status_stories.thumbnail)",
             params![
                 story.msg_id,
                 story.author_jid,
@@ -2168,8 +2214,39 @@ impl AppStateStore for SqliteStore {
                 story.caption,
                 if story.has_media { 1 } else { 0 },
                 if story.viewed { 1 } else { 0 },
+                story.background_argb.map(i64::from),
+                story.text_argb.map(i64::from),
+                story.font,
+                story.mimetype,
+                story.seconds.map(i64::from),
+                if story.is_ptt { 1 } else { 0 },
+                story.width.map(i64::from),
+                story.height.map(i64::from),
+                story.thumbnail,
             ],
         ).map_err(|e| StoreError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    async fn get_story_thumbnail(&self, msg_id: &str) -> Result<Option<Vec<u8>>, StoreError> {
+        let conn = self.reader();
+        conn.query_row(
+            "SELECT thumbnail FROM status_stories WHERE msg_id = ?1",
+            params![msg_id],
+            |r| r.get::<_, Option<Vec<u8>>>(0),
+        )
+        .optional()
+        .map(Option::flatten)
+        .map_err(db_err)
+    }
+
+    async fn delete_story(&self, msg_id: &str) -> Result<(), StoreError> {
+        let conn = self.writer();
+        conn.execute(
+            "DELETE FROM status_stories WHERE msg_id = ?1",
+            params![msg_id],
+        )
+        .map_err(db_err)?;
         Ok(())
     }
 
@@ -2180,11 +2257,13 @@ impl AppStateStore for SqliteStore {
     ) -> Result<Vec<StoredStory>, StoreError> {
         let conn = self.reader();
         let sql = if unviewed_only {
-            "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
+            "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed,
+                    background_argb, text_argb, font, mimetype, seconds, is_ptt, width, height
              FROM status_stories WHERE viewed = 0 AND timestamp >= CAST(strftime('%s','now') AS INTEGER) - 86400
              ORDER BY timestamp DESC, msg_id DESC LIMIT ?1"
         } else {
-            "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
+            "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed,
+                    background_argb, text_argb, font, mimetype, seconds, is_ptt, width, height
              FROM status_stories WHERE timestamp >= CAST(strftime('%s','now') AS INTEGER) - 86400
              ORDER BY timestamp DESC, msg_id DESC LIMIT ?1"
         };
@@ -2206,6 +2285,15 @@ impl AppStateStore for SqliteStore {
                     caption: row.get(6)?,
                     has_media: has_media_int != 0,
                     viewed: viewed_int != 0,
+                    background_argb: row.get::<_, Option<i64>>(9)?.map(|v| v as u32),
+                    text_argb: row.get::<_, Option<i64>>(10)?.map(|v| v as u32),
+                    font: row.get(11)?,
+                    mimetype: row.get(12)?,
+                    seconds: row.get::<_, Option<i64>>(13)?.map(|v| v as u32),
+                    is_ptt: row.get::<_, i32>(14)? != 0,
+                    width: row.get::<_, Option<i64>>(15)?.map(|v| v as u32),
+                    height: row.get::<_, Option<i64>>(16)?.map(|v| v as u32),
+                    thumbnail: None,
                 })
             })
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -2223,7 +2311,8 @@ impl AppStateStore for SqliteStore {
     ) -> Result<Vec<StoredStory>, StoreError> {
         let conn = self.reader();
         let mut stmt = conn.prepare_cached(
-            "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed
+            "SELECT msg_id, author_jid, author_name, timestamp, message_type, content, caption, has_media, viewed,
+                    background_argb, text_argb, font, mimetype, seconds, is_ptt, width, height
              FROM status_stories WHERE author_jid = ?1 AND timestamp >= CAST(strftime('%s','now') AS INTEGER) - 86400
              ORDER BY timestamp DESC, msg_id DESC"
         ).map_err(|e| StoreError::Database(e.to_string()))?;
@@ -2242,6 +2331,15 @@ impl AppStateStore for SqliteStore {
                     caption: row.get(6)?,
                     has_media: has_media_int != 0,
                     viewed: viewed_int != 0,
+                    background_argb: row.get::<_, Option<i64>>(9)?.map(|v| v as u32),
+                    text_argb: row.get::<_, Option<i64>>(10)?.map(|v| v as u32),
+                    font: row.get(11)?,
+                    mimetype: row.get(12)?,
+                    seconds: row.get::<_, Option<i64>>(13)?.map(|v| v as u32),
+                    is_ptt: row.get::<_, i32>(14)? != 0,
+                    width: row.get::<_, Option<i64>>(15)?.map(|v| v as u32),
+                    height: row.get::<_, Option<i64>>(16)?.map(|v| v as u32),
+                    thumbnail: None,
                 })
             })
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -3098,6 +3196,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn status_story_details_thumbnail_and_delete() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        store
+            .save_story(&StoredStory {
+                msg_id: "S1".into(),
+                author_jid: "628111@s.whatsapp.net".into(),
+                timestamp: now,
+                message_type: "audio".into(),
+                has_media: true,
+                mimetype: Some("audio/mpeg".into()),
+                seconds: Some(32),
+                is_ptt: false,
+                background_argb: Some(0xFF00_8069),
+                thumbnail: Some(vec![0xFF, 0xD8]),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        let listed = store
+            .get_stories_by_author("628111@s.whatsapp.net")
+            .await
+            .unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].seconds, Some(32));
+        assert_eq!(listed[0].mimetype.as_deref(), Some("audio/mpeg"));
+        assert_eq!(listed[0].background_argb, Some(0xFF00_8069));
+        assert!(listed[0].thumbnail.is_none(), "lists stay light");
+        assert_eq!(
+            store.get_story_thumbnail("S1").await.unwrap(),
+            Some(vec![0xFF, 0xD8])
+        );
+        store.delete_story("S1").await.unwrap();
+        assert!(store
+            .get_stories_by_author("628111@s.whatsapp.net")
+            .await
+            .unwrap()
+            .is_empty());
+    }
+
+    #[tokio::test]
     async fn notification_mute_and_pin_on_a_stub_alias_reach_the_listed_chat() {
         // A synced mute/pin can land on the LID alias before the PN-LID pair is known; the
         // LID row has no messages, so it's hidden from get_chats and the state would be lost.
@@ -3221,6 +3363,7 @@ mod tests {
             caption: None,
             has_media: false,
             viewed: false,
+            ..Default::default()
         };
         store.save_story(&story).await.unwrap();
         for index in 0..25 {

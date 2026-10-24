@@ -407,6 +407,7 @@ mod tests {
             caption: None,
             has_media: false,
             viewed: false,
+            ..Default::default()
         };
         let story2 = StoredStory {
             msg_id: "STORY_MSG_002".to_string(),
@@ -418,6 +419,7 @@ mod tests {
             caption: Some("Vacation photo".to_string()),
             has_media: true,
             viewed: false,
+            ..Default::default()
         };
         store.save_story(&story1).await.unwrap();
         store.save_story(&story2).await.unwrap();

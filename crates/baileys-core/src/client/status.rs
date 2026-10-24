@@ -16,31 +16,12 @@ impl BaileysClient {
             status_jid_list: audience,
             ..Default::default()
         };
+        let own_copy = msg.clone();
         let msg_id = self
             .send_message_with_options("status@broadcast", msg, options)
             .await?;
 
-        // Save our own story in SQLite store
-        let creds = self.store.get_creds().await.ok().flatten();
-        let me_jid = creds
-            .and_then(|c| c.me_jid)
-            .unwrap_or_else(|| "me".to_string());
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        let story = baileys_store::StoredStory {
-            msg_id: msg_id.clone(),
-            author_jid: me_jid,
-            author_name: Some("Me".to_string()),
-            timestamp: now,
-            message_type: "text".to_string(),
-            content: Some(text.to_string()),
-            caption: None,
-            has_media: false,
-            viewed: true,
-        };
-        let _ = self.store.save_story(&story).await;
+        self.save_own_story(&msg_id, &own_copy).await;
 
         Ok(msg_id)
     }
@@ -105,30 +86,12 @@ impl BaileysClient {
             status_jid_list: audience,
             ..Default::default()
         };
+        let own_copy = msg.clone();
         let msg_id = self
             .send_message_with_options("status@broadcast", msg, options)
             .await?;
 
-        let creds = self.store.get_creds().await.ok().flatten();
-        let me_jid = creds
-            .and_then(|c| c.me_jid)
-            .unwrap_or_else(|| "me".to_string());
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        let story = baileys_store::StoredStory {
-            msg_id: msg_id.clone(),
-            author_jid: me_jid,
-            author_name: Some("Me".to_string()),
-            timestamp: now,
-            message_type: "image".to_string(),
-            content: None,
-            caption: caption.map(|s| s.to_string()),
-            has_media: true,
-            viewed: true,
-        };
-        let _ = self.store.save_story(&story).await;
+        self.save_own_story(&msg_id, &own_copy).await;
 
         Ok(msg_id)
     }
@@ -138,6 +101,20 @@ impl BaileysClient {
         video_bytes: &[u8],
         caption: Option<&str>,
         mimetype: Option<&str>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String, CoreError> {
+        self.send_status_video_clip(video_bytes, caption, mimetype, 0, None, audience)
+            .await
+    }
+
+    /// Publishes a video status with its real length and an optional JPEG preview.
+    pub async fn send_status_video_clip(
+        &self,
+        video_bytes: &[u8],
+        caption: Option<&str>,
+        mimetype: Option<&str>,
+        seconds: u32,
+        thumbnail: Option<Vec<u8>>,
         audience: Option<Vec<String>>,
     ) -> Result<String, CoreError> {
         let encrypted =
@@ -162,7 +139,7 @@ impl BaileysClient {
         let attrs = crate::status::StatusMediaAttributes {
             width: None,
             height: None,
-            jpeg_thumbnail: None,
+            jpeg_thumbnail: thumbnail,
             is_hd: true,
             media_key_timestamp: Some(now_sec as i64),
         };
@@ -174,7 +151,8 @@ impl BaileysClient {
             encrypted.file_sha256.to_vec(),
             encrypted.file_enc_sha256.to_vec(),
             video_bytes.len() as u64,
-            30,
+            // Unknown length (0) keeps the previous default.
+            if seconds > 0 { seconds } else { 30 },
             mimetype,
             caption,
             Some(attrs),
@@ -184,30 +162,12 @@ impl BaileysClient {
             status_jid_list: audience,
             ..Default::default()
         };
+        let own_copy = msg.clone();
         let msg_id = self
             .send_message_with_options("status@broadcast", msg, options)
             .await?;
 
-        let creds = self.store.get_creds().await.ok().flatten();
-        let me_jid = creds
-            .and_then(|c| c.me_jid)
-            .unwrap_or_else(|| "me".to_string());
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        let story = baileys_store::StoredStory {
-            msg_id: msg_id.clone(),
-            author_jid: me_jid,
-            author_name: Some("Me".to_string()),
-            timestamp: now,
-            message_type: "video".to_string(),
-            content: None,
-            caption: caption.map(|s| s.to_string()),
-            has_media: true,
-            viewed: true,
-        };
-        let _ = self.store.save_story(&story).await;
+        self.save_own_story(&msg_id, &own_copy).await;
 
         Ok(msg_id)
     }
@@ -236,31 +196,12 @@ impl BaileysClient {
             status_jid_list: audience,
             ..Default::default()
         };
+        let own_copy = msg.clone();
         let msg_id = self
             .send_message_with_options("status@broadcast", msg, options)
             .await?;
 
-        // Save our own story in SQLite store
-        let creds = self.store.get_creds().await.ok().flatten();
-        let me_jid = creds
-            .and_then(|c| c.me_jid)
-            .unwrap_or_else(|| "me".to_string());
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        let story = baileys_store::StoredStory {
-            msg_id: msg_id.clone(),
-            author_jid: me_jid,
-            author_name: Some("Me".to_string()),
-            timestamp: now,
-            message_type: "text".to_string(),
-            content: Some(custom_text.unwrap_or(url).to_string()),
-            caption: None,
-            has_media: false,
-            viewed: true,
-        };
-        let _ = self.store.save_story(&story).await;
+        self.save_own_story(&msg_id, &own_copy).await;
 
         Ok(msg_id)
     }
@@ -270,6 +211,19 @@ impl BaileysClient {
         audio_bytes: &[u8],
         seconds: u32,
         mimetype: Option<&str>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String, CoreError> {
+        self.send_status_audio_as(audio_bytes, seconds, mimetype, true, audience)
+            .await
+    }
+
+    /// Publishes an audio status; `ptt` marks a voice note, otherwise it is a music/audio file.
+    pub async fn send_status_audio_as(
+        &self,
+        audio_bytes: &[u8],
+        seconds: u32,
+        mimetype: Option<&str>,
+        ptt: bool,
         audience: Option<Vec<String>>,
     ) -> Result<String, CoreError> {
         let encrypted =
@@ -298,35 +252,18 @@ impl BaileysClient {
             mimetype,
             None,
         );
+        let msg = crate::status::with_audio_ptt(msg, ptt);
 
         let options = MessageOptions {
             status_jid_list: audience,
             ..Default::default()
         };
+        let own_copy = msg.clone();
         let msg_id = self
             .send_message_with_options("status@broadcast", msg, options)
             .await?;
 
-        let creds = self.store.get_creds().await.ok().flatten();
-        let me_jid = creds
-            .and_then(|c| c.me_jid)
-            .unwrap_or_else(|| "me".to_string());
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        let story = baileys_store::StoredStory {
-            msg_id: msg_id.clone(),
-            author_jid: me_jid,
-            author_name: Some("Me".to_string()),
-            timestamp: now,
-            message_type: "audio".to_string(),
-            content: None,
-            caption: None,
-            has_media: true,
-            viewed: true,
-        };
-        let _ = self.store.save_story(&story).await;
+        self.save_own_story(&msg_id, &own_copy).await;
 
         Ok(msg_id)
     }
@@ -396,5 +333,39 @@ impl BaileysClient {
             .get_stories_by_author(author_jid)
             .await
             .map_err(|e| CoreError::Store(e.to_string()))
+    }
+
+    /// The JPEG preview embedded in a story, without downloading its media.
+    pub async fn get_story_thumbnail(&self, msg_id: &str) -> Result<Option<Vec<u8>>, CoreError> {
+        self.store
+            .get_story_thumbnail(msg_id)
+            .await
+            .map_err(|e| CoreError::Store(e.to_string()))
+    }
+}
+
+impl BaileysClient {
+    /// Saves a story we just posted with everything the parser reads from the sent message
+    /// (colours, font, caption, duration, preview), under our plain user jid.
+    async fn save_own_story(&self, msg_id: &str, msg: &Message) {
+        let creds = self.store.get_creds().await.ok().flatten();
+        let me_jid = creds
+            .as_ref()
+            .and_then(|c| c.me_jid.as_deref())
+            .map(normalize_user_jid)
+            .unwrap_or_else(|| "me".to_string());
+        let me_name = creds
+            .and_then(|c| c.me_name)
+            .or_else(|| Some("Me".to_string()));
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or_default();
+        if let Some(mut story) =
+            crate::status::parse_story_from_proto(msg_id, &me_jid, me_name, now, msg)
+        {
+            story.viewed = true;
+            let _ = self.store.save_story(&story).await;
+        }
     }
 }

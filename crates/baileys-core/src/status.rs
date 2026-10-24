@@ -229,98 +229,128 @@ pub fn build_video_status_message(
     }
 }
 
+/// Marks an audio status as a voice note (`ptt`) or a music/audio file.
+pub fn with_audio_ptt(mut msg: Message, ptt: bool) -> Message {
+    if let Some(audio) = msg.audio_message.as_mut() {
+        audio.ptt = Some(ptt);
+        if !ptt {
+            // Waveforms belong to voice notes.
+            audio.waveform = None;
+        }
+    }
+    msg
+}
+
 /// Parses an incoming status message protobuf into a `StoredStory` record.
+///
+/// Returns `None` for payloads that are not stories (revokes, reactions, key distribution and
+/// other protocol messages), which previously showed up as unplayable "unknown" stories.
 pub fn parse_story_from_proto(
     msg_id: &str,
     author_jid: &str,
     author_name: Option<String>,
     timestamp: u64,
     proto: &Message,
-) -> StoredStory {
+) -> Option<StoredStory> {
     // Status media may be inside ephemeral, view-once, or device-sent envelopes.
     let unwrapped = proto.unwrap_wrappers();
     let proto = unwrapped.payload;
-    if let Some(ref ext) = proto.extended_text_message {
-        return StoredStory {
-            msg_id: msg_id.to_string(),
-            author_jid: author_jid.to_string(),
-            author_name,
-            timestamp,
-            message_type: "text".to_string(),
-            content: ext.text.clone(),
-            caption: None,
-            has_media: false,
-            viewed: false,
-        };
-    }
-
-    if let Some(ref conv) = proto.conversation {
-        return StoredStory {
-            msg_id: msg_id.to_string(),
-            author_jid: author_jid.to_string(),
-            author_name,
-            timestamp,
-            message_type: "text".to_string(),
-            content: Some(conv.clone()),
-            caption: None,
-            has_media: false,
-            viewed: false,
-        };
-    }
-
-    if let Some(ref img) = proto.image_message {
-        return StoredStory {
-            msg_id: msg_id.to_string(),
-            author_jid: author_jid.to_string(),
-            author_name,
-            timestamp,
-            message_type: "image".to_string(),
-            content: None,
-            caption: img.caption.clone(),
-            has_media: true,
-            viewed: false,
-        };
-    }
-
-    if let Some(ref vid) = proto.video_message {
-        return StoredStory {
-            msg_id: msg_id.to_string(),
-            author_jid: author_jid.to_string(),
-            author_name,
-            timestamp,
-            message_type: "video".to_string(),
-            content: None,
-            caption: vid.caption.clone(),
-            has_media: true,
-            viewed: false,
-        };
-    }
-
-    if proto.audio_message.is_some() {
-        return StoredStory {
-            msg_id: msg_id.to_string(),
-            author_jid: author_jid.to_string(),
-            author_name,
-            timestamp,
-            message_type: "audio".to_string(),
-            content: None,
-            caption: None,
-            has_media: true,
-            viewed: false,
-        };
-    }
-
-    StoredStory {
+    let base = StoredStory {
         msg_id: msg_id.to_string(),
         author_jid: author_jid.to_string(),
         author_name,
         timestamp,
-        message_type: "unknown".to_string(),
-        content: None,
-        caption: None,
-        has_media: false,
-        viewed: false,
+        ..Default::default()
+    };
+
+    if let Some(ref ext) = proto.extended_text_message {
+        return Some(StoredStory {
+            message_type: "text".to_string(),
+            content: ext.text.clone(),
+            background_argb: ext.background_argb,
+            text_argb: ext.text_argb,
+            font: ext.font,
+            thumbnail: ext.jpeg_thumbnail.clone(),
+            ..base
+        });
     }
+    if let Some(ref conv) = proto.conversation {
+        return Some(StoredStory {
+            message_type: "text".to_string(),
+            content: Some(conv.clone()),
+            ..base
+        });
+    }
+    if let Some(ref img) = proto.image_message {
+        return Some(StoredStory {
+            message_type: "image".to_string(),
+            caption: img.caption.clone(),
+            has_media: true,
+            mimetype: img.mimetype.clone(),
+            width: img.width,
+            height: img.height,
+            thumbnail: img.jpeg_thumbnail.clone(),
+            ..base
+        });
+    }
+    if let Some(ref vid) = proto.video_message {
+        return Some(StoredStory {
+            message_type: "video".to_string(),
+            caption: vid.caption.clone(),
+            has_media: true,
+            mimetype: vid.mimetype.clone(),
+            seconds: vid.seconds,
+            width: vid.width,
+            height: vid.height,
+            thumbnail: vid.jpeg_thumbnail.clone(),
+            ..base
+        });
+    }
+    if let Some(ref ptv) = proto.ptv_message {
+        return Some(StoredStory {
+            message_type: "ptv".to_string(),
+            caption: ptv.caption.clone(),
+            has_media: true,
+            mimetype: ptv.mimetype.clone(),
+            seconds: ptv.seconds,
+            width: ptv.width,
+            height: ptv.height,
+            thumbnail: ptv.jpeg_thumbnail.clone(),
+            ..base
+        });
+    }
+    if let Some(ref audio) = proto.audio_message {
+        return Some(StoredStory {
+            message_type: "audio".to_string(),
+            has_media: true,
+            mimetype: audio.mimetype.clone(),
+            seconds: audio.seconds,
+            is_ptt: audio.ptt.unwrap_or(false),
+            ..base
+        });
+    }
+    if let Some(ref sticker) = proto.sticker_message {
+        return Some(StoredStory {
+            message_type: "sticker".to_string(),
+            has_media: true,
+            mimetype: sticker.mimetype.clone(),
+            width: sticker.width,
+            height: sticker.height,
+            ..base
+        });
+    }
+    if let Some(ref doc) = proto.document_message {
+        return Some(StoredStory {
+            message_type: "document".to_string(),
+            content: doc.file_name.clone().or_else(|| doc.title.clone()),
+            caption: doc.caption.clone(),
+            has_media: true,
+            mimetype: doc.mimetype.clone(),
+            thumbnail: doc.jpeg_thumbnail.clone(),
+            ..base
+        });
+    }
+    None
 }
 
 /// Builds a `<receipt>` node to mark a story from `author_jid` as viewed on WhatsApp.
@@ -364,7 +394,8 @@ mod tests {
             Some("Developer".into()),
             1700000000,
             &text_msg,
-        );
+        )
+        .expect("text status is a story");
         assert_eq!(story.msg_id, "STORY_123");
         assert_eq!(story.author_jid, "628123456789@s.whatsapp.net");
         assert_eq!(story.message_type, "text");
@@ -391,10 +422,61 @@ mod tests {
             None,
             1700000000,
             &wrapped,
-        );
+        )
+        .expect("image status is a story");
         assert!(story.has_media);
         assert_eq!(story.message_type, "image");
         assert_eq!(story.caption.as_deref(), Some("A photo"));
+    }
+
+    #[test]
+    fn status_story_details_and_non_story_payloads() {
+        let text = Message {
+            extended_text_message: Some(Box::new(
+                baileys_proto::proto::message::ExtendedTextMessage {
+                    text: Some("Hi".into()),
+                    background_argb: Some(0xFF00_8069),
+                    text_argb: Some(0xFFFF_FFFF),
+                    font: Some(2),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        };
+        let story = parse_story_from_proto("t", "a@s.whatsapp.net", None, 1, &text).unwrap();
+        assert_eq!(story.background_argb, Some(0xFF00_8069));
+        assert_eq!(story.text_argb, Some(0xFFFF_FFFF));
+        assert_eq!(story.font, Some(2));
+
+        let audio = |ptt| Message {
+            audio_message: Some(Box::new(baileys_proto::proto::message::AudioMessage {
+                ptt: Some(ptt),
+                seconds: Some(32),
+                mimetype: Some("audio/mpeg".into()),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let music =
+            parse_story_from_proto("m", "a@s.whatsapp.net", None, 1, &audio(false)).unwrap();
+        assert_eq!(
+            (music.message_type.as_str(), music.is_ptt, music.seconds),
+            ("audio", false, Some(32))
+        );
+        assert!(
+            parse_story_from_proto("v", "a@s.whatsapp.net", None, 1, &audio(true))
+                .unwrap()
+                .is_ptt
+        );
+
+        let protocol = Message {
+            protocol_message: Some(Box::new(Default::default())),
+            ..Default::default()
+        };
+        assert!(parse_story_from_proto("p", "a@s.whatsapp.net", None, 1, &protocol).is_none());
+        assert!(
+            parse_story_from_proto("e", "a@s.whatsapp.net", None, 1, &Message::default()).is_none()
+        );
     }
 
     #[test]

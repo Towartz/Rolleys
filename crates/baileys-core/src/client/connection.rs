@@ -1457,6 +1457,10 @@ impl BaileysClient {
                                                                         participant,
                                                                     } => {
                                                                         let _ = store_live.revoke_message_ex(&target_chat_jid, &target_msg_id, anti_revoke_live).await;
+                                                                        // A deleted status disappears from the story list too.
+                                                                        if target_chat_jid == "status@broadcast" {
+                                                                            let _ = store_live.delete_story(&target_msg_id).await;
+                                                                        }
                                                                         if anti_revoke_live {
                                                                             info!("[Anti-Revoke] Message {} deleted by {:?} in {} - Original preserved in SQLite", target_msg_id, participant, target_chat_jid);
                                                                         }
@@ -1624,14 +1628,18 @@ impl BaileysClient {
                                                             .unwrap()
                                                             .as_secs();
 
+                                                        let author_name_story = notify_opt.clone();
                                                         tokio::spawn(async move {
-                                                            let story = crate::status::parse_story_from_proto(
+                                                            // Revokes, reactions and key distribution are not stories.
+                                                            let Some(story) = crate::status::parse_story_from_proto(
                                                                 &msg_id_story,
                                                                 &author_story,
-                                                                None,
+                                                                author_name_story,
                                                                 if node_ts > 0 { node_ts } else { now_story },
                                                                 &proto_for_story,
-                                                            );
+                                                            ) else {
+                                                                return;
+                                                            };
                                                             let _ = store_story.save_story(&story).await;
                                                             events_story.emit(BaileysEvent::StoryReceived { story });
                                                         });

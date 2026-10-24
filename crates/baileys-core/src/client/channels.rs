@@ -613,6 +613,7 @@ impl BaileysClient {
             caption: caption.map(|s| s.to_string()),
             has_media: true,
             viewed: true,
+            ..Default::default()
         };
         let _ = self.store.save_story(&story).await;
 

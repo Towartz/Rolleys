@@ -296,6 +296,38 @@ pub struct RolleysStoredStory {
     pub caption: Option<String>,
     pub has_media: bool,
     pub viewed: bool,
+    pub background_argb: Option<u32>,
+    pub text_argb: Option<u32>,
+    pub font: Option<i32>,
+    pub mimetype: Option<String>,
+    pub seconds: Option<u32>,
+    pub is_ptt: bool,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
+impl From<baileys_store::StoredStory> for RolleysStoredStory {
+    fn from(s: baileys_store::StoredStory) -> Self {
+        Self {
+            msg_id: s.msg_id,
+            author_jid: s.author_jid,
+            author_name: s.author_name,
+            timestamp: s.timestamp,
+            message_type: s.message_type,
+            content: s.content,
+            caption: s.caption,
+            has_media: s.has_media,
+            viewed: s.viewed,
+            background_argb: s.background_argb,
+            text_argb: s.text_argb,
+            font: s.font,
+            mimetype: s.mimetype,
+            seconds: s.seconds,
+            is_ptt: s.is_ptt,
+            width: s.width,
+            height: s.height,
+        }
+    }
 }
 
 #[derive(uniffi::Record, Clone, Debug)]
@@ -1001,17 +1033,7 @@ impl RolleysClient {
                         },
                     },
                     BaileysEvent::StoryReceived { story } => RolleysEvent::StoryReceived {
-                        story: RolleysStoredStory {
-                            msg_id: story.msg_id,
-                            author_jid: story.author_jid,
-                            author_name: story.author_name,
-                            timestamp: story.timestamp,
-                            message_type: story.message_type,
-                            content: story.content,
-                            caption: story.caption,
-                            has_media: story.has_media,
-                            viewed: story.viewed,
-                        },
+                        story: RolleysStoredStory::from(story),
                     },
                     BaileysEvent::BlocklistUpdate { added, removed } => {
                         RolleysEvent::BlocklistUpdate { added, removed }
@@ -2693,20 +2715,7 @@ impl RolleysClient {
             .block_on(async move { client.get_recent_stories(limit, unviewed_only).await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(list
-            .into_iter()
-            .map(|s| RolleysStoredStory {
-                msg_id: s.msg_id,
-                author_jid: s.author_jid,
-                author_name: s.author_name,
-                timestamp: s.timestamp,
-                message_type: s.message_type,
-                content: s.content,
-                caption: s.caption,
-                has_media: s.has_media,
-                viewed: s.viewed,
-            })
-            .collect())
+        Ok(list.into_iter().map(RolleysStoredStory::from).collect())
     }
 
     /// Fetches all active status stories posted by a specific contact.
@@ -2720,20 +2729,7 @@ impl RolleysClient {
             .block_on(async move { client.get_stories_by_author(&author_jid).await })
             .map_err(|e| FfiError::OperationError(e.to_string()))?;
 
-        Ok(list
-            .into_iter()
-            .map(|s| RolleysStoredStory {
-                msg_id: s.msg_id,
-                author_jid: s.author_jid,
-                author_name: s.author_name,
-                timestamp: s.timestamp,
-                message_type: s.message_type,
-                content: s.content,
-                caption: s.caption,
-                has_media: s.has_media,
-                viewed: s.viewed,
-            })
-            .collect())
+        Ok(list.into_iter().map(RolleysStoredStory::from).collect())
     }
 
     pub fn edit_message(
@@ -3844,6 +3840,60 @@ impl RolleysClient {
                     )
                     .await
             })
+            .map_err(op_err)
+    }
+
+    /// Audio status as a voice note (`ptt`) or as a music/audio file, with its real mimetype.
+    pub fn send_status_audio_as(
+        &self,
+        audio_bytes: Vec<u8>,
+        seconds: u32,
+        mimetype: Option<String>,
+        ptt: bool,
+        audience: Option<Vec<String>>,
+    ) -> Result<String, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move {
+                client
+                    .send_status_audio_as(&audio_bytes, seconds, mimetype.as_deref(), ptt, audience)
+                    .await
+            })
+            .map_err(op_err)
+    }
+
+    /// Video status with its length in seconds and an optional JPEG preview.
+    pub fn send_status_video_clip(
+        &self,
+        video_bytes: Vec<u8>,
+        caption: Option<String>,
+        mimetype: Option<String>,
+        seconds: u32,
+        thumbnail: Option<Vec<u8>>,
+        audience: Option<Vec<String>>,
+    ) -> Result<String, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move {
+                client
+                    .send_status_video_clip(
+                        &video_bytes,
+                        caption.as_deref(),
+                        mimetype.as_deref(),
+                        seconds,
+                        thumbnail,
+                        audience,
+                    )
+                    .await
+            })
+            .map_err(op_err)
+    }
+
+    /// The JPEG preview embedded in a status story, if it carried one.
+    pub fn get_story_thumbnail(&self, msg_id: String) -> Result<Option<Vec<u8>>, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.get_story_thumbnail(&msg_id).await })
             .map_err(op_err)
     }
 
