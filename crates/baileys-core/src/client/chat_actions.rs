@@ -196,7 +196,7 @@ impl BaileysClient {
                             mute_end_timestamp,
                         } => {
                             let mute_until = if muted {
-                                mute_end_timestamp.map(|t| t as u64).or(Some(u64::MAX))
+                                Some(normalize_mute_end(mute_end_timestamp))
                             } else {
                                 None
                             };
@@ -1125,5 +1125,29 @@ mod archive_tests {
         assert!(client.chat_modify_archive(lid, false).await.is_err());
         assert!(!store.get_chat(pn).await.unwrap().unwrap().archived);
         assert!(!store.get_chat(lid).await.unwrap().unwrap().archived);
+    }
+}
+
+/// Mute end from an app-state mutation, in seconds. Phones send milliseconds; zero, negative
+/// or missing means "until unmuted".
+pub(crate) fn normalize_mute_end(mute_end_timestamp: Option<i64>) -> u64 {
+    match mute_end_timestamp {
+        Some(t) if t > 10_000_000_000 => (t / 1000) as u64,
+        Some(t) if t > 0 => t as u64,
+        _ => u64::MAX,
+    }
+}
+
+#[cfg(test)]
+mod mute_end_tests {
+    use super::normalize_mute_end;
+
+    #[test]
+    fn mute_end_is_seconds_and_open_ended_when_unset() {
+        assert_eq!(normalize_mute_end(Some(1_800_000_000_000)), 1_800_000_000);
+        assert_eq!(normalize_mute_end(Some(1_800_000_000)), 1_800_000_000);
+        assert_eq!(normalize_mute_end(Some(-1)), u64::MAX);
+        assert_eq!(normalize_mute_end(Some(0)), u64::MAX);
+        assert_eq!(normalize_mute_end(None), u64::MAX);
     }
 }

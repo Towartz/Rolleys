@@ -873,13 +873,19 @@ impl ChatStore for SqliteStore {
                     COALESCE((SELECT summary FROM messages WHERE chat_jid = chats.jid
                         AND timestamp = chats.last_message_timestamp AND summary <> '<empty>'
                         ORDER BY rowid DESC LIMIT 1), last_message_summary),
-                    pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
+                    MAX(pinned, COALESCE((SELECT MAX(a.pinned) FROM chats a WHERE a.jid IN (
+                        SELECT lid FROM contacts WHERE jid = chats.jid UNION SELECT jid FROM contacts WHERE lid = chats.jid)), 0)),
+                    MAX(archived, COALESCE((SELECT MAX(a.archived) FROM chats a WHERE a.jid IN (
+                        SELECT lid FROM contacts WHERE jid = chats.jid UNION SELECT jid FROM contacts WHERE lid = chats.jid)), 0)),
+                    COALESCE(mute_until, (SELECT CASE WHEN MIN(a.mute_until) = -1 THEN -1 ELSE MAX(a.mute_until) END FROM chats a WHERE a.jid IN (
+                        SELECT lid FROM contacts WHERE jid = chats.jid UNION SELECT jid FROM contacts WHERE lid = chats.jid))),
+                    ephemeral_expiration, ephemeral_setting_timestamp
                  FROM chats
                  WHERE jid LIKE '%@g.us' OR jid LIKE '%@newsletter'
                     OR (last_message_summary IS NOT NULL AND last_message_summary <> '<empty>')
                     OR EXISTS (SELECT 1 FROM messages m WHERE m.chat_jid = chats.jid
                         AND m.summary <> '<empty>')
-                 ORDER BY pinned DESC, last_message_timestamp DESC",
+                 ORDER BY 6 DESC, last_message_timestamp DESC",
             )
             .map_err(|e| StoreError::Database(e.to_string()))?;
 
@@ -921,7 +927,13 @@ impl ChatStore for SqliteStore {
                 COALESCE((SELECT summary FROM messages WHERE chat_jid = chats.jid
                     AND timestamp = chats.last_message_timestamp AND summary <> '<empty>'
                     ORDER BY rowid DESC LIMIT 1), last_message_summary),
-                pinned, archived, mute_until, ephemeral_expiration, ephemeral_setting_timestamp
+                MAX(pinned, COALESCE((SELECT MAX(a.pinned) FROM chats a WHERE a.jid IN (
+                        SELECT lid FROM contacts WHERE jid = chats.jid UNION SELECT jid FROM contacts WHERE lid = chats.jid)), 0)),
+                    MAX(archived, COALESCE((SELECT MAX(a.archived) FROM chats a WHERE a.jid IN (
+                        SELECT lid FROM contacts WHERE jid = chats.jid UNION SELECT jid FROM contacts WHERE lid = chats.jid)), 0)),
+                    COALESCE(mute_until, (SELECT CASE WHEN MIN(a.mute_until) = -1 THEN -1 ELSE MAX(a.mute_until) END FROM chats a WHERE a.jid IN (
+                        SELECT lid FROM contacts WHERE jid = chats.jid UNION SELECT jid FROM contacts WHERE lid = chats.jid))),
+                    ephemeral_expiration, ephemeral_setting_timestamp
                 FROM chats WHERE jid = ?1",
             )
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -1255,7 +1267,15 @@ impl ChatStore for SqliteStore {
     async fn update_chat_pin(&self, jid: &str, pinned: bool) -> Result<(), StoreError> {
         let conn = self.writer();
         conn.execute(
-            "INSERT INTO chats (jid, pinned) VALUES (?1, ?2)
+            // Like mute: a synced pin may address the LID while messages live under the PN.
+            "INSERT INTO chats (jid, pinned)
+             SELECT alias, ?2 FROM (
+                SELECT ?1 AS alias
+                UNION SELECT jid FROM contacts WHERE lid = ?1
+                UNION SELECT lid FROM contacts WHERE jid = ?1
+                UNION SELECT CAST(data AS TEXT) FROM session_keys WHERE key_type = 'lid-mapping' AND id = ?1
+                UNION SELECT id FROM session_keys WHERE key_type = 'lid-mapping' AND CAST(data AS TEXT) = ?1
+             ) WHERE alias IS NOT NULL
              ON CONFLICT(jid) DO UPDATE SET pinned = excluded.pinned",
             params![jid, if pinned { 1 } else { 0 }],
         )
@@ -1266,7 +1286,14 @@ impl ChatStore for SqliteStore {
     async fn update_chat_archive(&self, jid: &str, archived: bool) -> Result<(), StoreError> {
         let conn = self.writer();
         conn.execute(
-            "INSERT INTO chats (jid, archived) VALUES (?1, ?2)
+            "INSERT INTO chats (jid, archived)
+             SELECT alias, ?2 FROM (
+                SELECT ?1 AS alias
+                UNION SELECT jid FROM contacts WHERE lid = ?1
+                UNION SELECT lid FROM contacts WHERE jid = ?1
+                UNION SELECT CAST(data AS TEXT) FROM session_keys WHERE key_type = 'lid-mapping' AND id = ?1
+                UNION SELECT id FROM session_keys WHERE key_type = 'lid-mapping' AND CAST(data AS TEXT) = ?1
+             ) WHERE alias IS NOT NULL
              ON CONFLICT(jid) DO UPDATE SET archived = excluded.archived",
             params![jid, if archived { 1 } else { 0 }],
         )
@@ -1278,10 +1305,15 @@ impl ChatStore for SqliteStore {
         let conn = self.writer();
         conn.execute(
             // Mutations address either PN or LID. Keep both aliases consistent, including unmute.
+            // The lid-mapping keys cover pairs that never became a contact row.
             "INSERT INTO chats (jid, mute_until)
-             SELECT ?1, ?2
-             UNION SELECT jid, ?2 FROM contacts WHERE jid = ?1 OR lid = ?1
-             UNION SELECT lid, ?2 FROM contacts WHERE (jid = ?1 OR lid = ?1) AND lid IS NOT NULL
+             SELECT alias, ?2 FROM (
+                SELECT ?1 AS alias
+                UNION SELECT jid FROM contacts WHERE jid = ?1 OR lid = ?1
+                UNION SELECT lid FROM contacts WHERE (jid = ?1 OR lid = ?1) AND lid IS NOT NULL
+                UNION SELECT CAST(data AS TEXT) FROM session_keys WHERE key_type = 'lid-mapping' AND id = ?1
+                UNION SELECT id FROM session_keys WHERE key_type = 'lid-mapping' AND CAST(data AS TEXT) = ?1
+             ) WHERE alias IS NOT NULL
              ON CONFLICT(jid) DO UPDATE SET mute_until = excluded.mute_until",
             params![jid, mute_until.map(|ts| ts as i64)],
         )
@@ -3063,6 +3095,46 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[tokio::test]
+    async fn notification_mute_and_pin_on_a_stub_alias_reach_the_listed_chat() {
+        // A synced mute/pin can land on the LID alias before the PN-LID pair is known; the
+        // LID row has no messages, so it's hidden from get_chats and the state would be lost.
+        let store = SqliteStore::open_in_memory().unwrap();
+        let pn = "628111@s.whatsapp.net";
+        let lid = "12345@lid";
+        store.update_chat_mute(lid, Some(u64::MAX)).await.unwrap();
+        store.update_chat_pin(lid, true).await.unwrap();
+        store
+            .save_chat(&StoredChat {
+                jid: pn.into(),
+                name: None,
+                unread_count: 1,
+                last_message_timestamp: 200,
+                last_message_summary: Some("Hello".into()),
+                pinned: false,
+                archived: false,
+                mute_until: None,
+                ephemeral_expiration: 0,
+                ephemeral_setting_timestamp: None,
+            })
+            .await
+            .unwrap();
+        store
+            .save_contact(&StoredContact {
+                jid: pn.into(),
+                name: None,
+                push_name: None,
+                lid: Some(lid.into()),
+            })
+            .await
+            .unwrap();
+        let chats = store.get_chats().await.unwrap();
+        let listed = chats.iter().find(|c| c.jid == pn).expect("PN chat listed");
+        assert_eq!(listed.mute_until, Some(u64::MAX));
+        assert!(listed.pinned);
+        assert!(chats.iter().all(|c| c.jid != lid));
     }
 
     #[tokio::test]
