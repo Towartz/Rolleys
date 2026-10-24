@@ -464,29 +464,45 @@ impl BaileysClient {
         )
         .map_err(|e| CoreError::Media(e.to_string()))?;
 
+        // A cached media connection can expire between sends; retry once with a fresh one.
         let media_conn = self.refresh_media_conn(false).await?;
-
-        let upload_res = baileys_media::upload_encrypted_media(
+        let upload_res = match baileys_media::upload_encrypted_media(
             &encrypted.encrypted_bytes,
             &encrypted.file_enc_sha256,
             baileys_media::MediaType::Sticker,
             &media_conn,
         )
         .await
-        .map_err(|e| CoreError::Media(e.to_string()))?;
+        {
+            Ok(res) => res,
+            Err(first) => {
+                tracing::warn!(
+                    "sticker upload failed, retrying with a fresh media connection: {}",
+                    first
+                );
+                let fresh_conn = self.refresh_media_conn(true).await?;
+                baileys_media::upload_encrypted_media(
+                    &encrypted.encrypted_bytes,
+                    &encrypted.file_enc_sha256,
+                    baileys_media::MediaType::Sticker,
+                    &fresh_conn,
+                )
+                .await
+                .map_err(|e| CoreError::Media(e.to_string()))?
+            }
+        };
 
         let proto_msg = Message {
-            sticker_message: Some(Box::new(StickerMessage {
-                url: upload_res.url,
-                mimetype: Some("image/webp".to_string()),
-                file_sha256: Some(encrypted.file_sha256.to_vec()),
-                file_length: Some(sticker_bytes.len() as u64),
-                is_animated: Some(is_animated),
-                media_key: Some(encrypted.media_key.to_vec()),
-                file_enc_sha256: Some(encrypted.file_enc_sha256.to_vec()),
-                direct_path: upload_res.direct_path,
-                ..Default::default()
-            })),
+            sticker_message: Some(Box::new(sticker_message_fields(
+                sticker_bytes,
+                upload_res.url,
+                upload_res.direct_path,
+                encrypted.media_key.to_vec(),
+                encrypted.file_sha256.to_vec(),
+                encrypted.file_enc_sha256.to_vec(),
+                sticker_bytes.len() as u64,
+                is_animated,
+            ))),
             ..Default::default()
         };
 
@@ -596,19 +612,23 @@ impl BaileysClient {
                 })),
                 ..Default::default()
             },
-            baileys_media::MediaType::Sticker => Message {
-                sticker_message: Some(Box::new(baileys_proto::proto::message::StickerMessage {
-                    url: stream_res.upload_res.url,
-                    mimetype: Some("image/webp".to_string()),
-                    file_sha256: Some(stream_res.file_sha256.to_vec()),
-                    file_length: Some(stream_res.file_length),
-                    media_key: Some(stream_res.media_key.to_vec()),
-                    file_enc_sha256: Some(stream_res.file_enc_sha256.to_vec()),
-                    direct_path: stream_res.upload_res.direct_path,
+            baileys_media::MediaType::Sticker => {
+                let header = std::fs::read(file_path).unwrap_or_default();
+                let is_animated = header.windows(4).any(|w| w == b"ANIM");
+                Message {
+                    sticker_message: Some(Box::new(sticker_message_fields(
+                        &header,
+                        stream_res.upload_res.url,
+                        stream_res.upload_res.direct_path,
+                        stream_res.media_key.to_vec(),
+                        stream_res.file_sha256.to_vec(),
+                        stream_res.file_enc_sha256.to_vec(),
+                        stream_res.file_length,
+                        is_animated,
+                    ))),
                     ..Default::default()
-                })),
-                ..Default::default()
-            },
+                }
+            }
         };
 
         self.send_message(&normalized_jid, proto_msg).await
@@ -758,5 +778,64 @@ impl BaileysClient {
                 .ok_or_else(|| CoreError::Network("Not connected".into()))?
         };
         socket.send_node(receipt).await
+    }
+}
+
+/// Sticker fields receivers need to lay out and decrypt the sticker. Width and height come from
+/// the WebP header (512 when unreadable); without them some clients render an empty frame.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn sticker_message_fields(
+    webp_bytes: &[u8],
+    url: Option<String>,
+    direct_path: Option<String>,
+    media_key: Vec<u8>,
+    file_sha256: Vec<u8>,
+    file_enc_sha256: Vec<u8>,
+    file_length: u64,
+    is_animated: bool,
+) -> StickerMessage {
+    let dims = baileys_media::webp_dimensions(webp_bytes)
+        .unwrap_or(baileys_media::MediaDimensions::new(512, 512));
+    StickerMessage {
+        url,
+        mimetype: Some("image/webp".to_string()),
+        file_sha256: Some(file_sha256),
+        file_length: Some(file_length),
+        is_animated: Some(is_animated),
+        media_key: Some(media_key),
+        file_enc_sha256: Some(file_enc_sha256),
+        direct_path,
+        width: Some(dims.width),
+        height: Some(dims.height),
+        media_key_timestamp: Some(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() as i64)
+                .unwrap_or_default(),
+        ),
+        ..Default::default()
+    }
+}
+
+#[cfg(test)]
+mod sticker_fields_tests {
+    use super::*;
+
+    #[test]
+    fn sticker_fields_fall_back_to_512_and_set_timestamp() {
+        let msg = sticker_message_fields(
+            b"not a webp",
+            None,
+            Some("/p".into()),
+            vec![1],
+            vec![2],
+            vec![3],
+            10,
+            false,
+        );
+        assert_eq!((msg.width, msg.height), (Some(512), Some(512)));
+        assert!(msg.media_key_timestamp.unwrap_or_default() > 0);
+        assert_eq!(msg.mimetype.as_deref(), Some("image/webp"));
+        assert_eq!(msg.direct_path.as_deref(), Some("/p"));
     }
 }

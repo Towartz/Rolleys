@@ -144,8 +144,75 @@ pub fn generate_profile_picture(image_bytes: &[u8], size: u32) -> Result<Vec<u8>
     Ok(out)
 }
 
+/// Reads a WebP canvas size from its VP8X, VP8 or VP8L header.
+///
+/// The `image` crate is built without WebP support, so stickers need their own parser.
+pub fn webp_dimensions(bytes: &[u8]) -> Option<MediaDimensions> {
+    if bytes.len() < 12 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WEBP" {
+        return None;
+    }
+    let u8_at = |i: usize| bytes.get(i).copied().map(u32::from);
+    let u16_at = |i: usize| Some(u8_at(i)? | (u8_at(i + 1)? << 8));
+    let u24_at = |i: usize| Some(u16_at(i)? | (u8_at(i + 2)? << 16));
+    let mut pos = 12usize;
+    while pos + 8 <= bytes.len() {
+        let tag = &bytes[pos..pos + 4];
+        let len = u24_at(pos + 4)? as usize | ((u8_at(pos + 7)? as usize) << 24);
+        let data = pos + 8;
+        let found = match tag {
+            b"VP8X" => Some((u24_at(data + 4)? + 1, u24_at(data + 7)? + 1)),
+            b"VP8 "
+                if u8_at(data + 3)? == 0x9d
+                    && u8_at(data + 4)? == 0x01
+                    && u8_at(data + 5)? == 0x2a =>
+            {
+                Some((u16_at(data + 6)? & 0x3fff, u16_at(data + 8)? & 0x3fff))
+            }
+            b"VP8L" if u8_at(data)? == 0x2f => {
+                let bits = u24_at(data + 1)? | (u8_at(data + 4)? << 24);
+                Some(((bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1))
+            }
+            _ => None,
+        };
+        if let Some((width, height)) = found.filter(|(w, h)| *w > 0 && *h > 0) {
+            return Some(MediaDimensions { width, height });
+        }
+        pos = data.checked_add(len)?.checked_add(len & 1)?;
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn webp_dimensions_reads_extended_and_lossy_headers() {
+        fn riff(chunks: &[u8]) -> Vec<u8> {
+            let mut out = b"RIFF".to_vec();
+            out.extend_from_slice(&((chunks.len() + 4) as u32).to_le_bytes());
+            out.extend_from_slice(b"WEBP");
+            out.extend_from_slice(chunks);
+            out
+        }
+        let mut vp8x = b"VP8X".to_vec();
+        vp8x.extend_from_slice(&10u32.to_le_bytes());
+        vp8x.extend_from_slice(&[0x02, 0, 0, 0, 0xff, 0x01, 0x00, 0xff, 0x01, 0x00]);
+        assert_eq!(
+            webp_dimensions(&riff(&vp8x)),
+            Some(MediaDimensions::new(512, 512))
+        );
+
+        let mut vp8 = b"VP8 ".to_vec();
+        vp8.extend_from_slice(&10u32.to_le_bytes());
+        vp8.extend_from_slice(&[0, 0, 0, 0x9d, 0x01, 0x2a, 0x2c, 0x01, 0xc8, 0x00]);
+        assert_eq!(
+            webp_dimensions(&riff(&vp8)),
+            Some(MediaDimensions::new(300, 200))
+        );
+
+        assert_eq!(webp_dimensions(b"\x89PNG\r\n\x1a\n00000000"), None);
+        assert_eq!(webp_dimensions(&riff(b"VP8X\xff\xff\xff\xff")), None);
+    }
+
     use super::*;
 
     #[test]
