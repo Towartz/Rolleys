@@ -653,6 +653,11 @@ pub fn extract_syncd_response(
         if name.is_empty() {
             continue;
         }
+        if col_node.get_attr("type") == Some("error") || col_node.get_child("error").is_some() {
+            return Err(CoreError::Protocol(
+                "App State collection returned an error".into(),
+            ));
+        }
 
         tracing::debug!(
             "syncd collection node '{}': attrs={:?} children={:?}",
@@ -680,11 +685,22 @@ pub fn extract_syncd_response(
 
         if let Some(snap_node) = col_node.get_child("snapshot") {
             if let Some(content) = snap_node.as_bytes() {
+                if content.is_empty() {
+                    return Err(CoreError::Protocol(
+                        "Missing App State snapshot data".into(),
+                    ));
+                }
                 if let Ok(snap) = SyncdSnapshot::decode(content) {
                     snapshot = Some(snap);
                 } else if let Ok(blob) = ExternalBlobReference::decode(content) {
                     snapshot_blob_ref = Some(blob);
+                } else {
+                    return Err(CoreError::Protocol("Invalid App State snapshot".into()));
                 }
+            } else {
+                return Err(CoreError::Protocol(
+                    "Missing App State snapshot data".into(),
+                ));
             }
         }
 
@@ -692,9 +708,15 @@ pub fn extract_syncd_response(
         let patches_parent = col_node.get_child("patches").unwrap_or(col_node);
         for p_node in patches_parent.get_children_by_tag("patch") {
             if let Some(content) = p_node.as_bytes() {
-                if let Ok(patch) = SyncdPatch::decode(content) {
-                    patches.push(patch);
+                if content.is_empty() {
+                    return Err(CoreError::Protocol("Missing App State patch data".into()));
                 }
+                patches.push(
+                    SyncdPatch::decode(content)
+                        .map_err(|_| CoreError::Protocol("Invalid App State patch".into()))?,
+                );
+            } else {
+                return Err(CoreError::Protocol("Missing App State patch data".into()));
             }
         }
 
@@ -1384,6 +1406,45 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn notification_sync_rejects_error_and_malformed_collections() {
+        for collection in [
+            BinaryNode::new("collection")
+                .with_attr("name", REGULAR_HIGH)
+                .with_attr("type", "error"),
+            BinaryNode::new("collection")
+                .with_attr("name", REGULAR_HIGH)
+                .with_child(BinaryNode::new("error")),
+            BinaryNode::new("collection")
+                .with_attr("name", REGULAR_HIGH)
+                .with_child(BinaryNode::new("snapshot")),
+            BinaryNode::new("collection")
+                .with_attr("name", REGULAR_HIGH)
+                .with_child(BinaryNode::new("snapshot").with_content(vec![0xff])),
+            BinaryNode::new("collection")
+                .with_attr("name", REGULAR_HIGH)
+                .with_child(BinaryNode::new("patch")),
+            BinaryNode::new("collection")
+                .with_attr("name", REGULAR_HIGH)
+                .with_child(BinaryNode::new("patch").with_content(vec![0xff])),
+        ] {
+            let response =
+                BinaryNode::new("iq").with_child(BinaryNode::new("sync").with_child(collection));
+            assert!(extract_syncd_response(&response).is_err());
+        }
+        // An up-to-date collection legitimately contains no new snapshot/patches.
+        let response = BinaryNode::new("iq").with_child(
+            BinaryNode::new("sync").with_child(
+                BinaryNode::new("collection")
+                    .with_attr("name", REGULAR_HIGH)
+                    .with_attr("version", "1"),
+            ),
+        );
+        assert!(extract_syncd_response(&response)
+            .unwrap()
+            .contains_key(REGULAR_HIGH));
+    }
     use baileys_proto::proto::SyncdVersion;
 
     #[test]
