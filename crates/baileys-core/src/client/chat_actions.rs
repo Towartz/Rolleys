@@ -200,10 +200,10 @@ impl BaileysClient {
                             } else {
                                 None
                             };
-                            if self.store.update_chat_mute(&jid, mute_until).await.is_err() {
-                                summary.collections_failed += 1;
-                                continue;
-                            }
+                            self.store
+                                .update_chat_mute(&jid, mute_until)
+                                .await
+                                .map_err(|e| CoreError::Store(e.to_string()))?;
                             self.events.emit(BaileysEvent::ChatUpdate {
                                 jid,
                                 pinned: None,
@@ -296,8 +296,7 @@ impl BaileysClient {
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::LidMapping { lid, pn } => {
-                            if self
-                                .store
+                            self.store
                                 .save_contact(&StoredContact {
                                     jid: pn.clone(),
                                     name: None,
@@ -305,11 +304,7 @@ impl BaileysClient {
                                     lid: Some(lid.clone()),
                                 })
                                 .await
-                                .is_err()
-                            {
-                                summary.collections_failed += 1;
-                                continue;
-                            }
+                                .map_err(|e| CoreError::Store(e.to_string()))?;
                             self.events.emit(BaileysEvent::LidMappingUpdate { lid, pn });
                             summary.mutations_applied += 1;
                         }

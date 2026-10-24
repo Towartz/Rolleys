@@ -1241,9 +1241,11 @@ impl ChatStore for SqliteStore {
         let conn = self.reader();
         let mut stmt = conn
             .prepare_cached(
-                "SELECT jid, name, push_name, lid FROM contacts WHERE jid = ?1
+                "SELECT pn.jid, COALESCE(pn.name, alias.name), COALESCE(pn.push_name, alias.push_name), pn.lid
+                 FROM contacts pn LEFT JOIN contacts alias ON alias.jid = pn.lid
+                 WHERE pn.lid = ?1 AND pn.jid != ?1
                  UNION ALL
-                 SELECT jid, name, push_name, lid FROM contacts WHERE lid = ?1 AND jid != ?1
+                 SELECT jid, name, push_name, lid FROM contacts WHERE jid = ?1
                  LIMIT 1",
             )
             .map_err(|e| StoreError::Database(e.to_string()))?;
@@ -2847,6 +2849,37 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    async fn notification_contact_alias_keeps_phone_identity_and_saved_name_on_cold_lookup() {
+        let store = SqliteStore::open_in_memory().unwrap();
+        let pn = "628111@s.whatsapp.net";
+        let lid = "12345@lid";
+        for (jid, name) in [(pn, "Saved phone name"), (lid, "LID name")] {
+            store
+                .save_contact(&StoredContact {
+                    jid: jid.into(),
+                    name: Some(name.into()),
+                    push_name: None,
+                    lid: Some(lid.into()),
+                })
+                .await
+                .unwrap();
+        }
+        let contact = store.get_contact(lid).await.unwrap().unwrap();
+        assert_eq!(contact.jid, pn);
+        assert_eq!(contact.name.as_deref(), Some("Saved phone name"));
+        store
+            .writer()
+            .execute(
+                "UPDATE contacts SET name = NULL WHERE jid = ?1",
+                params![pn],
+            )
+            .unwrap();
+        let contact = store.get_contact(lid).await.unwrap().unwrap();
+        assert_eq!(contact.jid, pn);
+        assert_eq!(contact.name.as_deref(), Some("LID name"));
+    }
+
+    #[tokio::test]
     async fn notification_mute_updates_both_aliases_and_unmutes_without_stale_values() {
         let store = SqliteStore::open_in_memory().unwrap();
         let pn = "628111@s.whatsapp.net";
@@ -3154,7 +3187,7 @@ mod tests {
         let conn = store.writer();
         for (sql, table) in [
             ("SELECT data FROM session_keys WHERE key_type = 'session' AND id = 'x'", "session_keys"),
-            ("SELECT jid FROM contacts WHERE jid = 'x' UNION ALL SELECT jid FROM contacts WHERE lid = 'x' AND jid != 'x' LIMIT 1", "contacts"),
+            ("SELECT pn.jid FROM contacts pn LEFT JOIN contacts alias ON alias.jid = pn.lid WHERE pn.lid = 'x' AND pn.jid != 'x' UNION ALL SELECT jid FROM contacts WHERE jid = 'x' LIMIT 1", "pn"),
             ("SELECT id FROM messages WHERE chat_jid = 'x' AND timestamp < 5 ORDER BY timestamp DESC LIMIT 50", "messages"),
             ("SELECT id FROM messages WHERE is_starred = 1 ORDER BY timestamp DESC LIMIT 50", "messages"),
             ("SELECT jid FROM chats ORDER BY pinned DESC, last_message_timestamp DESC", "chats"),
