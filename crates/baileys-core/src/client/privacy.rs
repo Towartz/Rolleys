@@ -117,10 +117,11 @@ impl BaileysClient {
         picture_type: &str,
     ) -> Result<Option<String>, CoreError> {
         let iq_id = format!("3EB0{:X}", rand::random::<u64>());
+        // Like Baileys' jidNormalizedUser: a device jid ("628..:12@s.whatsapp.net") has no picture.
         let normalized = if !jid.contains('@') {
             format!("{}@s.whatsapp.net", jid)
         } else {
-            jid.to_string()
+            crate::client::normalize_user_jid(jid)
         };
         let ptype = if picture_type == "image" {
             "image"

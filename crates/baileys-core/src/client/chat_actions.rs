@@ -290,6 +290,10 @@ impl BaileysClient {
                             summary.mutations_applied += 1;
                         }
                         crate::syncd::SyncdAction::Setting { setting, value } => {
+                            // The account's own display name, set on another device.
+                            if setting == "pushName" && !value.trim().is_empty() {
+                                self.remember_me_name(value.trim()).await;
+                            }
                             self.events
                                 .emit(BaileysEvent::SettingsUpdate { setting, value });
                             summary.mutations_applied += 1;

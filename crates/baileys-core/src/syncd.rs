@@ -270,6 +270,9 @@ impl DecodedSyncdMutation {
                 a.unarchive_chats.unwrap_or(false).to_string(),
             );
         }
+        if let Some(name) = v.push_name_setting.as_ref().and_then(|a| a.name.clone()) {
+            return setting("pushName", name);
+        }
         if let Some(locale) = v.locale_setting.as_ref().and_then(|a| a.locale.clone()) {
             return setting("locale", locale);
         }

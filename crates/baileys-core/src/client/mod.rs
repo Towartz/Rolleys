@@ -240,6 +240,49 @@ impl BaileysClient {
         Ok(creds.and_then(|c| c.me_lid))
     }
 
+    /// The account's own display (push) name: saved credentials, then the profile KV entry,
+    /// then the push name stored for our own contact row.
+    pub async fn me_name(&self) -> Result<Option<String>, CoreError> {
+        let creds = self
+            .store
+            .get_creds()
+            .await
+            .map_err(|e| CoreError::Store(e.to_string()))?;
+        if let Some(name) = creds.as_ref().and_then(|c| c.me_name.clone()) {
+            if !name.trim().is_empty() {
+                return Ok(Some(name));
+            }
+        }
+        if let Ok(Some(name)) = self.store.get_kv("profile:name").await {
+            if !name.trim().is_empty() {
+                return Ok(Some(name));
+            }
+        }
+        let me = creds
+            .and_then(|c| c.me_jid)
+            .map(|jid| crate::client::normalize_user_jid(&jid));
+        if let Some(me) = me {
+            if let Ok(Some(contact)) = self.store.get_contact(&me).await {
+                return Ok(contact
+                    .push_name
+                    .or(contact.name)
+                    .filter(|n| !n.trim().is_empty()));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Stores the own display name learned from sync or pairing, without sending presence.
+    pub(crate) async fn remember_me_name(&self, name: &str) {
+        if let Ok(Some(mut creds)) = self.store.get_creds().await {
+            if creds.me_name.as_deref() != Some(name) {
+                creds.me_name = Some(name.to_string());
+                let _ = self.store.save_creds(&creds).await;
+            }
+        }
+        let _ = self.store.set_kv("profile:name", name).await;
+    }
+
     /// Disconnects from WhatsApp Web and cleans up active socket tasks.
     pub async fn disconnect(&self) {
         self.is_running.store(false, Ordering::SeqCst);

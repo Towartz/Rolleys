@@ -4047,6 +4047,14 @@ impl RolleysClient {
             .map_err(op_err)
     }
 
+    /// The account's own display name, if known.
+    pub fn me_name(&self) -> Result<Option<String>, FfiError> {
+        let client = self.client.clone();
+        self.runtime
+            .block_on(async move { client.me_name().await })
+            .map_err(op_err)
+    }
+
     pub fn me_lid(&self) -> Result<Option<String>, FfiError> {
         let client = self.client.clone();
         self.runtime
