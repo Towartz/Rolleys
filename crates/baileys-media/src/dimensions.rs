@@ -144,6 +144,44 @@ pub fn generate_profile_picture(image_bytes: &[u8], size: u32) -> Result<Vec<u8>
     Ok(out)
 }
 
+/// Prepares the whole image as a WhatsApp profile picture, without cropping: the picture keeps its
+/// aspect ratio and is only scaled down so its longest edge is at most `max_edge` pixels (smaller
+/// images are not enlarged). Encoded as JPEG (quality 80).
+pub fn generate_full_profile_picture(
+    image_bytes: &[u8],
+    max_edge: u32,
+) -> Result<Vec<u8>, MediaError> {
+    use image::codecs::jpeg::JpegEncoder;
+    use image::ExtendedColorType;
+
+    if image_bytes.is_empty() {
+        return Err(MediaError::DecryptionFailed(
+            "Empty image bytes for profile picture".to_string(),
+        ));
+    }
+    let img = image::load_from_memory(image_bytes).map_err(|e| {
+        MediaError::DecryptionFailed(format!("Failed to decode profile picture: {}", e))
+    })?;
+
+    let longest = img.width().max(img.height());
+    let rgb = if longest > max_edge {
+        // `resize` fits inside the box while keeping the aspect ratio.
+        img.resize(max_edge, max_edge, FilterType::Lanczos3)
+            .to_rgb8()
+    } else {
+        img.to_rgb8()
+    };
+
+    let (width, height) = (rgb.width(), rgb.height());
+    let mut out = Vec::new();
+    JpegEncoder::new_with_quality(&mut out, 80)
+        .encode(rgb.as_raw(), width, height, ExtendedColorType::Rgb8)
+        .map_err(|e| {
+            MediaError::EncryptionFailed(format!("Failed to encode profile picture: {}", e))
+        })?;
+    Ok(out)
+}
+
 /// Reads a WebP canvas size from its VP8X, VP8 or VP8L header.
 ///
 /// The `image` crate is built without WebP support, so stickers need their own parser.
@@ -296,5 +334,50 @@ mod tests {
 
         assert!(generate_profile_picture(&[], 64).is_err());
         assert!(generate_profile_picture(b"not an image", 64).is_err());
+    }
+
+    #[test]
+    fn full_profile_picture_keeps_the_whole_image() {
+        fn png(width: u32, height: u32) -> Vec<u8> {
+            // Red left third, green middle, blue right third, so a crop would be visible.
+            let mut img = image::RgbImage::new(width, height);
+            for (x, _, px) in img.enumerate_pixels_mut() {
+                *px = match x * 3 / width {
+                    0 => image::Rgb([255, 0, 0]),
+                    1 => image::Rgb([0, 255, 0]),
+                    _ => image::Rgb([0, 0, 255]),
+                };
+            }
+            let mut out = Vec::new();
+            image::DynamicImage::ImageRgb8(img)
+                .write_to(&mut Cursor::new(&mut out), ImageFormat::Png)
+                .unwrap();
+            out
+        }
+
+        // A small non-square image is neither cropped nor enlarged.
+        let small = generate_full_profile_picture(&png(300, 200), 720).unwrap();
+        assert_eq!(&small[..3], &[0xFF, 0xD8, 0xFF], "JPEG magic");
+        let dims = extract_image_dimensions(&small).unwrap();
+        assert_eq!((dims.width, dims.height), (300, 200));
+        let decoded = image::load_from_memory(&small).unwrap().to_rgb8();
+        let left = decoded.get_pixel(20, 100);
+        let right = decoded.get_pixel(280, 100);
+        assert!(
+            left[0] > 200 && left[1] < 60,
+            "left third still red: {left:?}"
+        );
+        assert!(
+            right[2] > 200 && right[0] < 60,
+            "right third still blue: {right:?}"
+        );
+
+        // A large image is scaled down to the longest edge, keeping its proportions.
+        let large = generate_full_profile_picture(&png(2000, 1000), 720).unwrap();
+        let dims = extract_image_dimensions(&large).unwrap();
+        assert_eq!((dims.width, dims.height), (720, 360));
+
+        assert!(generate_full_profile_picture(&[], 720).is_err());
+        assert!(generate_full_profile_picture(b"not an image", 720).is_err());
     }
 }

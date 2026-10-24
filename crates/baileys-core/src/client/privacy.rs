@@ -169,8 +169,9 @@ impl BaileysClient {
             iq_node = iq_node.with_attr("target", normalized);
         }
 
-        // Like Baileys' generateProfilePicture: centred square, 640 px, JPEG.
-        let jpeg = baileys_media::generate_profile_picture(image_bytes, 640)
+        // The whole picture, not a centred square crop: scaled down to at most 720 px on its
+        // longest edge, keeping its proportions (WhatsApp shows non-square pictures in full).
+        let jpeg = baileys_media::generate_full_profile_picture(image_bytes, 720)
             .map_err(|e| CoreError::Media(e.to_string()))?;
         let picture_node = BinaryNode::new("picture")
             .with_attr("type", "image")
